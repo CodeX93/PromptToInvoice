@@ -73,6 +73,8 @@ export const invoices = pgTable(
     taxTotal: money("tax_total").notNull().default(0),
     total: money("total").notNull().default(0),
     amountPaid: money("amount_paid").notNull().default(0),
+    /** Sum of issued credit notes against this invoice (positive minor units). */
+    creditedAmount: money("credited_amount").notNull().default(0),
     taxBreakdown: jsonb("tax_breakdown").$type<TaxBreakdownEntry[]>().notNull().default([]),
     /** Optional amount in the seller's accounting currency (EU VAT rule for foreign-currency invoices). */
     fxRate: numeric("fx_rate", { precision: 18, scale: 8 }),
@@ -120,6 +122,7 @@ export const invoices = pgTable(
     check("invoices_status_chk", sql`${t.status} in ('draft','open','paid','void')`),
     check("invoices_issued_has_number_chk", sql`(${t.status} = 'draft') = (${t.number} is null)`),
     check("invoices_paid_nonneg_chk", sql`${t.amountPaid} >= 0`),
+    check("invoices_credited_nonneg_chk", sql`${t.creditedAmount} >= 0`),
   ],
 );
 

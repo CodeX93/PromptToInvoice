@@ -1,0 +1,2 @@
+ALTER TABLE "invoices" ADD COLUMN "credited_amount" bigint DEFAULT 0 NOT NULL;--> statement-breakpoint
+ALTER TABLE "invoices" ADD CONSTRAINT "invoices_credited_nonneg_chk" CHECK ("invoices"."credited_amount" >= 0);
