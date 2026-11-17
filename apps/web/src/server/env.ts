@@ -47,6 +47,14 @@ const schema = z
     STRIPE_WEBHOOK_SECRET: optional,
     STRIPE_CONNECT_WEBHOOK_SECRET: optional,
     /** Platform fee on invoice payments in basis points (50 = 0.5%). */
+    /** Our own subscription prices (Stripe Price ids, each with EUR/USD/GBP currency_options). */
+    STRIPE_PRICE_PRO_MONTH: optional,
+    STRIPE_PRICE_PRO_YEAR: optional,
+    STRIPE_PRICE_BUSINESS_MONTH: optional,
+    STRIPE_PRICE_BUSINESS_YEAR: optional,
+    STRIPE_PRICE_SEAT_MONTH: optional,
+    STRIPE_PRICE_SEAT_YEAR: optional,
+    STRIPE_TRIAL_DAYS: z.coerce.number().int().min(0).max(60).default(14),
     STRIPE_APPLICATION_FEE_BPS: z.coerce.number().int().min(0).max(500).default(0),
 
     EMAIL_PROVIDER: z.enum(["log", "smtp", "postmark"]).default("log"),
@@ -118,6 +126,7 @@ export const env: Env = load();
 export const features = {
   ai: env.AI_PROVIDER === "stub" || Boolean(env.ANTHROPIC_API_KEY),
   stripe: Boolean(env.STRIPE_SECRET_KEY),
+  billing: Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_PRICE_PRO_MONTH && env.STRIPE_PRICE_BUSINESS_MONTH),
   google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
   microsoft: Boolean(env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET),
   turnstile: Boolean(env.TURNSTILE_SITE_KEY && env.TURNSTILE_SECRET_KEY),
