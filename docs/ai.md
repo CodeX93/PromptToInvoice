@@ -27,11 +27,11 @@ prompt bar (server action, POST only)
 
 ## Configuration
 
-| Variable | Meaning |
-|---|---|
-| `ANTHROPIC_API_KEY` | Enables AI drafting. |
-| `AI_MODEL` | Defaults to `claude-opus-5-5`. |
-| `AI_PROVIDER` | `anthropic` (default) or `stub`. `stub` is a deterministic offline parser for local dev and e2e only, refused in production. |
+| Variable            | Meaning                                                                                                                      |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `ANTHROPIC_API_KEY` | Enables AI drafting.                                                                                                         |
+| `AI_MODEL`          | Defaults to `claude-opus-5-5`.                                                                                               |
+| `AI_PROVIDER`       | `anthropic` (default) or `stub`. `stub` is a deterministic offline parser for local dev and e2e only, refused in production. |
 
 Per organisation (Settings → AI): turn drafting off, or stop retaining prompt text (only a SHA-256 fingerprint is stored).
 
@@ -45,4 +45,5 @@ Per organisation (Settings → AI): turn drafting off, or stop retaining prompt 
   ```
 
   The run prints per-case results, accuracy, and tokens in/cached/out, and exits non-zero below `--min` (default 0.9). Use it to gate prompt and model changes. `--model` lets you compare a cheaper model on the same cases before switching any route to it.
+
 - In production, watch the `ai_drafts.edited_fields` frequency per field and the acceptance rate (drafts issued with no edits).

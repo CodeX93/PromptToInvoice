@@ -10,11 +10,11 @@ docker build --target worker -t pti-worker --build-arg DEPLOYMENT_ID=$(git rev-p
 Behind a TLS-inspecting proxy, add `--secret id=extra_ca,src=/path/to/ca.pem`; the CA is
 used for `pnpm install` only and never lands in a layer.
 
-| Image | Runs | Notes |
-|---|---|---|
-| `pti-web` | Next.js standalone server, port 3000 | Stateless; scale horizontally. Same `DEPLOYMENT_ID` across replicas of a release. |
-| `pti-worker` | `node dist/worker.mjs` | pg-boss jobs: email, PDF archiving, reminders, recurring, FX, webhooks, purge. Run ≥1; more for throughput. Drains on SIGTERM (give it 60 s). |
-| `pti-worker` | `node dist/migrate.mjs` | One-off before each release, with `MIGRATION_DATABASE_URL` (owner role). Migrations are additive; old app versions keep working during a rollout. |
+| Image        | Runs                                 | Notes                                                                                                                                             |
+| ------------ | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pti-web`    | Next.js standalone server, port 3000 | Stateless; scale horizontally. Same `DEPLOYMENT_ID` across replicas of a release.                                                                 |
+| `pti-worker` | `node dist/worker.mjs`               | pg-boss jobs: email, PDF archiving, reminders, recurring, FX, webhooks, purge. Run ≥1; more for throughput. Drains on SIGTERM (give it 60 s).     |
+| `pti-worker` | `node dist/migrate.mjs`              | One-off before each release, with `MIGRATION_DATABASE_URL` (owner role). Migrations are additive; old app versions keep working during a rollout. |
 
 ## Release order
 
