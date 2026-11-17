@@ -56,6 +56,9 @@ importers:
       '@pti/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@pti/einvoice':
+        specifier: workspace:*
+        version: link:../../packages/einvoice
       '@radix-ui/react-dialog':
         specifier: ^1.3.1
         version: 1.3.1(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
