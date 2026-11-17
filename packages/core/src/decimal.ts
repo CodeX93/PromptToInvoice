@@ -35,7 +35,10 @@ export function parseDecimal(input: string | number, maxScale = 12): Decimal {
   const text = typeof input === "number" ? numberToPlainString(input) : input.trim();
   const m = DECIMAL_RE.exec(text);
   if (!m) throw new DecimalParseError(`Invalid decimal: "${text}"`);
-  const [, sign, int, frac = ""] = m;
+  const [, sign, int] = m;
+  let frac = m[3] ?? "";
+  // Trailing zeros carry no value ("5.000000" from a numeric(20,6) column == "5").
+  if (frac.length > maxScale) frac = frac.replace(/0+$/, "");
   if (frac.length > maxScale) {
     throw new DecimalParseError(`Too many decimal places (max ${maxScale}): "${text}"`);
   }
