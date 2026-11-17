@@ -9,7 +9,10 @@ import { cn } from "@/lib/cn";
 export function SubNav({ items }: { items: { href: Route; label: string }[] }) {
   const path = usePathname();
   return (
-    <nav aria-label="Section" className="border-rule scrollbar-thin flex gap-6 overflow-x-auto border-b px-6 lg:px-10">
+    <nav
+      aria-label="Section"
+      className="border-rule flex scrollbar-thin gap-6 overflow-x-auto border-b px-6 lg:px-10"
+    >
       {items.map((it) => {
         const active = path === it.href;
         return (

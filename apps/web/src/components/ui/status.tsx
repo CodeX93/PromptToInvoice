@@ -20,7 +20,13 @@ const STYLE: Record<DisplayStatus, { glyph: string; cls: string }> = {
 export function StatusMark({ status, className }: { status: DisplayStatus; className?: string }) {
   const s = STYLE[status];
   return (
-    <span className={cn("inline-flex items-center gap-1.5 text-2xs font-medium tracking-[0.08em] uppercase", s.cls, className)}>
+    <span
+      className={cn(
+        "text-2xs inline-flex items-center gap-1.5 font-medium tracking-[0.08em] uppercase",
+        s.cls,
+        className,
+      )}
+    >
       <span aria-hidden className="figures w-3 text-center text-xs">
         {s.glyph}
       </span>

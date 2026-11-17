@@ -16,7 +16,10 @@ async function requestMeta(): Promise<{ ip: string | null; userAgent: string | n
   try {
     const h = await headers();
     const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
-    return { ip: ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : null, userAgent: h.get("user-agent")?.slice(0, 300) ?? null };
+    return {
+      ip: ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : null,
+      userAgent: h.get("user-agent")?.slice(0, 300) ?? null,
+    };
   } catch {
     // Outside a request (jobs): no headers.
     return { ip: null, userAgent: null };

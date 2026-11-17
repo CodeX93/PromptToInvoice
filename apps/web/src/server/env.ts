@@ -25,7 +25,12 @@ const schema = z
 
     BETTER_AUTH_SECRET: z.string().min(32, "BETTER_AUTH_SECRET must be at least 32 characters"),
     /** 32-byte key, base64. Encrypts bank details at rest. Rotate via ENCRYPTION_KEYS_OLD. */
-    ENCRYPTION_KEY: z.base64().refine((v) => Buffer.from(v, "base64").length === 32, "ENCRYPTION_KEY must decode to 32 bytes"),
+    ENCRYPTION_KEY: z
+      .base64()
+      .refine(
+        (v) => Buffer.from(v, "base64").length === 32,
+        "ENCRYPTION_KEY must decode to 32 bytes",
+      ),
     ENCRYPTION_KEYS_OLD: optional,
 
     GOOGLE_CLIENT_ID: optional,
@@ -65,15 +70,24 @@ const schema = z
     const need = (cond: boolean, keys: string[], why: string) => {
       if (!cond) return;
       for (const k of keys) {
-        if (!env[k as keyof typeof env]) ctx.addIssue({ code: "custom", path: [k], message: `required ${why}` });
+        if (!env[k as keyof typeof env])
+          ctx.addIssue({ code: "custom", path: [k], message: `required ${why}` });
       }
     };
     need(env.EMAIL_PROVIDER === "smtp", ["SMTP_URL"], "when EMAIL_PROVIDER=smtp");
-    need(env.EMAIL_PROVIDER === "postmark", ["POSTMARK_SERVER_TOKEN"], "when EMAIL_PROVIDER=postmark");
+    need(
+      env.EMAIL_PROVIDER === "postmark",
+      ["POSTMARK_SERVER_TOKEN"],
+      "when EMAIL_PROVIDER=postmark",
+    );
     need(env.STORAGE_DRIVER === "s3", ["S3_BUCKET", "S3_REGION"], "when STORAGE_DRIVER=s3");
     need(!!env.STRIPE_SECRET_KEY, ["STRIPE_WEBHOOK_SECRET"], "when Stripe is enabled");
     if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
-      ctx.addIssue({ code: "custom", path: ["EMAIL_PROVIDER"], message: "log provider is not allowed in production" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["EMAIL_PROVIDER"],
+        message: "log provider is not allowed in production",
+      });
     }
   });
 
@@ -82,7 +96,9 @@ export type Env = z.infer<typeof schema>;
 function load(): Env {
   const parsed = schema.safeParse(process.env);
   if (!parsed.success) {
-    const lines = parsed.error.issues.map((i) => `  • ${i.path.join(".")}: ${i.message}`).join("\n");
+    const lines = parsed.error.issues
+      .map((i) => `  • ${i.path.join(".")}: ${i.message}`)
+      .join("\n");
     throw new Error(`Invalid environment configuration:\n${lines}`);
   }
   return parsed.data;

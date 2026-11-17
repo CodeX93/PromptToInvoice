@@ -1,7 +1,8 @@
 "use client";
 
+import { str } from "@/lib/form-data";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -12,10 +13,10 @@ export default function TwoFactorPage() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const code = String(fd.get("code") ?? "").replace(/\s/g, "");
+    const code = str(fd, "code").replace(/\s/g, "");
     const trustDevice = fd.get("trust") === "on";
     setPending(true);
     setError(null);
@@ -34,7 +35,9 @@ export default function TwoFactorPage() {
     <div>
       <h1 className="text-3xl">Two-step verification</h1>
       <p className="text-ink-3 mt-2">
-        {backup ? "Enter one of your backup codes." : "Enter the 6-digit code from your authenticator app."}
+        {backup
+          ? "Enter one of your backup codes."
+          : "Enter the 6-digit code from your authenticator app."}
       </p>
       <form onSubmit={onSubmit} className="mt-8 flex flex-col gap-5">
         <Field label={backup ? "Backup code" : "Code"} error={error ?? undefined}>
@@ -60,7 +63,11 @@ export default function TwoFactorPage() {
         <Button type="submit" size="lg" pending={pending}>
           Verify
         </Button>
-        <button type="button" className="text-ink-3 hover:text-ink text-sm" onClick={() => setBackup(!backup)}>
+        <button
+          type="button"
+          className="text-ink-3 hover:text-ink text-sm"
+          onClick={() => setBackup(!backup)}
+        >
           {backup ? "Use authenticator code" : "Use a backup code"}
         </button>
       </form>

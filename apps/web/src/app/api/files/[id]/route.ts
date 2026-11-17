@@ -13,7 +13,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/files/[id]">) {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return new Response("Not found", { status: 404 });
   try {
     const org = await orgContextOrThrow();
-    const [file] = await withOrg(db, org.org.id, (tx) => tx.select().from(schema.files).where(eq(schema.files.id, id)).limit(1));
+    const [file] = await withOrg(db, org.org.id, (tx) =>
+      tx.select().from(schema.files).where(eq(schema.files.id, id)).limit(1),
+    );
     if (!file) return new Response("Not found", { status: 404 });
     const body = await readBlob(file.storageKey);
     return new Response(new Uint8Array(body), {

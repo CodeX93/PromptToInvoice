@@ -191,4 +191,3 @@ export const idempotencyKeys = pgTable(
   },
   (t) => [primaryKey({ columns: [t.orgId, t.key] })],
 );
-

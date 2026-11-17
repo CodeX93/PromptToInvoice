@@ -35,7 +35,8 @@ function fsStore(root: string): BlobStore {
 }
 
 async function s3Store(): Promise<BlobStore> {
-  const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } = await import("@aws-sdk/client-s3");
+  const { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } =
+    await import("@aws-sdk/client-s3");
   const client = new S3Client({
     region: env.S3_REGION,
     endpoint: env.S3_ENDPOINT,
@@ -48,7 +49,15 @@ async function s3Store(): Promise<BlobStore> {
   const Bucket = env.S3_BUCKET ?? "";
   return {
     async put(key, body, contentType) {
-      await client.send(new PutObjectCommand({ Bucket, Key: key, Body: body, ContentType: contentType, ServerSideEncryption: env.S3_ENDPOINT ? undefined : "AES256" }));
+      await client.send(
+        new PutObjectCommand({
+          Bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+          ServerSideEncryption: env.S3_ENDPOINT ? undefined : "AES256",
+        }),
+      );
     },
     async get(key) {
       const r = await client.send(new GetObjectCommand({ Bucket, Key: key }));
@@ -62,7 +71,9 @@ async function s3Store(): Promise<BlobStore> {
 }
 
 let store: Promise<BlobStore> | undefined;
-const blobs = () => (store ??= env.STORAGE_DRIVER === "s3" ? s3Store() : Promise.resolve(fsStore(env.STORAGE_FS_ROOT)));
+const blobs = () =>
+  (store ??=
+    env.STORAGE_DRIVER === "s3" ? s3Store() : Promise.resolve(fsStore(env.STORAGE_FS_ROOT)));
 
 export type FileKind = (typeof schema.files.$inferInsert)["kind"];
 
@@ -76,11 +87,20 @@ export interface StoredFile {
 /** Upload bytes and record metadata in the same transaction context. */
 export async function storeFile(
   tx: DbOrTx,
-  args: { orgId: string; kind: FileKind; body: Buffer; contentType: string; fileName: string; retainUntil?: Date | null },
+  args: {
+    orgId: string;
+    kind: FileKind;
+    body: Buffer;
+    contentType: string;
+    fileName: string;
+    retainUntil?: Date | null;
+  },
 ): Promise<StoredFile> {
   const sha256 = createHash("sha256").update(args.body).digest("hex");
   const id = crypto.randomUUID();
-  const ext = args.fileName.includes(".") ? args.fileName.slice(args.fileName.lastIndexOf(".")).toLowerCase() : "";
+  const ext = args.fileName.includes(".")
+    ? args.fileName.slice(args.fileName.lastIndexOf(".")).toLowerCase()
+    : "";
   const storageKey = `${args.orgId}/${args.kind}/${id}${ext}`;
   await (await blobs()).put(storageKey, args.body, args.contentType);
   await tx.insert(schema.files).values({

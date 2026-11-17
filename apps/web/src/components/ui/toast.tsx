@@ -48,7 +48,10 @@ const empty: Toast[] = [];
 export function Toaster() {
   const items = useSyncExternalStore(subscribe, snapshot, () => empty);
   return (
-    <div aria-live="polite" className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-80 flex-col gap-2">
+    <div
+      aria-live="polite"
+      className="pointer-events-none fixed right-4 bottom-4 z-[60] flex w-80 flex-col gap-2"
+    >
       {items.map((t) => (
         <div
           key={t.id}
@@ -58,7 +61,17 @@ export function Toaster() {
             "shadow-pop animate-[rise-in_160ms_ease-out]",
           )}
         >
-          <span aria-hidden className={cn("figures mt-px", t.tone === "error" ? "text-[#f08a6d]" : t.tone === "success" ? "text-[#7fc08d]" : "text-paper/60")}>
+          <span
+            aria-hidden
+            className={cn(
+              "figures mt-px",
+              t.tone === "error"
+                ? "text-[#f08a6d]"
+                : t.tone === "success"
+                  ? "text-[#7fc08d]"
+                  : "text-paper/60",
+            )}
+          >
             {t.tone === "error" ? "!" : t.tone === "success" ? "✓" : "·"}
           </span>
           <span className="leading-snug">{t.message}</span>

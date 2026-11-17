@@ -1,5 +1,11 @@
 import "server-only";
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  timingSafeEqual,
+} from "node:crypto";
 import { env } from "./env";
 
 /**
@@ -31,18 +37,27 @@ export function encrypt(plaintext: string, aad = ""): string {
   const cipher = createCipheriv("aes-256-gcm", current.bytes, iv);
   cipher.setAAD(Buffer.from(aad));
   const ct = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
-  return ["v1", current.id, iv.toString("base64url"), cipher.getAuthTag().toString("base64url"), ct.toString("base64url")].join(".");
+  return [
+    "v1",
+    current.id,
+    iv.toString("base64url"),
+    cipher.getAuthTag().toString("base64url"),
+    ct.toString("base64url"),
+  ].join(".");
 }
 
 export function decrypt(payload: string, aad = ""): string {
   const [v, keyId, iv, tag, ct] = payload.split(".");
-  if (v !== "v1" || !keyId || !iv || !tag || ct === undefined) throw new Error("Malformed ciphertext");
+  if (v !== "v1" || !keyId || !iv || !tag || ct === undefined)
+    throw new Error("Malformed ciphertext");
   const key = keyring.get(keyId);
   if (!key) throw new Error("Unknown encryption key");
   const decipher = createDecipheriv("aes-256-gcm", key.bytes, Buffer.from(iv, "base64url"));
   decipher.setAAD(Buffer.from(aad));
   decipher.setAuthTag(Buffer.from(tag, "base64url"));
-  return Buffer.concat([decipher.update(Buffer.from(ct, "base64url")), decipher.final()]).toString("utf8");
+  return Buffer.concat([decipher.update(Buffer.from(ct, "base64url")), decipher.final()]).toString(
+    "utf8",
+  );
 }
 
 export function encryptJson(value: unknown, aad = ""): string {

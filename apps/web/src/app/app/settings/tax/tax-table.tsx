@@ -46,8 +46,14 @@ export function TaxTable({ rows, canEdit }: { rows: TaxRateRow[]; canEdit: boole
             <tr key={r.id} className="border-rule border-b">
               <td className="py-2.5">
                 {r.name}
-                {r.isDefault ? <span className="text-ink-3 ml-2 text-2xs tracking-[0.08em] uppercase">default</span> : null}
-                {r.note ? <p className="text-ink-3 mt-0.5 max-w-md truncate text-xs">{r.note}</p> : null}
+                {r.isDefault ? (
+                  <span className="text-ink-3 text-2xs ml-2 tracking-[0.08em] uppercase">
+                    default
+                  </span>
+                ) : null}
+                {r.note ? (
+                  <p className="text-ink-3 mt-0.5 max-w-md truncate text-xs">{r.note}</p>
+                ) : null}
               </td>
               <td className="text-ink-2 py-2.5">
                 <span className="figures text-ink-3 mr-1.5 text-xs">{r.category}</span>
@@ -58,7 +64,11 @@ export function TaxTable({ rows, canEdit }: { rows: TaxRateRow[]; canEdit: boole
                 {canEdit ? (
                   <span className="inline-flex gap-1">
                     {!r.isDefault ? (
-                      <Button size="sm" variant="ghost" onClick={() => act(() => makeDefault(r.id))}>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => act(() => makeDefault(r.id))}
+                      >
                         Make default
                       </Button>
                     ) : null}
@@ -75,10 +85,17 @@ export function TaxTable({ rows, canEdit }: { rows: TaxRateRow[]; canEdit: boole
 
       {canEdit ? (
         <form action={action} className="mt-8 grid items-end gap-4 sm:grid-cols-[2fr_2fr_1fr_auto]">
-          <Field label="Name" error={fe.name}>{(f) => <Input id={f.id} name="name" placeholder="VAT 7% (reduced)" required />}</Field>
+          <Field label="Name" error={fe.name}>
+            {(f) => <Input id={f.id} name="name" placeholder="VAT 7% (reduced)" required />}
+          </Field>
           <Field label="Category">
             {(f) => (
-              <Select id={f.id} name="category" value={category} onChange={(e) => setCategory(e.target.value as TaxCategory)}>
+              <Select
+                id={f.id}
+                name="category"
+                value={category}
+                onChange={(e) => setCategory(e.target.value as TaxCategory)}
+              >
                 {TAX_CATEGORIES.map((c) => (
                   <option key={c} value={c}>
                     {c} · {TAX_CATEGORY_LABEL[c]}
@@ -88,7 +105,18 @@ export function TaxTable({ rows, canEdit }: { rows: TaxRateRow[]; canEdit: boole
             )}
           </Field>
           <Field label="Rate %" error={fe.rate}>
-            {(f) => <Input key={category} id={f.id} name="rate" defaultValue={category === "S" ? "" : "0"} readOnly={category !== "S"} inputMode="decimal" className="figures" required />}
+            {(f) => (
+              <Input
+                key={category}
+                id={f.id}
+                name="rate"
+                defaultValue={category === "S" ? "" : "0"}
+                readOnly={category !== "S"}
+                inputMode="decimal"
+                className="figures"
+                required
+              />
+            )}
           </Field>
           <Button type="submit" variant="secondary" pending={adding}>
             Add rate

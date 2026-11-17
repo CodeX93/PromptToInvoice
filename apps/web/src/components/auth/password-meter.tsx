@@ -20,7 +20,10 @@ const LABELS = ["Too short", "Weak", "Fair", "Good", "Strong"] as const;
 
 export function PasswordMeter({ value }: { value: string }) {
   const score = scorePassword(value);
-  if (!value) return <p className="text-ink-3 text-xs">At least 10 characters. A short sentence works well.</p>;
+  if (!value)
+    return (
+      <p className="text-ink-3 text-xs">At least 10 characters. A short sentence works well.</p>
+    );
   return (
     <div className="flex items-center gap-2" aria-live="polite">
       <div className="flex flex-1 gap-1">
@@ -29,7 +32,13 @@ export function PasswordMeter({ value }: { value: string }) {
             key={i}
             className={cn(
               "h-0.5 flex-1 transition-colors",
-              i <= score ? (score <= 1 ? "bg-danger" : score === 2 ? "bg-warning" : "bg-positive") : "bg-rule",
+              i <= score
+                ? score <= 1
+                  ? "bg-danger"
+                  : score === 2
+                    ? "bg-warning"
+                    : "bg-positive"
+                : "bg-rule",
             )}
           />
         ))}

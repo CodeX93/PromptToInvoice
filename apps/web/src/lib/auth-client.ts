@@ -16,7 +16,9 @@ export const authClient = createAuthClient({
 });
 
 /** Map auth error codes to copy a person can act on. */
-export function authErrorMessage(err: { code?: string; message?: string; status?: number } | null | undefined): string {
+export function authErrorMessage(
+  err: { code?: string; message?: string; status?: number } | null | undefined,
+): string {
   switch (err?.code) {
     case "INVALID_EMAIL_OR_PASSWORD":
       return "That email and password don't match.";

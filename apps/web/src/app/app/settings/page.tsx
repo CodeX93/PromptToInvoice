@@ -9,7 +9,9 @@ export const metadata: Metadata = { title: "Business settings" };
 export default async function BusinessSettingsPage() {
   const ctx = await requireOrg();
   const p = await getProfile(ctx);
-  const countries = COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) => a.name.localeCompare(b.name));
+  const countries = COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) =>
+    a.name.localeCompare(b.name),
+  );
   return (
     <ProfileForm
       canEdit={can(ctx, "profile:write")}

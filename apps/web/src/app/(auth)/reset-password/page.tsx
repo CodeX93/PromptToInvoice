@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState, type FormEvent } from "react";
+import { Suspense, useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { PasswordMeter } from "@/components/auth/password-meter";
@@ -14,9 +14,11 @@ function ResetForm() {
   const token = params.get("token");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(params.get("error") ? "This link has expired or was already used." : null);
+  const [error, setError] = useState<string | null>(
+    params.get("error") ? "This link has expired or was already used." : null,
+  );
 
-  async function onSubmit(e: FormEvent) {
+  async function onSubmit(e: SubmitEvent) {
     e.preventDefault();
     if (!token) return;
     setPending(true);
@@ -31,7 +33,10 @@ function ResetForm() {
       <div>
         <h1 className="text-3xl">Link expired</h1>
         <p className="text-ink-2 mt-3">{error ?? "This reset link is incomplete."}</p>
-        <Link href="/forgot-password" className="text-ink mt-6 inline-block underline underline-offset-4">
+        <Link
+          href="/forgot-password"
+          className="text-ink mt-6 inline-block underline underline-offset-4"
+        >
           Request a new link
         </Link>
       </div>
@@ -46,7 +51,17 @@ function ResetForm() {
         <Field label="New password">
           {(f) => (
             <div className="flex flex-col gap-2">
-              <Input id={f.id} type="password" autoComplete="new-password" minLength={10} maxLength={128} required autoFocus value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Input
+                id={f.id}
+                type="password"
+                autoComplete="new-password"
+                minLength={10}
+                maxLength={128}
+                required
+                autoFocus
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
               <PasswordMeter value={password} />
             </div>
           )}

@@ -1,7 +1,8 @@
 "use client";
 
+import { str } from "@/lib/form-data";
 import Link from "next/link";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { authClient, authErrorMessage } from "@/lib/auth-client";
@@ -14,14 +15,14 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email") ?? "").trim();
+    const email = str(fd, "email").trim();
     setPending(true);
     setError(null);
     const { error: err } = await authClient.signUp.email({
-      name: String(fd.get("name") ?? "").trim(),
+      name: str(fd, "name").trim(),
       email,
       password,
       callbackURL: `/onboarding?next=${encodeURIComponent(next)}`,
@@ -38,8 +39,8 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
       <div>
         <h1 className="text-3xl">Confirm your email</h1>
         <p className="text-ink-2 mt-3 leading-relaxed">
-          We sent a link to <span className="text-ink font-medium">{sentTo}</span>. Open it to finish setting up. You can
-          close this tab.
+          We sent a link to <span className="text-ink font-medium">{sentTo}</span>. Open it to
+          finish setting up. You can close this tab.
         </p>
       </div>
     );
@@ -60,7 +61,9 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
       </div>
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
         <Field label="Your name">
-          {(f) => <Input id={f.id} name="name" autoComplete="name" required maxLength={100} autoFocus />}
+          {(f) => (
+            <Input id={f.id} name="name" autoComplete="name" required maxLength={100} autoFocus />
+          )}
         </Field>
         <Field label="Work email">
           {(f) => <Input id={f.id} name="email" type="email" autoComplete="email" required />}
@@ -83,7 +86,10 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
           )}
         </Field>
         {error ? (
-          <p role="alert" className="border-danger bg-danger-soft text-danger border-l-2 px-3 py-2 text-sm">
+          <p
+            role="alert"
+            className="border-danger bg-danger-soft text-danger border-l-2 px-3 py-2 text-sm"
+          >
             {error}
           </p>
         ) : null}
@@ -91,8 +97,15 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
           Create account
         </Button>
         <p className="text-ink-3 text-xs leading-relaxed">
-          By creating an account you agree to the <Link href="/legal/terms" className="underline">Terms</Link> and{" "}
-          <Link href="/legal/privacy" className="underline">Privacy Policy</Link>.
+          By creating an account you agree to the{" "}
+          <Link href="/legal/terms" className="underline">
+            Terms
+          </Link>{" "}
+          and{" "}
+          <Link href="/legal/privacy" className="underline">
+            Privacy Policy
+          </Link>
+          .
         </p>
       </form>
     </div>

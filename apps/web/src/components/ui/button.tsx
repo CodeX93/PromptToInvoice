@@ -13,7 +13,8 @@ const base =
 const variants: Record<Variant, string> = {
   // Ink on paper: the primary action looks like a stamp, not a gradient pill.
   primary: "bg-ink text-paper hover:bg-ink-2 rounded-sm",
-  secondary: "border border-rule-strong bg-paper-raised text-ink hover:border-ink-3 hover:bg-paper rounded-sm",
+  secondary:
+    "border border-rule-strong bg-paper-raised text-ink hover:border-ink-3 hover:bg-paper rounded-sm",
   ghost: "text-ink-2 hover:text-ink hover:bg-paper-sunk rounded-sm",
   danger: "border border-danger/40 text-danger hover:bg-danger-soft rounded-sm",
   link: "text-ink underline decoration-rule-strong underline-offset-4 hover:decoration-ink px-0! h-auto!",

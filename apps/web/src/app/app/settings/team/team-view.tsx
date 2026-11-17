@@ -24,7 +24,17 @@ export interface InviteRow {
   expires: string;
 }
 
-export function TeamView({ members, invites, canManage, seats }: { members: MemberRow[]; invites: InviteRow[]; canManage: boolean; seats: string }) {
+export function TeamView({
+  members,
+  invites,
+  canManage,
+  seats,
+}: {
+  members: MemberRow[];
+  invites: InviteRow[];
+  canManage: boolean;
+  seats: string;
+}) {
   const [pending, start] = useTransition();
   const [state, action, inviting] = useActionState(inviteMember, initialActionState);
   const fe = fieldErrors(state);
@@ -51,14 +61,25 @@ export function TeamView({ members, invites, canManage, seats }: { members: Memb
             </div>
             {canManage && !m.isSelf ? (
               <>
-                <Select aria-label={`Role for ${m.name}`} defaultValue={m.role} className="w-48" onChange={(e) => act(() => changeRole(m.id, e.target.value), "Role updated.")}>
+                <Select
+                  aria-label={`Role for ${m.name}`}
+                  defaultValue={m.role}
+                  className="w-48"
+                  onChange={(e) => act(() => changeRole(m.id, e.target.value), "Role updated.")}
+                >
                   {ROLES.map((r) => (
                     <option key={r} value={r}>
                       {ROLE_LABEL[r]}
                     </option>
                   ))}
                 </Select>
-                <Button variant="ghost" size="sm" onClick={() => confirm(`Remove ${m.name}?`) && act(() => removeMember(m.id), "Member removed.")}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    confirm(`Remove ${m.name}?`) && act(() => removeMember(m.id), "Member removed.")
+                  }
+                >
                   Remove
                 </Button>
               </>
@@ -76,7 +97,11 @@ export function TeamView({ members, invites, canManage, seats }: { members: Memb
               </p>
             </div>
             {canManage ? (
-              <Button variant="ghost" size="sm" onClick={() => act(() => revokeInvitation(i.id), "Invitation revoked.")}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => act(() => revokeInvitation(i.id), "Invitation revoked.")}
+              >
                 Revoke
               </Button>
             ) : null}
@@ -86,7 +111,17 @@ export function TeamView({ members, invites, canManage, seats }: { members: Memb
 
       {canManage ? (
         <form action={action} className="mt-8 grid items-end gap-4 sm:grid-cols-[2fr_1fr_auto]">
-          <Field label="Invite by email" error={fe.email}>{(f) => <Input id={f.id} name="email" type="email" required placeholder="colleague@company.com" />}</Field>
+          <Field label="Invite by email" error={fe.email}>
+            {(f) => (
+              <Input
+                id={f.id}
+                name="email"
+                type="email"
+                required
+                placeholder="colleague@company.com"
+              />
+            )}
+          </Field>
           <Field label="Role">
             {(f) => (
               <Select id={f.id} name="role" defaultValue="member">

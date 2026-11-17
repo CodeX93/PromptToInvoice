@@ -13,7 +13,10 @@ export function OAuthButtons({ providers, next }: { providers: OAuthProvider[]; 
   const [pending, setPending] = useState<OAuthProvider | null>(null);
   if (providers.length === 0) return null;
   return (
-    <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${providers.length}, minmax(0, 1fr))` }}>
+    <div
+      className="grid gap-2"
+      style={{ gridTemplateColumns: `repeat(${providers.length}, minmax(0, 1fr))` }}
+    >
       {providers.map((p) => (
         <Button
           key={p}
@@ -39,7 +42,7 @@ export function OAuthButtons({ providers, next }: { providers: OAuthProvider[]; 
 
 export function Divider({ children }: { children: string }) {
   return (
-    <div className="text-ink-4 my-6 flex items-center gap-3 text-2xs tracking-[0.1em] uppercase">
+    <div className="text-ink-4 text-2xs my-6 flex items-center gap-3 tracking-[0.1em] uppercase">
       <span className="bg-rule h-px flex-1" />
       {children}
       <span className="bg-rule h-px flex-1" />

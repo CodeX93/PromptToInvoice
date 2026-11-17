@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 type Handler = (e: KeyboardEvent) => void;
 
@@ -16,7 +16,10 @@ function isTyping(target: EventTarget | null): boolean {
  */
 export function useHotkeys(bindings: Record<string, Handler>): void {
   const ref = useRef(bindings);
-  ref.current = bindings;
+  // Keep the latest handlers without re-subscribing the listener.
+  useLayoutEffect(() => {
+    ref.current = bindings;
+  });
 
   useEffect(() => {
     let pending: string | null = null;
@@ -28,7 +31,7 @@ export function useHotkeys(bindings: Record<string, Handler>): void {
       const mod = isMac ? e.metaKey : e.ctrlKey;
       if (mod && ref.current[`mod+${key}`]) {
         e.preventDefault();
-        ref.current[`mod+${key}`]?.(e);
+        ref.current[`mod+${key}`](e);
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
@@ -38,7 +41,7 @@ export function useHotkeys(bindings: Record<string, Handler>): void {
         clearTimeout(timer);
         if (ref.current[combo]) {
           e.preventDefault();
-          ref.current[combo]?.(e);
+          ref.current[combo](e);
         }
         return;
       }
@@ -49,7 +52,7 @@ export function useHotkeys(bindings: Record<string, Handler>): void {
       }
       if (ref.current[key]) {
         e.preventDefault();
-        ref.current[key]?.(e);
+        ref.current[key](e);
       }
     }
     window.addEventListener("keydown", onKey);
