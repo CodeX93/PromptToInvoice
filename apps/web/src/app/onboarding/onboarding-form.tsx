@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { COUNTRY_CODES, CURRENCY_CODES, countryName, isEuCountry, parseEuVatId, type CurrencyCode } from "@pti/core";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
@@ -13,6 +13,8 @@ export function OnboardingForm({ defaultName, defaultCountry, next }: { defaultN
   const [country, setCountry] = useState(defaultCountry);
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrencyFor(defaultCountry));
   const [vatId, setVatId] = useState("");
+  const [timeZone, setTimeZone] = useState("UTC");
+  useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
   const eu = isEuCountry(country);
   const countries = useMemo(
     () => COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) => a.name.localeCompare(b.name)),
@@ -24,7 +26,7 @@ export function OnboardingForm({ defaultName, defaultCountry, next }: { defaultN
   return (
     <form action={action} className="flex flex-col gap-10">
       <input type="hidden" name="next" value={next} />
-      <input type="hidden" name="timeZone" value={typeof window === "undefined" ? "UTC" : Intl.DateTimeFormat().resolvedOptions().timeZone} />
+      <input type="hidden" name="timeZone" value={timeZone} />
 
       <section className="grid gap-5">
         <h2 className="label-caps">Business</h2>
