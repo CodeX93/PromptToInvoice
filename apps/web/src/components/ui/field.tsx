@@ -71,7 +71,7 @@ export function Field({ label, hint, error, children, className, optional }: Fie
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <label htmlFor={id} className="label-caps flex items-baseline justify-between">
-        <span>{label}</span>
+        <span className="flex flex-1">{label}</span>
         {optional ? <span className="text-ink-4 normal-case tracking-normal">optional</span> : null}
       </label>
       {children({ id, describedBy, invalid: Boolean(msg) })}
