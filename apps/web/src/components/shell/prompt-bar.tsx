@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, type SubmitEvent } from "react";
 import type { Route } from "next";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { cn } from "@/lib/cn";
@@ -20,9 +20,12 @@ const EXAMPLES = [
 export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
   const router = useRouter();
   const input = useRef<HTMLInputElement>(null);
+  // Rotate the example after hydration (server and browser may disagree on the date).
+  useEffect(() => {
+    if (input.current) input.current.placeholder = EXAMPLES[new Date().getDate() % EXAMPLES.length] ?? "";
+  }, []);
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
-  const placeholder = EXAMPLES[new Date().getDate() % EXAMPLES.length] ?? "";
 
   useHotkeys({
     "mod+k": () => input.current?.focus(),
@@ -71,7 +74,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
           onKeyDown={(e) => {
             if (e.key === "Escape") input.current?.blur();
           }}
-          placeholder={placeholder}
+          placeholder={EXAMPLES[0]}
           maxLength={2000}
           className="figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none"
           autoComplete="off"

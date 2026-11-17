@@ -267,11 +267,14 @@ export async function renderInvoicePdf(m: InvoiceDocModel, opts: RenderOptions =
     const color = m.stamp === "paid" ? "#2c6a3b" : m.stamp === "void" ? "#b8361a" : INK3;
     doc.switchToPage(0);
     doc.save();
-    doc.rotate(-12, { origin: [R - 120, 190] });
-    doc.font("sansSemi").fontSize(22);
-    const w = doc.widthOfString(text.toUpperCase(), { characterSpacing: 3 }) + 28;
-    doc.opacity(0.75).rect(R - 120 - w / 2, 172, w, 38).lineWidth(2).strokeColor(color).stroke();
-    doc.fillColor(color).text(text.toUpperCase(), R - 120 - w / 2, 180, { width: w, align: "center", characterSpacing: 3 });
+    // Centred in the masthead whitespace so it never covers content.
+    const cx = L + CW / 2;
+    const cy = doc.page.margins.top + 18;
+    doc.rotate(-8, { origin: [cx, cy] });
+    doc.font("sansSemi").fontSize(18);
+    const w = doc.widthOfString(text.toUpperCase(), { characterSpacing: 3 }) + 26;
+    doc.opacity(0.75).rect(cx - w / 2, cy - 15, w, 32).lineWidth(1.8).strokeColor(color).stroke();
+    doc.fillColor(color).text(text.toUpperCase(), cx - w / 2, cy - 8, { width: w, align: "center", characterSpacing: 3 });
     doc.restore();
   }
 
