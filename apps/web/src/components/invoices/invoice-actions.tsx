@@ -9,6 +9,8 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { toast } from "@/components/ui/toast";
 import { creditNoteAction, duplicateAction, recordPaymentAction } from "@/app/app/invoices/actions";
+import { SendDialog } from "./send-dialog";
+import { RecurringDialog } from "./recurring-dialog";
 
 export interface InvoiceActionsProps {
   id: string;
@@ -20,12 +22,19 @@ export interface InvoiceActionsProps {
   amountDue: string;
   amountDueRaw: string;
   today: string;
+  number: string;
+  canSend: boolean;
+  sentBefore: boolean;
+  clientEmails: string[];
+  canRepeat: boolean;
 }
 
 export function InvoiceActions(p: InvoiceActionsProps) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [payOpen, setPayOpen] = useState(false);
+  const [sendOpen, setSendOpen] = useState(false);
+  const [repeatOpen, setRepeatOpen] = useState(false);
 
   const go = (
     fn: () => Promise<{ ok: true; data: { id: string } } | { ok: false; error: string }>,
@@ -44,8 +53,13 @@ export function InvoiceActions(p: InvoiceActionsProps) {
         <a href={`/app/invoices/${p.id}/pdf?download`}>Download PDF</a>
       </Button>
       {p.canPay ? (
-        <Button size="sm" onClick={() => setPayOpen(true)}>
+        <Button size="sm" variant={p.canSend && !p.sentBefore ? "secondary" : "primary"} onClick={() => setPayOpen(true)}>
           Record payment
+        </Button>
+      ) : null}
+      {p.canSend ? (
+        <Button size="sm" variant={p.sentBefore ? "secondary" : "primary"} onClick={() => setSendOpen(true)}>
+          {p.sentBefore ? "Send again" : "Send"}
         </Button>
       ) : null}
       <Menu>
@@ -77,6 +91,7 @@ export function InvoiceActions(p: InvoiceActionsProps) {
               >
                 Duplicate as new draft
               </MenuItem>
+              {p.canRepeat ? <MenuItem onSelect={() => setRepeatOpen(true)}>Repeat on a schedule…</MenuItem> : null}
               {p.canCredit ? (
                 <MenuItem
                   danger
@@ -92,6 +107,8 @@ export function InvoiceActions(p: InvoiceActionsProps) {
         </MenuContent>
       </Menu>
       <PaymentDialog open={payOpen} onOpenChange={setPayOpen} {...p} />
+      <SendDialog id={p.id} open={sendOpen} onOpenChange={setSendOpen} defaultTo={p.clientEmails} number={p.number} sentBefore={p.sentBefore} />
+      {p.canRepeat ? <RecurringDialog id={p.id} open={repeatOpen} onOpenChange={setRepeatOpen} startOn={p.today} /> : null}
     </div>
   );
 }
