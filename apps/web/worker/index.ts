@@ -6,7 +6,7 @@
 import { todayIn } from "@pti/core";
 import { boss, enqueue, type JobPayloads } from "@/server/jobs/queue";
 import { systemContext } from "@/server/jobs/system-context";
-import { purge } from "@/server/jobs/maintenance";
+import { purge, purgeExpiredRetention } from "@/server/jobs/maintenance";
 import { logger } from "@/server/logger";
 import { archivePdf } from "@/server/documents/service";
 import { deliverInvoiceEmail, deliverReminder } from "@/server/services/emails";
@@ -47,7 +47,7 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
     logger.info({ orgId: d.orgId, bytes: r.bytes }, "export built");
   },
   "maintenance.purge": async () => {
-    logger.info(await purge(), "maintenance purge");
+    logger.info({ ...(await purge()), retentionPurgedOrgs: await purgeExpiredRetention() }, "maintenance purge");
   },
 };
 
