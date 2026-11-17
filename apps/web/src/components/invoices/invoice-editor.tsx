@@ -518,7 +518,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                 ))}
               </ul>
               <p className="text-ink-3 text-2xs mt-2">
-                <span className="ai-mark">Marked</span> values were filled in for you. Check them
+                <span className="ai-field px-0.5">Highlighted</span> values were filled in for you. Check them
                 before issuing.
               </p>
             </div>
@@ -674,7 +674,7 @@ function CellInput({
       onChange={(e) => onChange(e.target.value)}
       className={cn(
         "figures placeholder:text-ink-4 w-full bg-transparent py-1 text-right outline-none",
-        ai && "ai-mark",
+        ai && "ai-field",
       )}
     />
   );
@@ -712,7 +712,7 @@ function MetaInput({
           className={cn(
             "figures placeholder:text-ink-4 hover:border-rule focus:border-ink w-full border-b border-transparent bg-transparent py-0.5 text-right outline-none",
             error && "border-danger",
-            ai && "ai-mark",
+            ai && "ai-field",
           )}
         />
       </dd>
@@ -752,7 +752,7 @@ function NoteArea({
         rows={2}
         className={cn(
           "placeholder:text-ink-4 text-ink-2 [field-sizing:content] resize-none bg-transparent text-[13px] leading-relaxed outline-none",
-          ai && "ai-mark",
+          ai && "ai-field",
         )}
       />
     </label>
