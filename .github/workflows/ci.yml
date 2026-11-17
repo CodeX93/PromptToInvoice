@@ -47,6 +47,48 @@ jobs:
       - run: pnpm test
       - run: pnpm build
 
+  e2e:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: pti
+          POSTGRES_PASSWORD: pti
+          POSTGRES_DB: pti
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U pti" --health-interval 5s --health-retries 10
+    env:
+      MIGRATION_DATABASE_URL: postgres://pti:pti@localhost:5432/pti
+      DATABASE_URL: postgres://pti_app:pti_app@localhost:5432/pti
+      SYSTEM_DATABASE_URL: postgres://pti_system:pti_system@localhost:5432/pti
+      BETTER_AUTH_SECRET: ci-only-secret-ci-only-secret-ci-only-secret
+      ENCRYPTION_KEY: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      APP_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Provision database roles and schema
+        run: |
+          psql "$MIGRATION_DATABASE_URL" -f infra/docker/postgres-init.sql
+          pnpm db:migrate
+      - run: pnpm --filter @pti/web exec playwright install --with-deps chromium
+      - run: pnpm --filter @pti/web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: apps/web/playwright-report
+          retention-days: 7
+
   images:
     # Proves both production images build with no secrets and the web image boots.
     needs: verify
