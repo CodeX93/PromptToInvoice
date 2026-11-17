@@ -12,6 +12,7 @@ interface Toast {
   id: number;
   message: string;
   tone: Tone;
+  action?: { label: string; href: string };
 }
 
 let toasts: Toast[] = [];
@@ -22,9 +23,9 @@ function emit() {
   for (const l of listeners) l();
 }
 
-export function toast(message: string, tone: Tone = "neutral", ms = 4200): void {
+export function toast(message: string, tone: Tone = "neutral", ms = 4200, action?: Toast["action"]): void {
   const id = ++seq;
-  toasts = [...toasts.slice(-3), { id, message, tone }];
+  toasts = [...toasts.slice(-3), { id, message, tone, action }];
   emit();
   setTimeout(() => {
     toasts = toasts.filter((t) => t.id !== id);
@@ -36,6 +37,10 @@ toast.success = (m: string) => {
 };
 toast.error = (m: string) => {
   toast(m, "error", 6000);
+};
+/** Error that points somewhere useful, e.g. a quota error → billing. */
+toast.action = (m: string, action: { label: string; href: string }) => {
+  toast(m, "error", 9000, action);
 };
 
 function subscribe(l: () => void) {
@@ -74,7 +79,14 @@ export function Toaster() {
           >
             {t.tone === "error" ? "!" : t.tone === "success" ? "✓" : "·"}
           </span>
-          <span className="leading-snug">{t.message}</span>
+          <span className="leading-snug">
+            {t.message}
+            {t.action ? (
+              <a href={t.action.href} className="text-paper ml-1.5 underline underline-offset-2">
+                {t.action.label}
+              </a>
+            ) : null}
+          </span>
         </div>
       ))}
     </div>

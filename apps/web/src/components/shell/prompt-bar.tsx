@@ -7,6 +7,7 @@ import { useHotkeys } from "@/hooks/use-hotkeys";
 import { useDictation } from "@/hooks/use-dictation";
 import { cn } from "@/lib/cn";
 import { toast } from "@/components/ui/toast";
+import { errorToast } from "@/lib/action-state";
 import { draftFromPrompt } from "@/app/app/invoices/ai-actions";
 
 const EXAMPLES = [
@@ -55,7 +56,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
     startDraft(async () => {
       const r = await draftFromPrompt(text);
       if (!r.ok) {
-        toast.error(r.error);
+        errorToast(r, toast);
         return;
       }
       setValue("");

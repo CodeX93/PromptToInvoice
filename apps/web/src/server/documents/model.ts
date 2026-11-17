@@ -135,7 +135,7 @@ function rate(r: string, locale: string): string {
 export function buildDocModel(
   d: InvoiceDetail,
   liveProfile: Profile,
-  opts: { payUrl?: string | null } = {},
+  opts: { payUrl?: string | null; customBranding?: boolean } = {},
 ): InvoiceDocModel {
   const inv = d.invoice;
   const snap: IssuedSnapshot["seller"] | null = inv.issuedSnapshot?.seller ?? null;
@@ -269,7 +269,7 @@ export function buildDocModel(
           : inv.status === "void"
             ? "void"
             : null,
-    accent: liveProfile.branding.accentColor ?? "#16140f",
+    accent: opts.customBranding === false ? "#16140f" : (liveProfile.branding.accentColor ?? "#16140f"),
     logoFileId: seller.logoFileId,
     seller: {
       name: seller.tradingName ?? seller.legalName,

@@ -23,6 +23,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/field";
 import { toast } from "@/components/ui/toast";
+import { errorToast } from "@/lib/action-state";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { cn } from "@/lib/cn";
 import {
@@ -129,7 +130,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
     if (!res.ok) {
       setSave("error");
       setErrors(res.fieldErrors ?? {});
-      toast.error(res.error);
+      errorToast(res, toast);
       return null;
     }
     setErrors({});
@@ -166,7 +167,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
       const r = await issueInvoiceAction(savedId);
       if (!r.ok) {
         setErrors(r.fieldErrors ?? {});
-        toast.error(r.error);
+        errorToast(r, toast);
         return;
       }
       toast.success(`${isCredit ? "Credit note" : "Invoice"} ${r.data.number} issued.`);
