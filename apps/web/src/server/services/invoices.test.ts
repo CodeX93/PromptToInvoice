@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from "vitest";
 import { dbs, orgContext } from "../../../test/fixtures";
+import { eq, schema } from "@pti/db";
 import {
   deleteDraft,
   draftCreditNote,
@@ -190,5 +191,27 @@ describe("invoice lifecycle", () => {
     await expect(saveDraft(ctx, null, draftInput(seed.profile.id, clientId))).rejects.toThrow(
       /permission/,
     );
+  });
+});
+
+describe("currency entitlement", () => {
+  it("a Starter org bills in its home currency but not in others", async () => {
+    const { ctx, seed, clientId } = await orgContext({ plan: "starter" });
+    await dbs.system
+      .update(schema.businessProfiles)
+      .set({ defaultCurrency: "GBP" })
+      .where(eq(schema.businessProfiles.id, seed.profile.id));
+    const draft = (currency: string) => ({
+      businessProfileId: seed.profile.id,
+      clientId,
+      currency,
+      issueDate: "2026-11-17",
+      lines: [
+        { description: "Work", quantity: "1", unitPrice: "100", taxCategory: "O", taxRate: "0" },
+      ],
+    });
+    await expect(saveDraft(ctx, null, draft("GBP"))).resolves.toMatchObject({ version: 1 });
+    await expect(saveDraft(ctx, null, draft("USD"))).resolves.toBeTruthy();
+    await expect(saveDraft(ctx, null, draft("JPY"))).rejects.toThrow(/Professional plan/);
   });
 });

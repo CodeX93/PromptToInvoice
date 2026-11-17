@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { PLAN_IDS, PLANS, checkQuota, hasFeature, minimumPlanFor, seatLimit } from "./plans";
+import {
+  PLAN_IDS,
+  PLANS,
+  allowedCurrencies,
+  checkQuota,
+  currencyAllowed,
+  hasFeature,
+  minimumPlanFor,
+  seatLimit,
+} from "./plans";
 
 describe("plans", () => {
   it("is monotonic: higher plans never lose features", () => {
@@ -35,5 +44,22 @@ describe("plans", () => {
     expect(minimumPlanFor("advanced_reports")).toBe("business");
     expect(minimumPlanFor("api")).toBe("enterprise");
     expect(hasFeature("starter", "ai_drafts")).toBe(true);
+  });
+});
+
+describe("allowedCurrencies", () => {
+  it("lets every plan bill in its home currency", () => {
+    expect(currencyAllowed("starter", "GBP", "GBP")).toBe(true);
+    expect(currencyAllowed("starter", "CHF", "CHF")).toBe(true);
+    expect(allowedCurrencies("starter", "GBP")).toEqual(["GBP", "USD", "EUR"]);
+  });
+  it("keeps USD and EUR available and other currencies paid on Starter", () => {
+    expect(allowedCurrencies("starter", "EUR")).toEqual(["USD", "EUR"]);
+    expect(currencyAllowed("starter", "USD", "GBP")).toBe(true);
+    expect(currencyAllowed("starter", "JPY", "GBP")).toBe(false);
+  });
+  it("is unrestricted on paid plans", () => {
+    expect(allowedCurrencies("pro", "EUR")).toBeNull();
+    expect(currencyAllowed("business", "JPY", "EUR")).toBe(true);
   });
 });
