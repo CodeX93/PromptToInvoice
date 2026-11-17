@@ -203,3 +203,62 @@ export const fxRates = pgTable(
   },
   (t) => [primaryKey({ columns: [t.currency, t.date] })],
 );
+
+/** API keys: the secret is shown once; only its SHA-256 is stored. Looked up by public prefix. */
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: id(),
+    orgId: orgId(),
+    name: text("name").notNull(),
+    prefix: text("prefix").notNull(),
+    hash: text("hash").notNull(),
+    scopes: text("scopes").array().notNull().default(sql`'{}'::text[]`),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [uniqueIndex("api_keys_prefix_uq").on(t.prefix), index("api_keys_org_idx").on(t.orgId)],
+);
+
+export const WEBHOOK_EVENTS = ["invoice.issued", "invoice.sent", "invoice.viewed", "invoice.paid", "invoice.voided", "quote.accepted", "quote.declined"] as const;
+export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number];
+
+export const webhookEndpoints = pgTable(
+  "webhook_endpoints",
+  {
+    id: id(),
+    orgId: orgId(),
+    url: text("url").notNull(),
+    /** Signing secret, encrypted at the application layer. */
+    secretEncrypted: text("secret_encrypted").notNull(),
+    events: text("events").array().notNull(),
+    active: boolean("active").notNull().default(true),
+    failureCount: integer("failure_count").notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("webhook_endpoints_org_idx").on(t.orgId)],
+);
+
+export const webhookDeliveries = pgTable(
+  "webhook_deliveries",
+  {
+    id: id(),
+    orgId: orgId(),
+    endpointId: uuid("endpoint_id")
+      .notNull()
+      .references(() => webhookEndpoints.id, { onDelete: "cascade" }),
+    eventId: uuid("event_id").notNull(),
+    type: text("type").notNull(),
+    payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+    status: text("status").$type<"pending" | "delivered" | "failed">().notNull().default("pending"),
+    attempts: integer("attempts").notNull().default(0),
+    responseStatus: integer("response_status"),
+    error: text("error"),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("webhook_deliveries_endpoint_idx").on(t.endpointId, t.createdAt.desc()), uniqueIndex("webhook_deliveries_event_uq").on(t.endpointId, t.eventId)],
+);
