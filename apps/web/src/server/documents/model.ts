@@ -58,6 +58,7 @@ export interface InvoiceDocModel {
     bankName: string | null;
     epcPayload: string | null;
     remittance: string;
+    payUrl: string | null;
     due: string;
     dueMinor: number;
   } | null;
@@ -199,6 +200,7 @@ export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { pa
             ? epcQrPayload({ name: bank?.accountHolder ?? seller.legalName, iban, bic: bank?.bic, amountCents: inv.status === "draft" ? inv.total : due, remittance: remittance || "Invoice" })
             : null,
         remittance,
+        payUrl: inv.status === "draft" ? null : (opts.payUrl ?? null),
         due: m(inv.status === "draft" ? inv.total : due),
         dueMinor: inv.status === "draft" ? inv.total : due,
       }

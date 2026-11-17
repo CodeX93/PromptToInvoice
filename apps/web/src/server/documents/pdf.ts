@@ -219,7 +219,7 @@ export async function renderInvoicePdf(m: InvoiceDocModel, opts: RenderOptions =
   // ── Payment ───────────────────────────────────────────────────────────
   if (m.payment) {
     const p = m.payment;
-    const boxH = 92;
+    const boxH = m.payment.payUrl ? 104 : 92;
     if (y + boxH > bottom()) {
       doc.addPage();
       y = doc.page.margins.top;
@@ -241,6 +241,11 @@ export async function renderInvoicePdf(m: InvoiceDocModel, opts: RenderOptions =
     kv(m.labels.iban, p.iban);
     kv(m.labels.bic, p.bic);
     kv(m.labels.reference, p.remittance || null);
+    if (p.payUrl) {
+      doc.font("sans").fontSize(8).fillColor(INK3).text(m.labels.payOnline, px, py, { width: 90 });
+      doc.font("sans").fontSize(8.5).fillColor(accent).text(p.payUrl, px + 90, py, { width: CW - 220, link: p.payUrl, underline: true });
+      py += 13;
+    }
     if (p.epcPayload) {
       const qr = QRCode.create(p.epcPayload, { errorCorrectionLevel: "M" });
       const size = 68;
@@ -275,10 +280,14 @@ export async function renderInvoicePdf(m: InvoiceDocModel, opts: RenderOptions =
   const footer = [m.seller.name, ...m.seller.ids.map((i) => `${i.label} ${i.value}`), ...m.seller.contact].join("  ·  ");
   for (let i = range.start; i < range.start + range.count; i++) {
     doc.switchToPage(i);
-    const fy = doc.page.height - doc.page.margins.bottom + 22;
+    // Drawing inside the bottom margin would make pdfkit auto-add a page; lift the margin while we draw.
+    const savedBottom = doc.page.margins.bottom;
+    doc.page.margins.bottom = 0;
+    const fy = doc.page.height - savedBottom + 22;
     doc.moveTo(L, fy - 8).lineTo(R, fy - 8).lineWidth(0.4).strokeColor(RULE).stroke();
     doc.font("sans").fontSize(7).fillColor(INK3).text(m.footer ? `${footer}\n${m.footer}` : footer, L, fy, { width: CW - 70, lineBreak: true, height: 24, ellipsis: true });
     doc.font("mono").fontSize(7).fillColor(INK3).text(`${m.labels.page} ${i + 1}/${range.count}`, R - 70, fy, { width: 70, align: "right" });
+    doc.page.margins.bottom = savedBottom;
   }
 
   doc.end();
