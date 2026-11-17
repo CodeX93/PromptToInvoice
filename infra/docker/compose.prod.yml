@@ -1,0 +1,29 @@
+# Reference production topology for a single host. Managed Postgres and S3
+# are recommended in real deployments; swap the URLs in .env.production.
+#   docker compose -f infra/docker/compose.prod.yml --env-file .env.production up -d
+name: prompttoinvoice-prod
+
+x-app: &app
+  env_file: ../../.env.production
+  restart: unless-stopped
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+
+services:
+  migrate:
+    image: ${IMAGE_WORKER:-pti-worker}
+    command: ["node", "dist/migrate.mjs"]
+    env_file: ../../.env.production
+    restart: "no"
+
+  web:
+    <<: *app
+    image: ${IMAGE_WEB:-pti-web}
+    ports: ["127.0.0.1:3000:3000"] # behind your TLS-terminating proxy
+    deploy: { replicas: 2 }
+
+  worker:
+    <<: *app
+    image: ${IMAGE_WORKER:-pti-worker}
+    stop_grace_period: 60s
