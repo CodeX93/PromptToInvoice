@@ -1,0 +1,197 @@
+@import "tailwindcss";
+
+/*
+ * Design language: "ledger on paper".
+ * Warm paper surfaces, ink-black type, hairline rules instead of shadows,
+ * a fountain-pen blue accent used sparingly, and a highlighter mark for
+ * anything the AI filled in. Figures are monospaced and tabular.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --paper: #f6f4ee;
+  --paper-raised: #fbfaf6;
+  --paper-sunk: #efece4;
+  --ink: #16140f;
+  --ink-2: #48443a;
+  --ink-3: #7f7a6b;
+  --ink-4: #a8a293;
+  --rule: #e2ddd1;
+  --rule-strong: #cbc4b3;
+  --accent: #2340c9;
+  --accent-ink: #ffffff;
+  --accent-soft: #e5e9fb;
+  --positive: #2c6a3b;
+  --positive-soft: #e3efe4;
+  --warning: #8a5a00;
+  --warning-soft: #f6ecd3;
+  --danger: #b8361a;
+  --danger-soft: #f8e4dd;
+  --highlight: #f4e27c;
+  --focus: #2340c9;
+  --shadow-pop: 0 1px 0 rgb(22 20 15 / 0.04), 0 8px 24px -8px rgb(22 20 15 / 0.18);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #121110;
+    --paper-raised: #1a1917;
+    --paper-sunk: #0d0c0b;
+    --ink: #ece8df;
+    --ink-2: #bdb7a9;
+    --ink-3: #85806f;
+    --ink-4: #5f5a4e;
+    --rule: #2a2824;
+    --rule-strong: #3a372f;
+    --accent: #8ea0ff;
+    --accent-ink: #0d0c0b;
+    --accent-soft: #1d2340;
+    --positive: #7fc08d;
+    --positive-soft: #18291c;
+    --warning: #e2b54a;
+    --warning-soft: #2c2412;
+    --danger: #f08a6d;
+    --danger-soft: #331a13;
+    --highlight: rgb(244 226 124 / 0.28);
+    --focus: #8ea0ff;
+    --shadow-pop: 0 1px 0 rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #121110;
+  --paper-raised: #1a1917;
+  --paper-sunk: #0d0c0b;
+  --ink: #ece8df;
+  --ink-2: #bdb7a9;
+  --ink-3: #85806f;
+  --ink-4: #5f5a4e;
+  --rule: #2a2824;
+  --rule-strong: #3a372f;
+  --accent: #8ea0ff;
+  --accent-ink: #0d0c0b;
+  --accent-soft: #1d2340;
+  --positive: #7fc08d;
+  --positive-soft: #18291c;
+  --warning: #e2b54a;
+  --warning-soft: #2c2412;
+  --danger: #f08a6d;
+  --danger-soft: #331a13;
+  --highlight: rgb(244 226 124 / 0.28);
+  --focus: #8ea0ff;
+  --shadow-pop: 0 1px 0 rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-raised: var(--paper-raised);
+  --color-paper-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-4: var(--ink-4);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-positive: var(--positive);
+  --color-positive-soft: var(--positive-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-highlight: var(--highlight);
+
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Newsreader Variable", "Iowan Old Style", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 5px;
+
+  --shadow-pop: var(--shadow-pop);
+
+  --ease-snap: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    @apply bg-paper text-ink font-sans text-sm antialiased;
+    font-feature-settings: "ss02", "cv01";
+  }
+  ::selection {
+    background: var(--highlight);
+    color: var(--ink);
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-serif text-ink;
+    font-optical-sizing: auto;
+    letter-spacing: -0.01em;
+  }
+  hr {
+    @apply border-rule;
+  }
+}
+
+@layer utilities {
+  /* Figures: monospaced, tabular, slashed zero — amounts line up in columns. */
+  .figures {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums slashed-zero;
+    font-feature-settings: "zero";
+    letter-spacing: -0.01em;
+  }
+  /* Small-caps labels used above fields and table headers. */
+  .label-caps {
+    @apply text-2xs text-ink-3 font-medium tracking-[0.08em] uppercase;
+  }
+  /* Highlighter mark for AI-filled values: a hand-drawn-ish band behind text. */
+  .ai-mark {
+    background-image: linear-gradient(
+      100deg,
+      transparent 0.2em,
+      var(--highlight) 0.35em,
+      var(--highlight) calc(100% - 0.3em),
+      transparent calc(100% - 0.15em)
+    );
+    background-size: 100% 0.62em;
+    background-position: 0 88%;
+    background-repeat: no-repeat;
+  }
+  /* Double rule under totals, as on a paper ledger. */
+  .rule-double {
+    border-bottom: 3px double var(--ink);
+  }
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--rule-strong) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

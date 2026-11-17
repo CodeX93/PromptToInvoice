@@ -12,6 +12,9 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fontsource-variable/newsreader": "^5.3.0",
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
     "@pti/core": "workspace:*",
     "@pti/db": "workspace:*",
     "better-auth": "^1.7.25",
