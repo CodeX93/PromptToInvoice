@@ -29,6 +29,13 @@
       "when": 1794938540309,
       "tag": "0003_id_db_defaults",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1794938918623,
+      "tag": "0004_auth_rate_limits",
+      "breakpoints": true
     }
   ]
 }

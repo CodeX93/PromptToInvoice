@@ -191,3 +191,10 @@ export const idempotencyKeys = pgTable(
   },
   (t) => [primaryKey({ columns: [t.orgId, t.key] })],
 );
+
+/** Storage for the auth library's built-in rate limiter (sign-in, sign-up, reset). */
+export const authRateLimits = pgTable("auth_rate_limits", {
+  key: text("key").primaryKey(),
+  count: integer("count").notNull(),
+  lastRequest: bigint("last_request", { mode: "number" }).notNull(),
+});
