@@ -13,15 +13,19 @@ export const metadata: Metadata = { title: "AI drafting" };
 
 export default async function AiSettingsPage() {
   const ctx = await requireOrg();
-  const [settings, usage] = await Promise.all([getOrgSettings(ctx.org.id), withOrg(db, ctx.org.id, (tx) => usageFor(tx, ctx.org.id))]);
+  const [settings, usage] = await Promise.all([
+    getOrgSettings(ctx.org.id),
+    withOrg(db, ctx.org.id, (tx) => usageFor(tx, ctx.org.id)),
+  ]);
   const limit = PLANS[ctx.org.plan].limits.aiDraftsPerMonth;
   return (
     <Section
       title="AI drafting"
       description={
         <>
-          Prompts are sent to Anthropic's Claude API to extract invoice details. Only your text and your clients' names are sent, never
-          addresses, emails or bank details. Totals and tax are always calculated by PromptToInvoice, not the model.
+          Prompts are sent to Anthropic's Claude API to extract invoice details. Only your text and
+          your clients' names are sent, never addresses, emails or bank details. Totals and tax are
+          always calculated by PromptToInvoice, not the model.
         </>
       }
     >

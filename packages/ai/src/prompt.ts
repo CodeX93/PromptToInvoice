@@ -29,13 +29,26 @@ export interface PromptContext {
   /** Only ids and names — never addresses, emails or bank details. */
   clients: { id: string; name: string }[];
   /** Recent line items the person has billed, to resolve "usual rate" requests. */
-  recentItems: { description: string; unit: string; unitPrice: string; currency: string; client: string | null }[];
+  recentItems: {
+    description: string;
+    unit: string;
+    unitPrice: string;
+    currency: string;
+    client: string | null;
+  }[];
 }
 
 export function contextBlock(ctx: PromptContext): string {
-  const clients = ctx.clients.length ? ctx.clients.map((c) => `- ${c.id} | ${c.name}`).join("\n") : "(none yet)";
+  const clients = ctx.clients.length
+    ? ctx.clients.map((c) => `- ${c.id} | ${c.name}`).join("\n")
+    : "(none yet)";
   const items = ctx.recentItems.length
-    ? ctx.recentItems.map((i) => `- ${i.description} | ${i.unitPrice} ${i.currency}${i.unit ? ` per ${i.unit}` : ""}${i.client ? ` | for ${i.client}` : ""}`).join("\n")
+    ? ctx.recentItems
+        .map(
+          (i) =>
+            `- ${i.description} | ${i.unitPrice} ${i.currency}${i.unit ? ` per ${i.unit}` : ""}${i.client ? ` | for ${i.client}` : ""}`,
+        )
+        .join("\n")
     : "(none yet)";
   return `CONTEXT
 SELLER COUNTRY: ${ctx.sellerCountry}

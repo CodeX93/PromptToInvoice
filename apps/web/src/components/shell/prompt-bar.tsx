@@ -80,7 +80,9 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
         <span aria-hidden className="figures text-ink-3 text-sm">
           ›
         </span>
-        <span className="sr-only">{aiEnabled ? "Describe the work to invoice" : "Search invoices"}</span>
+        <span className="sr-only">
+          {aiEnabled ? "Describe the work to invoice" : "Search invoices"}
+        </span>
         <input
           ref={input}
           value={value}
@@ -94,7 +96,10 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
           maxLength={2000}
           readOnly={drafting}
           aria-busy={drafting}
-          className={cn("figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none", drafting && "text-ink-3")}
+          className={cn(
+            "figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none",
+            drafting && "text-ink-3",
+          )}
           autoComplete="off"
           spellCheck={false}
         />
@@ -103,18 +108,35 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
             type="button"
             onClick={dictation.listening ? dictation.stop : dictation.start}
             aria-pressed={dictation.listening}
-            aria-label={dictation.listening ? "Stop dictation" : "Dictate (your browser's speech service transcribes the audio)"}
+            aria-label={
+              dictation.listening
+                ? "Stop dictation"
+                : "Dictate (your browser's speech service transcribes the audio)"
+            }
             title="Dictate — transcribed by your browser's speech service"
-            className={cn("grid size-6 place-items-center rounded-full text-ink-3 hover:text-ink", dictation.listening && "bg-danger-soft text-danger animate-pulse")}
+            className={cn(
+              "text-ink-3 hover:text-ink grid size-6 place-items-center rounded-full",
+              dictation.listening && "bg-danger-soft text-danger animate-pulse",
+            )}
           >
-            <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.3">
+            <svg
+              width="12"
+              height="14"
+              viewBox="0 0 12 14"
+              aria-hidden
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.3"
+            >
               <rect x="3.5" y="0.75" width="5" height="8" rx="2.5" />
               <path d="M1 6.5a5 5 0 0 0 10 0M6 11.5v2" />
             </svg>
           </button>
         ) : null}
         {drafting ? (
-          <span role="status" className="figures text-ink-3 text-2xs">drafting…</span>
+          <span role="status" className="figures text-ink-3 text-2xs">
+            drafting…
+          </span>
         ) : value ? (
           <kbd className="figures text-ink-3 text-2xs">↵ {aiEnabled ? "draft" : "search"}</kbd>
         ) : (
@@ -122,7 +144,12 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
         )}
       </label>
       {/* Ruled progress line: an indeterminate pen stroke along the bar's bottom edge. */}
-      {drafting ? <span aria-hidden className="bg-ink absolute bottom-0 left-0 h-px w-1/3 animate-[draft-stroke_1.1s_ease-in-out_infinite]" /> : null}
+      {drafting ? (
+        <span
+          aria-hidden
+          className="bg-ink absolute bottom-0 left-0 h-px w-1/3 animate-[draft-stroke_1.1s_ease-in-out_infinite]"
+        />
+      ) : null}
     </form>
   );
 }

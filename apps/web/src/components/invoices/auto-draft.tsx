@@ -21,13 +21,15 @@ export function AutoDraft({ prompt }: { prompt: string }) {
   return (
     <div className="mx-auto max-w-xl px-6 py-24">
       <p className="label-caps">Drafting from</p>
-      <p className="figures text-ink-2 border-rule mt-2 border-l-2 pl-3 text-[13px] leading-relaxed">{prompt}</p>
+      <p className="figures text-ink-2 border-rule mt-2 border-l-2 pl-3 text-[13px] leading-relaxed">
+        {prompt}
+      </p>
       {error ? (
         <p role="alert" className="text-danger mt-6 text-sm">
           {error}
         </p>
       ) : (
-        <div role="status" className="relative mt-8 h-px overflow-hidden bg-rule">
+        <div role="status" className="bg-rule relative mt-8 h-px overflow-hidden">
           <span className="bg-ink absolute inset-y-0 left-0 w-1/3 animate-[draft-stroke_1.1s_ease-in-out_infinite]" />
           <span className="sr-only">Drafting your invoice…</span>
         </div>

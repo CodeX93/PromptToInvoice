@@ -1,4 +1,11 @@
-import { addDays, isCurrencyCode, isDecimalString, isIsoDate, normalizeVatId, type TaxCategory } from "@pti/core";
+import {
+  addDays,
+  isCurrencyCode,
+  isDecimalString,
+  isIsoDate,
+  normalizeVatId,
+  type TaxCategory,
+} from "@pti/core";
 import type { DraftOutput, TaxHint } from "./schema";
 
 export interface HistoryItem {
@@ -59,7 +66,15 @@ const plainDecimal = (v: string | null | undefined, scale: number): string | nul
   return isDecimalString(s, scale) ? s : null;
 };
 
-const words = (s: string) => new Set(s.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter((w) => w.length > 2));
+const words = (s: string) =>
+  new Set(
+    s
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[^\p{L}\p{N}\s]/gu, " ")
+      .split(/\s+/)
+      .filter((w) => w.length > 2),
+  );
 
 function similarity(a: string, b: string): number {
   const A = words(a);
@@ -71,7 +86,13 @@ function similarity(a: string, b: string): number {
 }
 
 /** Best previous price for a line: same client first, then anyone; same currency when known. */
-export function suggestPrice(description: string, unit: string, clientId: string | null, currency: string | null, history: readonly HistoryItem[]): HistoryItem | null {
+export function suggestPrice(
+  description: string,
+  unit: string,
+  clientId: string | null,
+  currency: string | null,
+  history: readonly HistoryItem[],
+): HistoryItem | null {
   let best: { item: HistoryItem; score: number } | null = null;
   for (const h of history) {
     if (currency && h.currency !== currency) continue;
@@ -84,14 +105,21 @@ export function suggestPrice(description: string, unit: string, clientId: string
 }
 
 /** Map an explicit tax hint to one of the seller's configured rates. */
-export function mapTaxHint(hint: TaxHint | null, rates: readonly TaxRateRef[]): { category: TaxCategory; rate: string } | null {
+export function mapTaxHint(
+  hint: TaxHint | null,
+  rates: readonly TaxRateRef[],
+): { category: TaxCategory; rate: string } | null {
   if (!hint) return null;
-  const standard = rates.filter((r) => r.category === "S").sort((a, b) => Number(b.rate) - Number(a.rate));
+  const standard = rates
+    .filter((r) => r.category === "S")
+    .sort((a, b) => Number(b.rate) - Number(a.rate));
   switch (hint) {
     case "standard":
       return standard[0] ? { category: "S", rate: standard[0].rate } : null;
     case "reduced":
-      return standard.length > 1 && standard.at(-1) ? { category: "S", rate: standard.at(-1)?.rate ?? "0" } : null;
+      return standard.length > 1 && standard.at(-1)
+        ? { category: "S", rate: standard.at(-1)?.rate ?? "0" }
+        : null;
     case "zero":
       return { category: "Z", rate: "0" };
     case "exempt":
@@ -113,11 +141,15 @@ export function normalizeDraft(out: DraftOutput, ctx: NormalizeContext): Normali
   const ai: string[] = [];
   const notes: string[] = [...out.assumptions.filter((a) => a.trim()).slice(0, 8)];
 
-  const clientId = out.client.matchedClientId && ctx.knownClientIds.has(out.client.matchedClientId) ? out.client.matchedClientId : null;
+  const clientId =
+    out.client.matchedClientId && ctx.knownClientIds.has(out.client.matchedClientId)
+      ? out.client.matchedClientId
+      : null;
   const clientName = out.client.name?.trim() || null;
   if (clientId || clientName) ai.push("client");
 
-  const currency = out.currency && isCurrencyCode(out.currency.toUpperCase()) ? out.currency.toUpperCase() : null;
+  const currency =
+    out.currency && isCurrencyCode(out.currency.toUpperCase()) ? out.currency.toUpperCase() : null;
   if (currency) ai.push("currency");
 
   const date = (v: string | null, path: string) => {
@@ -130,7 +162,10 @@ export function normalizeDraft(out: DraftOutput, ctx: NormalizeContext): Normali
   const issueDate = date(out.issueDate, "issueDate") ?? ctx.today;
   const supplyDate = date(out.supplyDate, "supplyDate");
   let dueDate = date(out.dueDate, "dueDate");
-  const termsDays = out.paymentTermsDays !== null && out.paymentTermsDays >= 0 && out.paymentTermsDays <= 365 ? out.paymentTermsDays : null;
+  const termsDays =
+    out.paymentTermsDays !== null && out.paymentTermsDays >= 0 && out.paymentTermsDays <= 365
+      ? out.paymentTermsDays
+      : null;
   if (!dueDate && termsDays !== null) {
     dueDate = addDays(issueDate, termsDays);
     ai.push("dueDate");
@@ -158,7 +193,9 @@ export function normalizeDraft(out: DraftOutput, ctx: NormalizeContext): Normali
       if (prev) {
         unitPrice = prev.unitPrice;
         ai.push(`lines.${i}.unitPrice`);
-        notes.push(`Used your previous rate of ${prev.unitPrice} ${prev.currency}${prev.unit ? `/${prev.unit}` : ""} for “${description}”.`);
+        notes.push(
+          `Used your previous rate of ${prev.unitPrice} ${prev.currency}${prev.unit ? `/${prev.unit}` : ""} for “${description}”.`,
+        );
       } else {
         unitPrice = "";
         notes.push(`No price given for “${description}”. Add one before issuing.`);
@@ -166,15 +203,31 @@ export function normalizeDraft(out: DraftOutput, ctx: NormalizeContext): Normali
     }
     const discountPercent = plainDecimal(l.discountPercent, 4);
     if (discountPercent) ai.push(`lines.${i}.discountPercent`);
-    lines.push({ description, quantity, unit, unitPrice, discountPercent: discountPercent && Number(discountPercent) <= 100 ? discountPercent : null, tax: mapTaxHint(l.taxHint, ctx.taxRates) });
+    lines.push({
+      description,
+      quantity,
+      unit,
+      unitPrice,
+      discountPercent: discountPercent && Number(discountPercent) <= 100 ? discountPercent : null,
+      tax: mapTaxHint(l.taxHint, ctx.taxRates),
+    });
   });
 
-  const dv = out.discount ? plainDecimal(out.discount.value, out.discount.type === "percent" ? 4 : 6) : null;
-  const discount = out.discount && dv && (out.discount.type === "amount" || Number(dv) <= 100) ? { type: out.discount.type, value: dv } : null;
+  const dv = out.discount
+    ? plainDecimal(out.discount.value, out.discount.type === "percent" ? 4 : 6)
+    : null;
+  const discount =
+    out.discount && dv && (out.discount.type === "amount" || Number(dv) <= 100)
+      ? { type: out.discount.type, value: dv }
+      : null;
 
   for (const u of out.uncertainFields) {
     // Model-flagged uncertainty is surfaced through `notes`; make sure flagged fields are highlighted too.
-    if (/^(client|currency|issueDate|dueDate|supplyDate|reference|lines\.\d+\.\w+)$/.test(u) && !ai.includes(u)) ai.push(u);
+    if (
+      /^(client|currency|issueDate|dueDate|supplyDate|reference|lines\.\d+\.\w+)$/.test(u) &&
+      !ai.includes(u)
+    )
+      ai.push(u);
   }
   const reference = out.reference?.trim().slice(0, 100) ?? "";
   if (reference) ai.push("reference");
@@ -185,8 +238,14 @@ export function normalizeDraft(out: DraftOutput, ctx: NormalizeContext): Normali
     clientId,
     clientName,
     clientHints: {
-      email: out.client.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(out.client.email) ? out.client.email.toLowerCase() : null,
-      country: out.client.country && /^[A-Za-z]{2}$/.test(out.client.country) ? out.client.country.toUpperCase() : null,
+      email:
+        out.client.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(out.client.email)
+          ? out.client.email.toLowerCase()
+          : null,
+      country:
+        out.client.country && /^[A-Za-z]{2}$/.test(out.client.country)
+          ? out.client.country.toUpperCase()
+          : null,
       vatId: out.client.vatId ? normalizeVatId(out.client.vatId) : null,
     },
     currency,

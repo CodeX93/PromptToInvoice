@@ -12,7 +12,8 @@ export default async function NewInvoicePage(props: PageProps<"/app/invoices/new
   const ctx = await requireOrg();
   if (!can(ctx, "invoice:write")) redirect("/app/invoices");
   const sp = await props.searchParams;
-  if (features.ai && typeof sp.prompt === "string" && sp.prompt.trim()) return <AutoDraft prompt={sp.prompt.slice(0, 2000)} />;
+  if (features.ai && typeof sp.prompt === "string" && sp.prompt.trim())
+    return <AutoDraft prompt={sp.prompt.slice(0, 2000)} />;
   const clientId =
     typeof sp.client === "string" && /^[0-9a-f-]{36}$/.test(sp.client) ? sp.client : null;
   return <InvoiceEditor {...await editorProps(ctx, null, { clientId })} />;

@@ -6,7 +6,12 @@ interface RecognitionLike {
   lang: string;
   interimResults: boolean;
   continuous: boolean;
-  onresult: ((e: { resultIndex: number; results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }> }) => void) | null;
+  onresult:
+    | ((e: {
+        resultIndex: number;
+        results: ArrayLike<ArrayLike<{ transcript: string }> & { isFinal: boolean }>;
+      }) => void)
+    | null;
   onend: (() => void) | null;
   onerror: ((e: { error: string }) => void) | null;
   start(): void;
@@ -28,7 +33,11 @@ const noop = () => () => undefined;
  * mismatch); interim results stream into `onText` so people see words appear.
  */
 export function useDictation(onText: (text: string, final: boolean) => void) {
-  const supported = useSyncExternalStore(noop, () => ctor() !== null, () => false);
+  const supported = useSyncExternalStore(
+    noop,
+    () => ctor() !== null,
+    () => false,
+  );
   const [listening, setListening] = useState(false);
   const rec = useRef<RecognitionLike | null>(null);
   const cb = useRef(onText);

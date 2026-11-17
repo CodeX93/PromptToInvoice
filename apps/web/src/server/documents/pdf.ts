@@ -400,13 +400,11 @@ export async function renderInvoicePdf(
       .lineWidth(1.8)
       .strokeColor(color)
       .stroke();
-    doc
-      .fillColor(color)
-      .text(text.toUpperCase(), cx - w / 2, cy - 8, {
-        width: w,
-        align: "center",
-        characterSpacing: 3,
-      });
+    doc.fillColor(color).text(text.toUpperCase(), cx - w / 2, cy - 8, {
+      width: w,
+      align: "center",
+      characterSpacing: 3,
+    });
     doc.restore();
   }
 

@@ -45,7 +45,9 @@ export async function issueInvoiceAction(id: string): Promise<ActionResult<{ num
     const ctx = await orgContextOrThrow();
     const r = await issueInvoice(ctx, idSchema.parse(id));
     after(async () => {
-      await recordAiOutcome(ctx, id).catch((err: unknown) => logger.warn({ err, invoiceId: id }, "AI outcome not recorded"));
+      await recordAiOutcome(ctx, id).catch((err: unknown) =>
+        logger.warn({ err, invoiceId: id }, "AI outcome not recorded"),
+      );
       try {
         await archivePdf(ctx, id);
       } catch (err) {

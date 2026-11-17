@@ -12,8 +12,23 @@ export interface ExtractUsage {
 }
 
 export type ExtractResult =
-  | { status: "ok"; output: DraftOutput; usage: ExtractUsage; model: string; requestId: string | null; latencyMs: number }
-  | { status: "refused" | "invalid" | "error"; error: string; usage: ExtractUsage | null; model: string; requestId: string | null; latencyMs: number; retryable: boolean };
+  | {
+      status: "ok";
+      output: DraftOutput;
+      usage: ExtractUsage;
+      model: string;
+      requestId: string | null;
+      latencyMs: number;
+    }
+  | {
+      status: "refused" | "invalid" | "error";
+      error: string;
+      usage: ExtractUsage | null;
+      model: string;
+      requestId: string | null;
+      latencyMs: number;
+      retryable: boolean;
+    };
 
 export interface ExtractArgs {
   client: Anthropic;
@@ -59,12 +74,35 @@ export async function extractDraft(a: ExtractArgs): Promise<ExtractResult> {
     };
     const requestId = (response as { _request_id?: string | null })._request_id ?? null;
     if (response.stop_reason === "refusal") {
-      return { status: "refused", error: "The request was declined.", usage, model, requestId, latencyMs: ms(), retryable: false };
+      return {
+        status: "refused",
+        error: "The request was declined.",
+        usage,
+        model,
+        requestId,
+        latencyMs: ms(),
+        retryable: false,
+      };
     }
     if (response.stop_reason === "max_tokens" || !response.parsed_output) {
-      return { status: "invalid", error: "The draft could not be read.", usage, model, requestId, latencyMs: ms(), retryable: true };
+      return {
+        status: "invalid",
+        error: "The draft could not be read.",
+        usage,
+        model,
+        requestId,
+        latencyMs: ms(),
+        retryable: true,
+      };
     }
-    return { status: "ok", output: response.parsed_output, usage, model: response.model, requestId, latencyMs: ms() };
+    return {
+      status: "ok",
+      output: response.parsed_output,
+      usage,
+      model: response.model,
+      requestId,
+      latencyMs: ms(),
+    };
   } catch (err) {
     const retryable =
       err instanceof Anthropic.RateLimitError ||
@@ -84,6 +122,14 @@ export async function extractDraft(a: ExtractArgs): Promise<ExtractResult> {
                 ? "Cancelled."
                 : "The AI service failed.";
     const requestId = err instanceof Anthropic.APIError ? (err.requestID ?? null) : null;
-    return { status: "error", error: message, usage: null, model, requestId, latencyMs: ms(), retryable };
+    return {
+      status: "error",
+      error: message,
+      usage: null,
+      model,
+      requestId,
+      latencyMs: ms(),
+      retryable,
+    };
   }
 }
