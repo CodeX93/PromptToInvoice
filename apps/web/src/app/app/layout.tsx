@@ -15,6 +15,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const items: NavItem[] = [
     { href: "/app", label: "Overview", keys: "G D" },
     { href: "/app/invoices", label: "Invoices", keys: "G I" },
+    { href: "/app/quotes", label: "Quotes", keys: "G Q" },
     { href: "/app/clients", label: "Clients", keys: "G C" },
   ];
   if (can(ctx, "report:read")) items.push({ href: "/app/reports", label: "Reports" });

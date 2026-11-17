@@ -26,10 +26,12 @@ export async function saveInvoice(
   id: string | null,
   payload: unknown,
   expectedVersion?: number,
+  type?: "invoice" | "credit_note" | "quote",
 ): Promise<ActionResult<{ id: string; version: number }>> {
   return run("invoices.save", async () => {
     const ctx = await orgContextOrThrow();
-    const docType = id ? undefined : "invoice";
+    // Only new documents choose a type; credit notes are created from an invoice, never from the editor.
+    const docType = id ? undefined : type === "quote" ? "quote" : "invoice";
     const r = await saveDraft(ctx, id ? idSchema.parse(id) : null, payload, {
       expectedVersion,
       docType,
@@ -151,6 +153,30 @@ export async function markSentAction(id: string): Promise<ActionResult> {
   return run("invoices.mark-sent", async () => {
     const { markSent } = await import("@/server/services/emails");
     await markSent(await orgContextOrThrow(), idSchema.parse(id));
+    revalidatePath(`/app/invoices/${id}`);
+  });
+}
+
+export async function convertQuoteAction(id: string): Promise<ActionResult<{ id: string }>> {
+  return run("quotes.convert", async () => {
+    const { convertQuote } = await import("@/server/services/invoices");
+    const invoiceId = await convertQuote(await orgContextOrThrow(), idSchema.parse(id));
+    revalidatePath("/app/quotes");
+    return { id: invoiceId };
+  });
+}
+
+export async function answerQuoteAction(
+  id: string,
+  answer: "accepted" | "declined",
+): Promise<ActionResult> {
+  return run("quotes.answer", async () => {
+    const { answerQuote } = await import("@/server/services/invoices");
+    await answerQuote(
+      await orgContextOrThrow(),
+      idSchema.parse(id),
+      answer === "accepted" ? "accepted" : "declined",
+    );
     revalidatePath(`/app/invoices/${id}`);
   });
 }

@@ -15,6 +15,10 @@ const STYLE: Record<DisplayStatus, { glyph: string; cls: string }> = {
   overdue: { glyph: "!", cls: "text-danger" },
   paid: { glyph: "✓", cls: "text-positive" },
   void: { glyph: "⊘", cls: "text-ink-4 line-through" },
+  accepted: { glyph: "✓", cls: "text-positive" },
+  declined: { glyph: "×", cls: "text-danger" },
+  expired: { glyph: "◌", cls: "text-ink-4" },
+  converted: { glyph: "→", cls: "text-ink-2" },
 };
 
 export function StatusMark({ status, className }: { status: DisplayStatus; className?: string }) {

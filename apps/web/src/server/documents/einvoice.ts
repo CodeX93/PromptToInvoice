@@ -1,6 +1,19 @@
 import "server-only";
-import { DEFAULT_EXEMPTION_NOTES, isCurrencyCode, isValidIban, normalizeIban, type TaxCategory } from "@pti/core";
-import { facturXXmp, FACTURX_FILENAME, toCii, unitCode, type CiiProfile, type EInvoice } from "@pti/einvoice";
+import {
+  DEFAULT_EXEMPTION_NOTES,
+  isCurrencyCode,
+  isValidIban,
+  normalizeIban,
+  type TaxCategory,
+} from "@pti/core";
+import {
+  facturXXmp,
+  FACTURX_FILENAME,
+  toCii,
+  unitCode,
+  type CiiProfile,
+  type EInvoice,
+} from "@pti/einvoice";
 import type { InvoiceDetail } from "../services/invoices";
 import { logger } from "../logger";
 import type { PdfAttachment } from "./pdf";
@@ -33,16 +46,40 @@ export function toEInvoice(d: InvoiceDetail): EInvoice | null {
     preceding: d.corrects?.number ? { number: d.corrects.number } : null,
     notes: [inv.notes].filter(Boolean),
     paymentTerms: inv.terms || null,
-    seller: { name: snap.seller.legalName, address: snap.seller.address, vatId: snap.seller.vatId, taxId: snap.seller.taxId, registration: snap.seller.registrationNumber, email: snap.seller.email, phone: snap.seller.phone, contactName: snap.seller.tradingName ?? snap.seller.legalName },
+    seller: {
+      name: snap.seller.legalName,
+      address: snap.seller.address,
+      vatId: snap.seller.vatId,
+      taxId: snap.seller.taxId,
+      registration: snap.seller.registrationNumber,
+      email: snap.seller.email,
+      phone: snap.seller.phone,
+      contactName: snap.seller.tradingName ?? snap.seller.legalName,
+    },
     buyer: {
       name: snap.buyer.name,
-      address: snap.buyer.address ?? { line1: "", line2: "", city: "", postalCode: "", region: "", country: snap.seller.address.country },
+      address: snap.buyer.address ?? {
+        line1: "",
+        line2: "",
+        city: "",
+        postalCode: "",
+        region: "",
+        country: snap.seller.address.country,
+      },
       vatId: snap.buyer.vatId,
       taxId: snap.buyer.taxId,
       email: snap.buyer.email,
       contactName: snap.buyer.contactName,
     },
-    payment: bank?.iban && isValidIban(bank.iban) && inv.docType === "invoice" ? { iban: normalizeIban(bank.iban), bic: bank.bic ?? null, accountName: bank.accountHolder ?? snap.seller.legalName, reference: inv.number } : null,
+    payment:
+      bank?.iban && isValidIban(bank.iban) && inv.docType === "invoice"
+        ? {
+            iban: normalizeIban(bank.iban),
+            bic: bank.bic ?? null,
+            accountName: bank.accountHolder ?? snap.seller.legalName,
+            reference: inv.number,
+          }
+        : null,
     lines: d.lines.map((l, i) => ({
       id: String(i + 1),
       name: l.description,
@@ -54,9 +91,31 @@ export function toEInvoice(d: InvoiceDetail): EInvoice | null {
       taxCategory: l.taxCategory as TaxCategory,
       taxRate: l.taxRate,
     })),
-    allowances: inv.taxBreakdown.filter((b) => b.discount !== 0).map((b) => ({ amount: abs(b.discount), base: abs(b.lineNet), reason: "Discount", taxCategory: b.category, taxRate: b.rate })),
-    breakdown: inv.taxBreakdown.map((b) => ({ category: b.category, rate: b.rate, taxable: abs(b.taxable), tax: abs(b.tax), exemptionReason: b.category === "S" || b.category === "Z" ? null : exemption(b.category) })),
-    totals: { lineTotal: abs(inv.lineNetTotal), allowanceTotal: abs(inv.discountTotal), taxBasis: abs(inv.taxExclusive), taxTotal: abs(inv.taxTotal), grandTotal: total, prepaid: 0, duePayable: total },
+    allowances: inv.taxBreakdown
+      .filter((b) => b.discount !== 0)
+      .map((b) => ({
+        amount: abs(b.discount),
+        base: abs(b.lineNet),
+        reason: "Discount",
+        taxCategory: b.category,
+        taxRate: b.rate,
+      })),
+    breakdown: inv.taxBreakdown.map((b) => ({
+      category: b.category,
+      rate: b.rate,
+      taxable: abs(b.taxable),
+      tax: abs(b.tax),
+      exemptionReason: b.category === "S" || b.category === "Z" ? null : exemption(b.category),
+    })),
+    totals: {
+      lineTotal: abs(inv.lineNetTotal),
+      allowanceTotal: abs(inv.discountTotal),
+      taxBasis: abs(inv.taxExclusive),
+      taxTotal: abs(inv.taxTotal),
+      grandTotal: total,
+      prepaid: 0,
+      duePayable: total,
+    },
   };
 }
 
@@ -66,14 +125,24 @@ export function einvoiceXml(d: InvoiceDetail, profile: CiiProfile): string | nul
 }
 
 /** Factur-X/ZUGFeRD attachment + XMP for the archived PDF/A-3. */
-export function facturXFor(d: InvoiceDetail): { attachments: PdfAttachment[]; xmpExtension: string } | null {
+export function facturXFor(
+  d: InvoiceDetail,
+): { attachments: PdfAttachment[]; xmpExtension: string } | null {
   const xml = einvoiceXml(d, "en16931");
   if (!xml) {
     logger.info({ invoiceId: d.invoice.id }, "e-invoice skipped: missing seller tax identifier");
     return null;
   }
   return {
-    attachments: [{ name: FACTURX_FILENAME, content: Buffer.from(xml, "utf8"), mime: "text/xml", description: "Factur-X/ZUGFeRD invoice (EN 16931)", relationship: "Alternative" }],
+    attachments: [
+      {
+        name: FACTURX_FILENAME,
+        content: Buffer.from(xml, "utf8"),
+        mime: "text/xml",
+        description: "Factur-X/ZUGFeRD invoice (EN 16931)",
+        relationship: "Alternative",
+      },
+    ],
     xmpExtension: facturXXmp("EN 16931"),
   };
 }

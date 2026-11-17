@@ -16,5 +16,12 @@ export default async function NewInvoicePage(props: PageProps<"/app/invoices/new
     return <AutoDraft prompt={sp.prompt.slice(0, 2000)} />;
   const clientId =
     typeof sp.client === "string" && /^[0-9a-f-]{36}$/.test(sp.client) ? sp.client : null;
-  return <InvoiceEditor {...await editorProps(ctx, null, { clientId })} />;
+  return (
+    <InvoiceEditor
+      {...await editorProps(ctx, null, {
+        clientId,
+        docType: sp.type === "quote" ? "quote" : "invoice",
+      })}
+    />
+  );
 }

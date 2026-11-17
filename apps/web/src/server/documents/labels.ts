@@ -47,6 +47,8 @@ export interface DocLabels {
   taxSummary: string;
   taxableAmount: string;
   dueOnReceipt: string;
+  quote: string;
+  validUntil: string;
 }
 
 const en: DocLabels = {
@@ -90,6 +92,8 @@ const en: DocLabels = {
   taxSummary: "Tax summary",
   taxableAmount: "Taxable amount",
   dueOnReceipt: "Due on receipt",
+  quote: "Quote",
+  validUntil: "Valid until",
 };
 
 const de: DocLabels = {
@@ -133,6 +137,8 @@ const de: DocLabels = {
   taxSummary: "Steuerübersicht",
   taxableAmount: "Bemessungsgrundlage",
   dueOnReceipt: "Sofort fällig",
+  quote: "Angebot",
+  validUntil: "Gültig bis",
 };
 
 const fr: DocLabels = {
@@ -175,6 +181,8 @@ const fr: DocLabels = {
   taxSummary: "Récapitulatif TVA",
   taxableAmount: "Base HT",
   dueOnReceipt: "À réception",
+  quote: "Devis",
+  validUntil: "Valable jusqu\u0027au",
 };
 
 const es: DocLabels = {
@@ -217,6 +225,8 @@ const es: DocLabels = {
   taxSummary: "Resumen de IVA",
   taxableAmount: "Base",
   dueOnReceipt: "Al recibo",
+  quote: "Presupuesto",
+  validUntil: "Válido hasta",
 };
 
 const nl: DocLabels = {
@@ -259,6 +269,8 @@ const nl: DocLabels = {
   taxSummary: "Btw-overzicht",
   taxableAmount: "Grondslag",
   dueOnReceipt: "Direct",
+  quote: "Offerte",
+  validUntil: "Geldig tot",
 };
 
 const it: DocLabels = {
@@ -301,6 +313,8 @@ const it: DocLabels = {
   taxSummary: "Riepilogo IVA",
   taxableAmount: "Imponibile",
   dueOnReceipt: "A vista",
+  quote: "Preventivo",
+  validUntil: "Valido fino al",
 };
 
 const ALL: Record<DocLanguage, DocLabels> = { en, de, fr, es, nl, it };

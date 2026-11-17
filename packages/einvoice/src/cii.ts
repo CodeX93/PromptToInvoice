@@ -16,7 +16,17 @@ const GUIDELINE: Record<CiiProfile, string> = {
 
 export function escapeXml(s: string): string {
   return s.replace(/[<>&'"\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c) =>
-    c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === "&" ? "&amp;" : c === "'" ? "&apos;" : c === '"' ? "&quot;" : "",
+    c === "<"
+      ? "&lt;"
+      : c === ">"
+        ? "&gt;"
+        : c === "&"
+          ? "&amp;"
+          : c === "'"
+            ? "&apos;"
+            : c === '"'
+              ? "&quot;"
+              : "",
   );
 }
 
@@ -30,7 +40,8 @@ function e(tag: string, content: Node | Node[], attrs: Record<string, string> = 
     .join("");
   return `<${tag}${a}>${inner}</${tag}>`;
 }
-const t = (tag: string, text: string | null | undefined, attrs: Record<string, string> = {}) => (text ? e(tag, escapeXml(text), attrs) : "");
+const t = (tag: string, text: string | null | undefined, attrs: Record<string, string> = {}) =>
+  text ? e(tag, escapeXml(text), attrs) : "";
 const date = (iso: string) => e("udt:DateTimeString", iso.replace(/-/g, ""), { format: "102" });
 const pct = (r: string) => formatDecimal(normalizeDecimal(parseDecimal(r)));
 
@@ -69,14 +80,36 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
     e("ram:IncludedSupplyChainTradeLineItem", [
       e("ram:AssociatedDocumentLineDocument", t("ram:LineID", l.id)),
       e("ram:SpecifiedTradeProduct", t("ram:Name", l.name)),
-      e("ram:SpecifiedLineTradeAgreement", e("ram:NetPriceProductTradePrice", t("ram:ChargeAmount", formatDecimal(normalizeDecimal(parseDecimal(l.netPrice)))))),
-      e("ram:SpecifiedLineTradeDelivery", t("ram:BilledQuantity", formatDecimal(normalizeDecimal(parseDecimal(l.quantity))), { unitCode: l.unitCode })),
+      e(
+        "ram:SpecifiedLineTradeAgreement",
+        e(
+          "ram:NetPriceProductTradePrice",
+          t("ram:ChargeAmount", formatDecimal(normalizeDecimal(parseDecimal(l.netPrice)))),
+        ),
+      ),
+      e(
+        "ram:SpecifiedLineTradeDelivery",
+        t("ram:BilledQuantity", formatDecimal(normalizeDecimal(parseDecimal(l.quantity))), {
+          unitCode: l.unitCode,
+        }),
+      ),
       e("ram:SpecifiedLineTradeSettlement", [
-        e("ram:ApplicableTradeTax", [t("ram:TypeCode", "VAT"), t("ram:CategoryCode", l.taxCategory), t("ram:RateApplicablePercent", pct(l.taxRate))]),
+        e("ram:ApplicableTradeTax", [
+          t("ram:TypeCode", "VAT"),
+          t("ram:CategoryCode", l.taxCategory),
+          t("ram:RateApplicablePercent", pct(l.taxRate)),
+        ]),
         l.allowance > 0
-          ? e("ram:SpecifiedTradeAllowanceCharge", [e("ram:ChargeIndicator", e("udt:Indicator", "false")), t("ram:ActualAmount", m(l.allowance)), t("ram:Reason", "Discount")])
+          ? e("ram:SpecifiedTradeAllowanceCharge", [
+              e("ram:ChargeIndicator", e("udt:Indicator", "false")),
+              t("ram:ActualAmount", m(l.allowance)),
+              t("ram:Reason", "Discount"),
+            ])
           : "",
-        e("ram:SpecifiedTradeSettlementLineMonetarySummation", t("ram:LineTotalAmount", m(l.lineTotal))),
+        e(
+          "ram:SpecifiedTradeSettlementLineMonetarySummation",
+          t("ram:LineTotalAmount", m(l.lineTotal)),
+        ),
       ]),
     ]),
   );
@@ -85,7 +118,9 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
     e("ram:ApplicableTradeTax", [
       t("ram:CalculatedAmount", m(b.tax)),
       t("ram:TypeCode", "VAT"),
-      b.category !== "S" && b.category !== "Z" ? t("ram:ExemptionReason", b.exemptionReason ?? "") : "",
+      b.category !== "S" && b.category !== "Z"
+        ? t("ram:ExemptionReason", b.exemptionReason ?? "")
+        : "",
       t("ram:BasisAmount", m(b.taxable)),
       t("ram:CategoryCode", b.category),
       t("ram:RateApplicablePercent", pct(b.rate)),
@@ -100,13 +135,20 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
         t("ram:BasisAmount", m(a.base)),
         t("ram:ActualAmount", m(a.amount)),
         t("ram:Reason", a.reason),
-        e("ram:CategoryTradeTax", [t("ram:TypeCode", "VAT"), t("ram:CategoryCode", a.taxCategory), t("ram:RateApplicablePercent", pct(a.taxRate))]),
+        e("ram:CategoryTradeTax", [
+          t("ram:TypeCode", "VAT"),
+          t("ram:CategoryCode", a.taxCategory),
+          t("ram:RateApplicablePercent", pct(a.taxRate)),
+        ]),
       ]),
     );
 
   const T = inv.totals;
   const body = [
-    e("rsm:ExchangedDocumentContext", e("ram:GuidelineSpecifiedDocumentContextParameter", t("ram:ID", GUIDELINE[profile]))),
+    e(
+      "rsm:ExchangedDocumentContext",
+      e("ram:GuidelineSpecifiedDocumentContextParameter", t("ram:ID", GUIDELINE[profile])),
+    ),
     e("rsm:ExchangedDocument", [
       t("ram:ID", inv.number),
       t("ram:TypeCode", inv.typeCode),
@@ -119,18 +161,36 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
         t("ram:BuyerReference", inv.buyerReference ?? (profile === "xrechnung" ? "n/a" : "")),
         party("ram:SellerTradeParty", inv.seller, profile, "seller"),
         party("ram:BuyerTradeParty", inv.buyer, profile, "buyer"),
-        inv.orderReference ? e("ram:BuyerOrderReferencedDocument", t("ram:IssuerAssignedID", inv.orderReference)) : "",
+        inv.orderReference
+          ? e("ram:BuyerOrderReferencedDocument", t("ram:IssuerAssignedID", inv.orderReference))
+          : "",
       ]),
       // Required even when empty.
-      inv.supplyDate ? e("ram:ApplicableHeaderTradeDelivery", e("ram:ActualDeliverySupplyChainEvent", e("ram:OccurrenceDateTime", date(inv.supplyDate)))) : "<ram:ApplicableHeaderTradeDelivery/>",
+      inv.supplyDate
+        ? e(
+            "ram:ApplicableHeaderTradeDelivery",
+            e(
+              "ram:ActualDeliverySupplyChainEvent",
+              e("ram:OccurrenceDateTime", date(inv.supplyDate)),
+            ),
+          )
+        : "<ram:ApplicableHeaderTradeDelivery/>",
       e("ram:ApplicableHeaderTradeSettlement", [
         t("ram:PaymentReference", inv.payment?.reference ?? inv.number),
         t("ram:InvoiceCurrencyCode", inv.currency),
         inv.payment
           ? e("ram:SpecifiedTradeSettlementPaymentMeans", [
               t("ram:TypeCode", "58"),
-              e("ram:PayeePartyCreditorFinancialAccount", [t("ram:IBANID", inv.payment.iban), t("ram:AccountName", inv.payment.accountName ?? "")]),
-              inv.payment.bic ? e("ram:PayeeSpecifiedCreditorFinancialInstitution", t("ram:BICID", inv.payment.bic)) : "",
+              e("ram:PayeePartyCreditorFinancialAccount", [
+                t("ram:IBANID", inv.payment.iban),
+                t("ram:AccountName", inv.payment.accountName ?? ""),
+              ]),
+              inv.payment.bic
+                ? e(
+                    "ram:PayeeSpecifiedCreditorFinancialInstitution",
+                    t("ram:BICID", inv.payment.bic),
+                  )
+                : "",
             ])
           : profile === "xrechnung"
             ? e("ram:SpecifiedTradeSettlementPaymentMeans", t("ram:TypeCode", "1"))
@@ -138,7 +198,10 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
         ...taxes,
         ...allowances,
         inv.dueDate || inv.paymentTerms
-          ? e("ram:SpecifiedTradePaymentTerms", [t("ram:Description", inv.paymentTerms ?? ""), inv.dueDate ? e("ram:DueDateDateTime", date(inv.dueDate)) : ""])
+          ? e("ram:SpecifiedTradePaymentTerms", [
+              t("ram:Description", inv.paymentTerms ?? ""),
+              inv.dueDate ? e("ram:DueDateDateTime", date(inv.dueDate)) : "",
+            ])
           : "",
         e("ram:SpecifiedTradeSettlementHeaderMonetarySummation", [
           t("ram:LineTotalAmount", m(T.lineTotal)),
@@ -150,7 +213,17 @@ export function toCii(inv: EInvoice, profile: CiiProfile = "en16931"): string {
           t("ram:DuePayableAmount", m(T.duePayable)),
         ]),
         inv.preceding
-          ? e("ram:InvoiceReferencedDocument", [t("ram:IssuerAssignedID", inv.preceding.number), inv.preceding.issueDate ? e("ram:FormattedIssueDateTime", e("qdt:DateTimeString", inv.preceding.issueDate.replace(/-/g, ""), { format: "102" })) : ""])
+          ? e("ram:InvoiceReferencedDocument", [
+              t("ram:IssuerAssignedID", inv.preceding.number),
+              inv.preceding.issueDate
+                ? e(
+                    "ram:FormattedIssueDateTime",
+                    e("qdt:DateTimeString", inv.preceding.issueDate.replace(/-/g, ""), {
+                      format: "102",
+                    }),
+                  )
+                : "",
+            ])
           : "",
       ]),
     ]),

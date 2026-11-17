@@ -51,7 +51,7 @@ export interface TaxRateOption {
 export interface InvoiceEditorProps {
   id: string | null;
   version: number;
-  docType: "invoice" | "credit_note";
+  docType: "invoice" | "credit_note" | "quote";
   initial: EditorState;
   seller: SellerContext & { name: string; defaultTermsDays: number };
   taxRates: TaxRateOption[];
@@ -95,6 +95,8 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
   const suggestion = useMemo(() => taxSuggestion(state, props.seller), [state, props.seller]);
   const fmt = (minor: number) => formatMoney(minor, state.currency);
   const isCredit = props.docType === "credit_note";
+  const isQuote = props.docType === "quote";
+  const docLabel = isCredit ? "Credit note" : isQuote ? "Quote" : "Invoice";
 
   const update = useCallback(
     (patch: Partial<EditorState> | ((s: EditorState) => EditorState), touched?: string) => {
@@ -128,7 +130,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
   const doSave = useCallback(async (): Promise<string | null> => {
     setSave("saving");
     const snapshot = stateRef.current;
-    const res = await saveInvoice(id, toPayload(snapshot), id ? version : undefined);
+    const res = await saveInvoice(id, toPayload(snapshot), id ? version : undefined, props.docType);
     if (!res.ok) {
       setSave("error");
       setErrors(res.fieldErrors ?? {});
@@ -145,7 +147,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
       window.history.replaceState(null, "", `/app/invoices/${res.data.id}`);
     }
     return res.data.id;
-  }, [id, version]);
+  }, [id, version, props.docType]);
 
   // Autosave existing drafts shortly after the user stops typing.
   useEffect(() => {
@@ -172,7 +174,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
         errorToast(r, toast);
         return;
       }
-      toast.success(`${isCredit ? "Credit note" : "Invoice"} ${r.data.number} issued.`);
+      toast.success(`${docLabel} ${r.data.number} issued.`);
       router.push(`/app/invoices/${savedId}` as Route);
       router.refresh();
     });
@@ -194,7 +196,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
           ← Invoices
         </Link>
         <span className="text-ink-4">/</span>
-        <span className="text-[13px]">{isCredit ? "Credit note" : "Invoice"} draft</span>
+        <span className="text-[13px]">{docLabel} draft</span>
         <SaveIndicator state={save} at={savedAt} />
         <div className="ml-auto flex items-center gap-2">
           {id ? (
@@ -233,7 +235,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
           </Button>
           {props.canIssue ? (
             <Button size="sm" onClick={issue} pending={issuing} title="⌘↵">
-              Issue {isCredit ? "credit note" : "invoice"}
+              Issue {docLabel.toLowerCase()}
             </Button>
           ) : null}
         </div>
@@ -248,7 +250,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
           <header className="flex flex-wrap items-start justify-between gap-6">
             <p className="font-serif text-xl">{props.seller.name}</p>
             <div className="text-right">
-              <p className="label-caps">{isCredit ? "Credit note" : "Invoice"}</p>
+              <p className="label-caps">{docLabel}</p>
               <p className="text-ink-3 mt-1 font-serif text-2xl">Draft</p>
             </div>
           </header>
@@ -281,7 +283,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
               />
               {!isCredit ? (
                 <MetaInput
-                  label="Due date"
+                  label={isQuote ? "Valid until" : "Due date"}
                   type="date"
                   value={state.dueDate}
                   onChange={(v) => update({ dueDate: v }, "dueDate")}

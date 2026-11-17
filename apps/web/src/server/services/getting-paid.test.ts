@@ -144,7 +144,10 @@ describe("stripe webhooks", () => {
       secret: "whsec_test_secret",
     });
     expect(verifyWebhook(payload, header).id).toBe("evt_sig");
-    expect(() => verifyWebhook(payload, header.replace(/v1=\w/, "v1=0"))).toThrow();
+    // Flip the last hex digit so the signature is always wrong (never a no-op replacement).
+    const tampered = header.replace(/([0-9a-f])$/, (d) => (d === "0" ? "1" : "0"));
+    expect(tampered).not.toBe(header);
+    expect(() => verifyWebhook(payload, tampered)).toThrow();
   });
 
   it("records a checkout payment once and marks the invoice paid", async () => {

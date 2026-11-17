@@ -68,7 +68,13 @@ export async function GET(req: Request) {
             .select({ i: I, client: schema.clients.name, clientVat: schema.clients.vatId })
             .from(I)
             .leftJoin(schema.clients, eq(schema.clients.id, I.clientId))
-            .where(and(sql`${I.status} <> 'draft'`, gte(I.issueDate, from), lte(I.issueDate, to)))
+            .where(
+              and(
+                sql`${I.status} <> 'draft' and ${I.docType} <> 'quote'`,
+                gte(I.issueDate, from),
+                lte(I.issueDate, to),
+              ),
+            )
             .orderBy(asc(I.issueDate), asc(I.number)),
         );
         header = [

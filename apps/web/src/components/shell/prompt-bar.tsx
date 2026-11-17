@@ -40,6 +40,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
     c: () => router.push("/app/invoices/new"),
     "g i": () => router.push("/app/invoices"),
     "g c": () => router.push("/app/clients"),
+    "g q": () => router.push("/app/quotes"),
     "g d": () => router.push("/app"),
     "g s": () => router.push("/app/settings"),
   });
