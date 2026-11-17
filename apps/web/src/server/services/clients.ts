@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import { addressSchema, currencySchema, emailSchema, isEuCountry, normalizeVatId } from "@pti/core";
+import { addressSchema, currencySchema, emailSchema, normalizeVatId, parseEuVatId } from "@pti/core";
 import { and, asc, eq, ne, one, schema, sql, withOrg, type SQL } from "@pti/db";
 import { db } from "../db";
 import { audit } from "../audit";
@@ -217,6 +217,6 @@ export function clientTaxContext(client: Pick<ClientRow, "isBusiness" | "vatId" 
     buyerCountry: client.address?.country ?? null,
     buyerIsBusiness: client.isBusiness,
     // An unverified-but-well-formed EU VAT ID still counts; VIES outages shouldn't block invoicing.
-    buyerVatIdValid: Boolean(client.vatId && (client.vatIdVerifiedAt || isEuCountry(client.vatId.slice(0, 2)))),
+    buyerVatIdValid: Boolean(client.vatId && (client.vatIdVerifiedAt || parseEuVatId(client.vatId))),
   };
 }
