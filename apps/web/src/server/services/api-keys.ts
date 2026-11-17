@@ -73,6 +73,22 @@ export async function revokeApiKey(ctx: OrgContext, id: string): Promise<void> {
   });
 }
 
+/** Revoke every live key a person created in an org (they're leaving it). Returns the count. */
+export async function revokeKeysCreatedBy(orgId: string, userId: string): Promise<number> {
+  const rows = await sysDb
+    .update(schema.apiKeys)
+    .set({ revokedAt: new Date() })
+    .where(
+      and(
+        eq(schema.apiKeys.orgId, orgId),
+        eq(schema.apiKeys.createdBy, userId),
+        isNull(schema.apiKeys.revokedAt),
+      ),
+    )
+    .returning({ id: schema.apiKeys.id });
+  return rows.length;
+}
+
 /**
  * Resolve a bearer key to an OrgContext. The key acts as the member who
  * created it, with "member" permissions: it can create, issue and send
