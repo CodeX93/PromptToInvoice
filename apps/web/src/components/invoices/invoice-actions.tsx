@@ -32,6 +32,7 @@ export interface InvoiceActionsProps {
   sentBefore: boolean;
   clientEmails: string[];
   canRepeat: boolean;
+  canEinvoice: boolean;
 }
 
 export function InvoiceActions(p: InvoiceActionsProps) {
@@ -105,6 +106,12 @@ export function InvoiceActions(p: InvoiceActionsProps) {
             >
               Mark as sent (delivered elsewhere)
             </MenuItem>
+          ) : null}
+          {p.canEinvoice ? (
+            <>
+              <MenuItem onSelect={() => (window.location.href = `/app/invoices/${p.id}/xml`)}>Download e-invoice (EN 16931 XML)</MenuItem>
+              <MenuItem onSelect={() => (window.location.href = `/app/invoices/${p.id}/xml?format=xrechnung`)}>Download XRechnung (DE public sector)</MenuItem>
+            </>
           ) : null}
           <MenuItem onSelect={() => window.open(`/app/invoices/${p.id}/pdf`, "_blank", "noopener")}>
             Open PDF
