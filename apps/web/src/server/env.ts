@@ -16,6 +16,10 @@ const schema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     APP_URL: z.url().default("http://localhost:3000"),
+    /** Operator identity shown on the legal pages (the data controller / contracting party). */
+    LEGAL_ENTITY: z.string().trim().min(1).default("PromptToInvoice"),
+    LEGAL_ADDRESS: optional,
+    LEGAL_EMAIL: z.email().default("legal@prompttoinvoice.com"),
 
     DATABASE_URL: z.string().min(1),
     SYSTEM_DATABASE_URL: z.string().min(1),
