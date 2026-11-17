@@ -19,11 +19,16 @@ import { features } from "../env";
  */
 export async function deleteOrganization(ctx: OrgContext, confirmName: string): Promise<void> {
   authorize(ctx, "org:delete");
-  if (confirmName.trim() !== ctx.org.name) throw new ValidationError("Type the organisation name exactly to confirm.", { confirm: ["Doesn't match."] });
+  if (confirmName.trim() !== ctx.org.name)
+    throw new ValidationError("Type the organisation name exactly to confirm.", {
+      confirm: ["Doesn't match."],
+    });
 
   const sub = await subscriptionFor(ctx.org.id);
   if (sub?.stripeSubscriptionId && features.stripe && sub.status !== "canceled") {
-    await stripeClient().subscriptions.cancel(sub.stripeSubscriptionId).catch((err: unknown) => logger.error({ err }, "subscription cancel failed"));
+    await stripeClient()
+      .subscriptions.cancel(sub.stripeSubscriptionId)
+      .catch((err: unknown) => logger.error({ err }, "subscription cancel failed"));
   }
 
   await sysDb.transaction(async (tx) => {
@@ -33,20 +38,43 @@ export async function deleteOrganization(ctx: OrgContext, confirmName: string): 
     await tx.execute(sql`delete from ai_drafts where org_id = ${id}`);
     await tx.execute(sql`delete from email_messages where org_id = ${id}`);
     await tx.execute(sql`delete from catalog_items where org_id = ${id}`);
-    await tx.execute(sql`update clients set emails = '{}', phone = null, notes = '', contact_name = null where org_id = ${id}`);
-    await tx.execute(sql`delete from clients c where c.org_id = ${id} and not exists (select 1 from invoices i where i.client_id = c.id)`);
-    await tx.execute(sql`delete from files where org_id = ${id} and kind in ('logo','export','attachment')`);
-    await tx.update(schema.sessions).set({ activeOrganizationId: null }).where(eq(schema.sessions.activeOrganizationId, id));
+    await tx.execute(
+      sql`update clients set emails = '{}', phone = null, notes = '', contact_name = null where org_id = ${id}`,
+    );
+    await tx.execute(
+      sql`delete from clients c where c.org_id = ${id} and not exists (select 1 from invoices i where i.client_id = c.id)`,
+    );
+    await tx.execute(
+      sql`delete from files where org_id = ${id} and kind in ('logo','export','attachment')`,
+    );
+    await tx
+      .update(schema.sessions)
+      .set({ activeOrganizationId: null })
+      .where(eq(schema.sessions.activeOrganizationId, id));
     await tx.delete(schema.invitations).where(eq(schema.invitations.organizationId, id));
     await tx.delete(schema.members).where(eq(schema.members.organizationId, id));
-    await tx.update(schema.organizations).set({ deletedAt: new Date(), settings: {} }).where(and(eq(schema.organizations.id, id), isNull(schema.organizations.deletedAt)));
-    await audit(tx, { orgId: id, actorId: ctx.user.id, action: "org.deleted", entityType: "organization", entityId: id });
+    await tx
+      .update(schema.organizations)
+      .set({ deletedAt: new Date(), settings: {} })
+      .where(and(eq(schema.organizations.id, id), isNull(schema.organizations.deletedAt)));
+    await audit(tx, {
+      orgId: id,
+      actorId: ctx.user.id,
+      action: "org.deleted",
+      entityType: "organization",
+      entityId: id,
+    });
   });
 }
 
 /** Guard for account deletion: an owner can't orphan an organisation that has other members. */
 export async function assertCanDeleteUser(userId: string): Promise<void> {
-  const owned = await sysDb.execute<{ org: string; name: string; others: number; owners: number }>(sql`
+  const owned = await sysDb.execute<{
+    org: string;
+    name: string;
+    others: number;
+    owners: number;
+  }>(sql`
     select o.id as org, o.name,
       (select count(*)::int from members x where x.organization_id = o.id and x.user_id <> ${userId}) as others,
       (select count(*)::int from members x where x.organization_id = o.id and x.role = 'owner') as owners

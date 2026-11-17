@@ -33,9 +33,23 @@ export function DeleteOrgForm({ orgName }: { orgName: string }) {
   return (
     <form action={action} className="grid max-w-md gap-4">
       <Field label={`Type “${orgName}” to confirm`} error={fieldErrors(state).confirm}>
-        {(f) => <Input id={f.id} name="confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" />}
+        {(f) => (
+          <Input
+            id={f.id}
+            name="confirm"
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+          />
+        )}
       </Field>
-      <Button type="submit" variant="danger" pending={pending} disabled={typed !== orgName} className="justify-self-start">
+      <Button
+        type="submit"
+        variant="danger"
+        pending={pending}
+        disabled={typed !== orgName}
+        className="justify-self-start"
+      >
         Delete organisation
       </Button>
       <FormFeedback state={state} />

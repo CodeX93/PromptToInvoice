@@ -14,8 +14,18 @@ import { enforce } from "../rate-limit";
 export async function requestExport(ctx: OrgContext): Promise<void> {
   authorize(ctx, "export:run");
   await enforce(`export:${ctx.org.id}`, { limit: 3, windowSeconds: 86_400 });
-  await enqueue("org.export", { orgId: ctx.org.id, requestedBy: ctx.user.id }, { singletonKey: `export:${ctx.org.id}` });
-  await audit(sysDb, { orgId: ctx.org.id, actorId: ctx.user.id, action: "org.export_requested", entityType: "organization", entityId: ctx.org.id });
+  await enqueue(
+    "org.export",
+    { orgId: ctx.org.id, requestedBy: ctx.user.id },
+    { singletonKey: `export:${ctx.org.id}` },
+  );
+  await audit(sysDb, {
+    orgId: ctx.org.id,
+    actorId: ctx.user.id,
+    action: "org.export_requested",
+    entityType: "organization",
+    entityId: ctx.org.id,
+  });
 }
 
 /**
@@ -26,16 +36,17 @@ export async function buildExport(ctx: OrgContext): Promise<{ fileId: string; by
   const files: Record<string, Uint8Array> = {};
   const json = (v: unknown) => strToU8(JSON.stringify(v, null, 2));
   await withOrg(db, ctx.org.id, async (tx) => {
-    const [profiles, clients, invoices, lines, payments, events, taxRates, schedules] = await Promise.all([
-      tx.select().from(schema.businessProfiles),
-      tx.select().from(schema.clients),
-      tx.select().from(schema.invoices),
-      tx.select().from(schema.invoiceLines),
-      tx.select().from(schema.payments),
-      tx.select().from(schema.invoiceEvents),
-      tx.select().from(schema.taxRates),
-      tx.select().from(schema.recurringSchedules),
-    ]);
+    const [profiles, clients, invoices, lines, payments, events, taxRates, schedules] =
+      await Promise.all([
+        tx.select().from(schema.businessProfiles),
+        tx.select().from(schema.clients),
+        tx.select().from(schema.invoices),
+        tx.select().from(schema.invoiceLines),
+        tx.select().from(schema.payments),
+        tx.select().from(schema.invoiceEvents),
+        tx.select().from(schema.taxRates),
+        tx.select().from(schema.recurringSchedules),
+      ]);
     // Bank details stay encrypted at rest and are not exported in clear text.
     files["business_profiles.json"] = json(profiles.map(({ bankDetailsEncrypted: _b, ...p }) => p));
     files["clients.json"] = json(clients);
@@ -53,7 +64,14 @@ export async function buildExport(ctx: OrgContext): Promise<{ fileId: string; by
   );
   const zip = Buffer.from(zipSync(files, { level: 6 }));
   const stored = await withOrg(db, ctx.org.id, (tx) =>
-    storeFile(tx, { orgId: ctx.org.id, kind: "export", body: zip, contentType: "application/zip", fileName: `prompttoinvoice-export-${new Date().toISOString().slice(0, 10)}.zip`, retainUntil: new Date(Date.now() + 7 * 86_400_000) }),
+    storeFile(tx, {
+      orgId: ctx.org.id,
+      kind: "export",
+      body: zip,
+      contentType: "application/zip",
+      fileName: `prompttoinvoice-export-${new Date().toISOString().slice(0, 10)}.zip`,
+      retainUntil: new Date(Date.now() + 7 * 86_400_000),
+    }),
   );
   await sendEmail({
     to: [ctx.user.email],

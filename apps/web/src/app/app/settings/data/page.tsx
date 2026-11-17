@@ -9,8 +9,15 @@ export default async function DataSettingsPage() {
   const ctx = await requireOrg();
   return (
     <>
-      <Section title="Export" description="Everything: clients, invoices, lines, payments, history and every archived PDF, as JSON + PDF in a zip. The download link is emailed to you and works for 7 days.">
-        {can(ctx, "export:run") ? <ExportButton /> : <p className="text-ink-3 text-sm">Ask an owner or admin to export data.</p>}
+      <Section
+        title="Export"
+        description="Everything: clients, invoices, lines, payments, history and every archived PDF, as JSON + PDF in a zip. The download link is emailed to you and works for 7 days."
+      >
+        {can(ctx, "export:run") ? (
+          <ExportButton />
+        ) : (
+          <p className="text-ink-3 text-sm">Ask an owner or admin to export data.</p>
+        )}
       </Section>
       {can(ctx, "org:delete") ? (
         <Section

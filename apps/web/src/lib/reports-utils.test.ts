@@ -15,20 +15,28 @@ describe("resolvePeriod", () => {
   });
 
   it("handles quarter boundaries and February", () => {
-    expect(resolvePeriod("2026-03-31", "last-month")).toMatchObject({ from: "2026-02-01", to: "2026-02-28" });
-    expect(resolvePeriod("2026-01-05", "last-quarter")).toMatchObject({ from: "2025-10-01", to: "2025-12-31" });
+    expect(resolvePeriod("2026-03-31", "last-month")).toMatchObject({
+      from: "2026-02-01",
+      to: "2026-02-28",
+    });
+    expect(resolvePeriod("2026-01-05", "last-quarter")).toMatchObject({
+      from: "2025-10-01",
+      to: "2025-12-31",
+    });
   });
 
   it("accepts valid custom ranges and rejects bad ones", () => {
     expect(resolvePeriod("2026-11-17", undefined, "2026-01-01", "2026-03-31").key).toBe("custom");
-    expect(resolvePeriod("2026-11-17", undefined, "2026-04-01", "2026-03-31").key).toBe("this-month");
+    expect(resolvePeriod("2026-11-17", undefined, "2026-04-01", "2026-03-31").key).toBe(
+      "this-month",
+    );
   });
 });
 
 describe("csv", () => {
   it("escapes and neutralises formulas", () => {
     expect(csvCell('He said "hi", then left')).toBe('"He said ""hi"", then left"');
-    expect(csvCell("=HYPERLINK(\"x\")")).toBe(`"'=HYPERLINK(""x"")"`);
+    expect(csvCell('=HYPERLINK("x")')).toBe(`"'=HYPERLINK(""x"")"`);
     expect(csvCell("-5")).toBe(`"'-5"`);
     expect(csvCell(-5)).toBe("-5");
     expect(csvCell(null)).toBe("");
