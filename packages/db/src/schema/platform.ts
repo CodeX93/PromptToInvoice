@@ -191,3 +191,15 @@ export const idempotencyKeys = pgTable(
   },
   (t) => [primaryKey({ columns: [t.orgId, t.key] })],
 );
+
+/** Daily reference rates: 1 EUR = rate × currency (ECB publishes against EUR). */
+export const fxRates = pgTable(
+  "fx_rates",
+  {
+    date: text("date").notNull(),
+    currency: text("currency").notNull(),
+    rate: text("rate").notNull(),
+    source: text("source").notNull().default("ECB"),
+  },
+  (t) => [primaryKey({ columns: [t.currency, t.date] })],
+);
