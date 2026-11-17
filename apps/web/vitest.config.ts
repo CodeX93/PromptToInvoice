@@ -1,7 +1,22 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
+const r = (p: string) => fileURLToPath(new URL(p, import.meta.url));
+
 export default defineConfig({
-  resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)), "server-only": fileURLToPath(new URL("./test/server-only.ts", import.meta.url)) } },
-  test: { include: ["src/**/*.test.ts", "src/**/*.test.tsx"], environment: "node" },
+  resolve: {
+    alias: {
+      "@": r("./src"),
+      "server-only": r("./test/server-only.ts"),
+    },
+  },
+  test: {
+    include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    environment: "node",
+    setupFiles: ["./test/setup-env.ts"],
+    globalSetup: ["./test/global-setup.ts"],
+    pool: "forks",
+    testTimeout: 20_000,
+    hookTimeout: 60_000,
+  },
 });
