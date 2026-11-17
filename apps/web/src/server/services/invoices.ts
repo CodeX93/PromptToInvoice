@@ -5,6 +5,7 @@ import {
   hasFeature,
   assertCan,
   calculate,
+  euCountry,
   displayStatus,
   invoiceDraftSchema,
   isCurrencyCode,
@@ -40,6 +41,7 @@ import { ConflictError, NotFound, QuotaExceededError, ValidationError } from "..
 import { authorize, type OrgContext } from "../session";
 import { readBank } from "./business-profiles";
 import { consume } from "./usage";
+import { conversionRate, logFxGap } from "./fx";
 
 type InvoiceRow = typeof schema.invoices.$inferSelect;
 type LineRow = typeof schema.invoiceLines.$inferSelect;
@@ -547,17 +549,19 @@ export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ numbe
       },
     };
 
+    // EU rule (Art. 230 VAT Directive): VAT on a foreign-currency invoice must also be stated in the
+    // seller's national currency. Freeze the ECB reference rate at issue.
+    const national = euCountry(profile.address.country)?.currency;
+    let fx: { fxRate: string; fxCurrency: string } | null = null;
+    if (national && national !== inv.currency && inv.taxTotal !== 0) {
+      const r = await conversionRate(inv.currency, national, inv.issueDate);
+      if (r) fx = { fxRate: r.rate, fxCurrency: national };
+      else logFxGap(id, inv.currency, national);
+    }
+
     await tx
       .update(I)
-      .set({
-        status: "open",
-        number,
-        seriesId: series.id,
-        issuedSnapshot: snapshot,
-        issuedAt: new Date(),
-        publicToken: randomToken(18),
-        version: inv.version + 1,
-      })
+      .set({ status: "open", number, seriesId: series.id, issuedSnapshot: snapshot, issuedAt: new Date(), publicToken: randomToken(18), version: inv.version + 1, ...fx })
       .where(eq(I.id, id));
 
     // Issuing a credit note settles (part of) the original invoice.
