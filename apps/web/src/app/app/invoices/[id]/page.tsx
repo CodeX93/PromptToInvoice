@@ -10,6 +10,7 @@ import { NotFound } from "@/server/errors";
 import { requireOrg, can } from "@/server/session";
 import { getInvoice } from "@/server/services/invoices";
 import { editorProps } from "@/server/services/editor-props";
+import { aiMarksFor } from "@/server/services/ai-drafts";
 import { modelFor, publicUrl } from "@/server/documents/service";
 
 export async function generateMetadata(props: PageProps<"/app/invoices/[id]">): Promise<Metadata> {
@@ -42,7 +43,8 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
   });
 
   if (detail.invoice.status === "draft" && can(ctx, "invoice:write")) {
-    return <InvoiceEditor {...await editorProps(ctx, detail)} />;
+    const marks = await aiMarksFor(ctx, detail.invoice.aiDraftId, detail.invoice.version);
+    return <InvoiceEditor {...await editorProps(ctx, detail, { aiFields: marks?.fields, aiNotes: marks?.notes })} />;
   }
 
   const inv = detail.invoice;
