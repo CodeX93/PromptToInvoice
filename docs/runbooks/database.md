@@ -2,11 +2,11 @@
 
 ## Roles
 
-| Role | Used by | RLS |
-|---|---|---|
-| owner (e.g. `pti`) | migrations only (`MIGRATION_DATABASE_URL`) | bypassed (table owner, but `FORCE RLS` applies to non-superusers) |
-| `pti_app` | web app request handling (`DATABASE_URL`) | **enforced** |
-| `pti_system` | worker, webhooks, public invoice page (`SYSTEM_DATABASE_URL`) | bypassed (`BYPASSRLS`) |
+| Role               | Used by                                                       | RLS                                                               |
+| ------------------ | ------------------------------------------------------------- | ----------------------------------------------------------------- |
+| owner (e.g. `pti`) | migrations only (`MIGRATION_DATABASE_URL`)                    | bypassed (table owner, but `FORCE RLS` applies to non-superusers) |
+| `pti_app`          | web app request handling (`DATABASE_URL`)                     | **enforced**                                                      |
+| `pti_system`       | worker, webhooks, public invoice page (`SYSTEM_DATABASE_URL`) | bypassed (`BYPASSRLS`)                                            |
 
 Migration `0002_rls_and_integrity` creates `pti_app` and `pti_system` without passwords. Set them out-of-band:
 
