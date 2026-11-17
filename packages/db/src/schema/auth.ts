@@ -100,6 +100,9 @@ export const twoFactors = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     secret: text("secret").notNull(),
     backupCodes: text("backup_codes").notNull(),
+    verified: boolean("verified").default(true),
+    failedVerificationCount: integer("failed_verification_count").default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
   },
   (t) => [uniqueIndex("two_factors_user_uq").on(t.userId)],
 );
