@@ -11,6 +11,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           { href: "/app/settings", label: "Business" },
           { href: "/app/settings/tax", label: "Tax rates" },
           { href: "/app/settings/numbering", label: "Numbering" },
+          { href: "/app/settings/payments", label: "Payments" },
           { href: "/app/settings/ai", label: "AI" },
           { href: "/app/settings/team", label: "Team" },
           { href: "/app/settings/account", label: "Account & security" },
