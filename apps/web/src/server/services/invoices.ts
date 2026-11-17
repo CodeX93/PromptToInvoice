@@ -198,7 +198,7 @@ export async function getInvoice(ctx: OrgContext, id: string): Promise<InvoiceDe
           e: schema.invoiceEvents,
           actorName: sql<
             string | null
-          >`(select name from users where id = ${schema.invoiceEvents.actorId})`,
+          >`(select name from users where users.id = invoice_events.actor_id)`,
         })
         .from(schema.invoiceEvents)
         .where(eq(schema.invoiceEvents.invoiceId, id))

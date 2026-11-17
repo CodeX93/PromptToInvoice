@@ -21,7 +21,7 @@ export async function getClientOptions(ctx: OrgContext, q: string): Promise<Clie
       .from(c)
       .where(ne(c.status, "archived"))
       .orderBy(
-        sql`(select max(issue_date) from invoices i where i.client_id = ${c.id}) desc nulls last`,
+        sql`(select max(issue_date) from invoices i where i.client_id = clients.id) desc nulls last`,
         desc(c.createdAt),
       )
       .limit(8);
