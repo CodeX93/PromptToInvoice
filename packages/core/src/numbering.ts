@@ -18,7 +18,8 @@ export interface NumberPatternIssue {
 }
 
 export function validateNumberPattern(pattern: string): NumberPatternIssue | null {
-  if (pattern.length === 0 || pattern.length > 40) return { message: "Pattern must be 1–40 characters." };
+  if (pattern.length === 0 || pattern.length > 40)
+    return { message: "Pattern must be 1–40 characters." };
   let seqCount = 0;
   let literal = "";
   let last = 0;
@@ -41,7 +42,8 @@ export function validateNumberPattern(pattern: string): NumberPatternIssue | nul
 
 /** `issueDate` is an ISO calendar date (YYYY-MM-DD); invoices have no time zone. */
 export function formatDocumentNumber(pattern: string, seq: number, issueDate: string): string {
-  if (!Number.isSafeInteger(seq) || seq < 1) throw new RangeError("Sequence must be a positive integer");
+  if (!Number.isSafeInteger(seq) || seq < 1)
+    throw new RangeError("Sequence must be a positive integer");
   const yyyy = issueDate.slice(0, 4);
   const mm = issueDate.slice(5, 7);
   return pattern.replace(TOKEN_RE, (_, token: string, width?: string) => {

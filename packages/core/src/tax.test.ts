@@ -12,7 +12,11 @@ const base: TreatmentInput = {
 
 describe("suggestTaxTreatment", () => {
   it("applies the domestic standard rate", () => {
-    expect(suggestTaxTreatment(base)).toMatchObject({ category: "S", rate: "19", reason: "domestic" });
+    expect(suggestTaxTreatment(base)).toMatchObject({
+      category: "S",
+      rate: "19",
+      reason: "domestic",
+    });
   });
 
   it("uses reverse charge for intra-EU B2B services with a valid VAT ID", () => {
@@ -24,7 +28,9 @@ describe("suggestTaxTreatment", () => {
   });
 
   it("uses K for intra-EU B2B goods", () => {
-    expect(suggestTaxTreatment({ ...base, buyerCountry: "NL", supply: "goods" }).category).toBe("K");
+    expect(suggestTaxTreatment({ ...base, buyerCountry: "NL", supply: "goods" }).category).toBe(
+      "K",
+    );
   });
 
   it("charges seller VAT when the EU buyer has no valid VAT ID", () => {
@@ -41,7 +47,9 @@ describe("suggestTaxTreatment", () => {
   });
 
   it("treats goods to non-EU customers as exports", () => {
-    expect(suggestTaxTreatment({ ...base, buyerCountry: "US", supply: "goods" }).category).toBe("G");
+    expect(suggestTaxTreatment({ ...base, buyerCountry: "US", supply: "goods" }).category).toBe(
+      "G",
+    );
   });
 
   it("respects seller small-business exemption", () => {
@@ -49,14 +57,18 @@ describe("suggestTaxTreatment", () => {
   });
 
   it("does not apply EU rules to non-EU sellers", () => {
-    expect(suggestTaxTreatment({ ...base, sellerCountry: "US", buyerCountry: "DE" })).toMatchObject({
-      category: "O",
-      rate: "0",
-      reason: "non-eu-seller",
-    });
+    expect(suggestTaxTreatment({ ...base, sellerCountry: "US", buyerCountry: "DE" })).toMatchObject(
+      {
+        category: "O",
+        rate: "0",
+        reason: "non-eu-seller",
+      },
+    );
   });
 
   it("uses Finland's 25.5% rate", () => {
-    expect(suggestTaxTreatment({ ...base, sellerCountry: "FI", buyerCountry: "FI" }).rate).toBe("25.5");
+    expect(suggestTaxTreatment({ ...base, sellerCountry: "FI", buyerCountry: "FI" }).rate).toBe(
+      "25.5",
+    );
   });
 });

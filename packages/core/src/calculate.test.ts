@@ -87,7 +87,10 @@ describe("calculate", () => {
   });
 
   it("supports zero-decimal currencies", () => {
-    const r = calculate({ currency: "JPY", lines: [line({ quantity: "3", unitPrice: "333.4", taxRate: "10" })] });
+    const r = calculate({
+      currency: "JPY",
+      lines: [line({ quantity: "3", unitPrice: "333.4", taxRate: "10" })],
+    });
     expect(r.taxExclusive).toBe(1000);
     expect(r.taxTotal).toBe(100);
   });
@@ -106,7 +109,9 @@ describe("calculate", () => {
     [{ quantity: "1.23456" }, /Too many decimal places/],
     [{ unitPrice: "abc" }, /Invalid decimal/],
   ] as const)("rejects invalid line %j", (over, msg) => {
-    expect(() => calculate({ currency: "EUR", lines: [line(over as Partial<LineInput>)] })).toThrow(msg);
+    expect(() => calculate({ currency: "EUR", lines: [line(over as Partial<LineInput>)] })).toThrow(
+      msg,
+    );
   });
 
   it("reports the failing field path", () => {
@@ -140,7 +145,11 @@ describe("calculate", () => {
           fc.array(arbLine, { minLength: 1, maxLength: 25 }),
           fc.integer({ min: 0, max: 100 }),
           (lines, pct) => {
-            const r = calculate({ currency: "EUR", lines, discount: { type: "percent", value: String(pct) } });
+            const r = calculate({
+              currency: "EUR",
+              lines,
+              discount: { type: "percent", value: String(pct) },
+            });
             const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
             expect(sum(r.lines.map((l) => l.net))).toBe(r.lineNetTotal);
             expect(sum(r.breakdown.map((b) => b.discount))).toBe(r.discountTotal);

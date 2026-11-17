@@ -28,7 +28,15 @@ describe("permissions", () => {
   });
 
   it("void invoices allow nothing", () => {
-    for (const a of ["edit", "delete", "issue", "send", "record_payment", "void", "credit"] as const) {
+    for (const a of [
+      "edit",
+      "delete",
+      "issue",
+      "send",
+      "record_payment",
+      "void",
+      "credit",
+    ] as const) {
       expect(can(facts({ status: "void" }), a)).toBe(false);
     }
   });
@@ -39,10 +47,12 @@ describe("permissions", () => {
   });
 
   it("throws a descriptive error", () => {
-    expect(() => assertCan(facts({ status: "paid" }), "edit")).toThrow(LifecycleError);
-    expect(() => assertCan(facts({ status: "paid" }), "record_payment")).toThrow(
-      "Cannot record payment an invoice that is paid.",
-    );
+    expect(() => {
+      assertCan(facts({ status: "paid" }), "edit");
+    }).toThrow(LifecycleError);
+    expect(() => {
+      assertCan(facts({ status: "paid" }), "record_payment");
+    }).toThrow("Cannot record payment an invoice that is paid.");
   });
 });
 

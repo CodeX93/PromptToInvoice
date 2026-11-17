@@ -1,7 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { addressSchema, euVatIdSchema, ibanSchema, invoiceDraftSchema, lineItemSchema } from "./schemas";
+import {
+  addressSchema,
+  euVatIdSchema,
+  ibanSchema,
+  invoiceDraftSchema,
+  lineItemSchema,
+} from "./schemas";
 
-const validLine = { description: "Consulting", quantity: "10", unitPrice: "120", taxCategory: "S", taxRate: "19" };
+const validLine = {
+  description: "Consulting",
+  quantity: "10",
+  unitPrice: "120",
+  taxCategory: "S",
+  taxRate: "19",
+};
 
 describe("schemas", () => {
   it("parses a line item with defaults", () => {

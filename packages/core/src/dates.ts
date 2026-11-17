@@ -16,7 +16,7 @@ export function isIsoDate(value: string): value is IsoDate {
 }
 
 function toUtcMs(date: IsoDate): number {
-  if (!isIsoDate(date)) throw new RangeError(`Invalid ISO date: ${date}`);
+  if (!isIsoDate(date)) throw new RangeError(`Invalid ISO date: ${String(date)}`);
   return Date.parse(`${date}T00:00:00Z`);
 }
 
@@ -27,7 +27,9 @@ export function addDays(date: IsoDate, days: number): IsoDate {
 export function addMonths(date: IsoDate, months: number): IsoDate {
   const [y, m, d] = date.split("-").map(Number) as [number, number, number];
   const target = new Date(Date.UTC(y, m - 1 + months, 1));
-  const lastDay = new Date(Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0)).getUTCDate();
+  const lastDay = new Date(
+    Date.UTC(target.getUTCFullYear(), target.getUTCMonth() + 1, 0),
+  ).getUTCDate();
   target.setUTCDate(Math.min(d, lastDay));
   return target.toISOString().slice(0, 10);
 }
@@ -42,7 +44,12 @@ const tzFormatterCache = new Map<string, Intl.DateTimeFormat>();
 export function todayIn(timeZone: string, now: Date = new Date()): IsoDate {
   let f = tzFormatterCache.get(timeZone);
   if (!f) {
-    f = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" });
+    f = new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
     tzFormatterCache.set(timeZone, f);
   }
   return f.format(now);
@@ -72,7 +79,11 @@ export function agingBucket(dueDate: IsoDate | null, today: IsoDate): AgingBucke
 
 const dateFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
-export function formatDate(date: IsoDate, locale = "en-US", style: "medium" | "long" | "short" = "medium"): string {
+export function formatDate(
+  date: IsoDate,
+  locale = "en-US",
+  style: "medium" | "long" | "short" = "medium",
+): string {
   const key = `${locale}|${style}`;
   let f = dateFormatterCache.get(key);
   if (!f) {

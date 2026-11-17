@@ -47,7 +47,15 @@ export const PLANS: Readonly<Record<PlanId, { name: string; limits: PlanLimits }
       aiDraftsPerMonth: 500,
       businessProfiles: 1,
       includedSeats: 1,
-      features: f("ai_drafts", "all_currencies", "recurring", "reminders", "custom_branding", "einvoice", "remove_branding"),
+      features: f(
+        "ai_drafts",
+        "all_currencies",
+        "recurring",
+        "reminders",
+        "custom_branding",
+        "einvoice",
+        "remove_branding",
+      ),
     },
   },
   business: {
