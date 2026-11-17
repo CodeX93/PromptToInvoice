@@ -27,7 +27,13 @@ export function isZeroRateCategory(category: TaxCategory): boolean {
 
 /** Categories that require an exemption reason on the invoice (EN 16931 BR-E/AE/K/G/O-10). */
 export function requiresExemptionReason(category: TaxCategory): boolean {
-  return category === "E" || category === "AE" || category === "K" || category === "G" || category === "O";
+  return (
+    category === "E" ||
+    category === "AE" ||
+    category === "K" ||
+    category === "G" ||
+    category === "O"
+  );
 }
 
 export const DEFAULT_EXEMPTION_NOTES: Readonly<Partial<Record<TaxCategory, string>>> = {
@@ -77,7 +83,12 @@ export function suggestTaxTreatment(input: TreatmentInput): TaxTreatment {
     return { category: "O", rate: "0", note: null, reason: "non-eu-seller" };
   }
   if (input.sellerVatExempt) {
-    return { category: "E", rate: "0", note: DEFAULT_EXEMPTION_NOTES.E ?? null, reason: "seller-exempt" };
+    return {
+      category: "E",
+      rate: "0",
+      note: DEFAULT_EXEMPTION_NOTES.E ?? null,
+      reason: "seller-exempt",
+    };
   }
   const buyer = input.buyerCountry?.toUpperCase();
   const domestic = { category: "S", rate: seller.standardVatRate, note: null } as const;
@@ -86,7 +97,12 @@ export function suggestTaxTreatment(input: TreatmentInput): TaxTreatment {
   if (isEuCountry(buyer)) {
     if (input.buyerIsBusiness && input.buyerVatIdValid) {
       return input.supply === "goods"
-        ? { category: "K", rate: "0", note: DEFAULT_EXEMPTION_NOTES.K ?? null, reason: "eu-b2b-goods" }
+        ? {
+            category: "K",
+            rate: "0",
+            note: DEFAULT_EXEMPTION_NOTES.K ?? null,
+            reason: "eu-b2b-goods",
+          }
         : {
             category: "AE",
             rate: "0",
@@ -98,11 +114,21 @@ export function suggestTaxTreatment(input: TreatmentInput): TaxTreatment {
   }
 
   if (input.supply === "goods") {
-    return { category: "G", rate: "0", note: DEFAULT_EXEMPTION_NOTES.G ?? null, reason: "export-goods" };
+    return {
+      category: "G",
+      rate: "0",
+      note: DEFAULT_EXEMPTION_NOTES.G ?? null,
+      reason: "export-goods",
+    };
   }
   // B2B services to a non-EU customer: place of supply is the customer's country (Art. 44).
   // B2C services to non-EU customers generally stay taxable at the seller's rate.
   return input.buyerIsBusiness
-    ? { category: "O", rate: "0", note: DEFAULT_EXEMPTION_NOTES.O ?? null, reason: "export-services" }
+    ? {
+        category: "O",
+        rate: "0",
+        note: DEFAULT_EXEMPTION_NOTES.O ?? null,
+        reason: "export-services",
+      }
     : { ...domestic, reason: "eu-b2c" };
 }

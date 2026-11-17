@@ -11,9 +11,18 @@ describe("plans", () => {
   });
 
   it("enforces quotas", () => {
-    expect(checkQuota("starter", "invoicesPerMonth", 4)).toMatchObject({ allowed: true, remaining: 1 });
-    expect(checkQuota("starter", "invoicesPerMonth", 5)).toMatchObject({ allowed: false, remaining: 0 });
-    expect(checkQuota("pro", "invoicesPerMonth", 10_000)).toMatchObject({ allowed: true, limit: null });
+    expect(checkQuota("starter", "invoicesPerMonth", 4)).toMatchObject({
+      allowed: true,
+      remaining: 1,
+    });
+    expect(checkQuota("starter", "invoicesPerMonth", 5)).toMatchObject({
+      allowed: false,
+      remaining: 0,
+    });
+    expect(checkQuota("pro", "invoicesPerMonth", 10_000)).toMatchObject({
+      allowed: true,
+      limit: null,
+    });
   });
 
   it("computes seats", () => {

@@ -24,7 +24,10 @@ const decimal = (maxScale: number, msg = "Enter a valid number.") =>
     .refine((v) => isDecimalString(v, maxScale), msg);
 
 export const quantitySchema = decimal(QUANTITY_SCALE, `Up to ${QUANTITY_SCALE} decimal places.`);
-export const unitPriceSchema = decimal(UNIT_PRICE_SCALE, `Up to ${UNIT_PRICE_SCALE} decimal places.`);
+export const unitPriceSchema = decimal(
+  UNIT_PRICE_SCALE,
+  `Up to ${UNIT_PRICE_SCALE} decimal places.`,
+);
 export const percentSchema = decimal(PERCENT_SCALE).refine((v) => {
   const n = Number(v);
   return n >= 0 && n <= 100;
@@ -62,7 +65,11 @@ export const taxIdSchema = z
   .max(40)
   .transform((v) => (v ? normalizeVatId(v) : v));
 
-export const ibanSchema = z.string().trim().transform(normalizeIban).refine(isValidIban, "Invalid IBAN.");
+export const ibanSchema = z
+  .string()
+  .trim()
+  .transform(normalizeIban)
+  .refine(isValidIban, "Invalid IBAN.");
 export const bicSchema = z
   .string()
   .trim()

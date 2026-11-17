@@ -21,10 +21,7 @@ export interface LineInput {
 }
 
 export type DocumentDiscount =
-  | { type: "percent"; value: string }
-  | { type: "amount"; value: string }
-  | null
-  | undefined;
+  { type: "percent"; value: string } | { type: "amount"; value: string } | null | undefined;
 
 export interface CalculationInput {
   currency: CurrencyCode;
@@ -97,7 +94,10 @@ export function calculate(input: CalculationInput): CalculationResult {
   const exp = minorUnitExponent(currency);
 
   const lines: LineResult[] = new Array<LineResult>(input.lines.length);
-  const groups = new Map<string, { category: TaxCategory; rate: string; rateCoef: bigint; rateScale: number; net: bigint }>();
+  const groups = new Map<
+    string,
+    { category: TaxCategory; rate: string; rateCoef: bigint; rateScale: number; net: bigint }
+  >();
   let lineNetTotal = 0n;
 
   input.lines.forEach((line, i) => {
@@ -107,17 +107,29 @@ export function calculate(input: CalculationInput): CalculationResult {
       ? parseOrThrow(line.discountPercent, PERCENT_SCALE, ["lines", i, "discountPercent"])
       : { coef: 0n, scale: 0 };
     if (disc.coef < 0n || disc.coef > HUNDRED * pow10(disc.scale)) {
-      throw new CalculationError("Line discount must be between 0 and 100%", ["lines", i, "discountPercent"]);
+      throw new CalculationError("Line discount must be between 0 and 100%", [
+        "lines",
+        i,
+        "discountPercent",
+      ]);
     }
     const rate = parseOrThrow(line.taxRate, PERCENT_SCALE, ["lines", i, "taxRate"]);
     if (rate.coef < 0n || rate.coef > HUNDRED * pow10(rate.scale)) {
       throw new CalculationError("Tax rate must be between 0 and 100%", ["lines", i, "taxRate"]);
     }
     if (isZeroRateCategory(line.taxCategory) && rate.coef !== 0n) {
-      throw new CalculationError(`Category ${line.taxCategory} requires a 0% rate`, ["lines", i, "taxRate"]);
+      throw new CalculationError(`Category ${line.taxCategory} requires a 0% rate`, [
+        "lines",
+        i,
+        "taxRate",
+      ]);
     }
     if (line.taxCategory === "S" && rate.coef === 0n) {
-      throw new CalculationError("Standard-rated lines need a rate above 0%", ["lines", i, "taxRate"]);
+      throw new CalculationError("Standard-rated lines need a rate above 0%", [
+        "lines",
+        i,
+        "taxRate",
+      ]);
     }
 
     // gross (in minor units) = qty × price, both scaled.
@@ -127,16 +139,31 @@ export function calculate(input: CalculationInput): CalculationResult {
 
     // net = qty × price × (100 − d) / 100, rounded once to avoid double rounding.
     const keep = HUNDRED * pow10(disc.scale) - disc.coef; // scale: disc.scale, ×100
-    const net = divRound(grossExact * keep * pow10(exp), pow10(productScale + disc.scale) * HUNDRED, mode);
+    const net = divRound(
+      grossExact * keep * pow10(exp),
+      pow10(productScale + disc.scale) * HUNDRED,
+      mode,
+    );
 
-    lines[i] = { gross: toSafeMinor(gross), lineDiscount: toSafeMinor(gross - net), net: toSafeMinor(net) };
+    lines[i] = {
+      gross: toSafeMinor(gross),
+      lineDiscount: toSafeMinor(gross - net),
+      net: toSafeMinor(net),
+    };
     lineNetTotal += net;
 
     const normRate = normalizeRate(rate.coef, rate.scale);
     const key = `${line.taxCategory}|${normRate}`;
     const g = groups.get(key);
     if (g) g.net += net;
-    else groups.set(key, { category: line.taxCategory, rate: normRate, rateCoef: rate.coef, rateScale: rate.scale, net });
+    else
+      groups.set(key, {
+        category: line.taxCategory,
+        rate: normRate,
+        rateCoef: rate.coef,
+        rateScale: rate.scale,
+        net,
+      });
   });
 
   const discountTotal = documentDiscount(input.discount, lineNetTotal, exp, mode);

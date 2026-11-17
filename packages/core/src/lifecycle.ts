@@ -14,7 +14,8 @@
 export const INVOICE_STATUSES = ["draft", "open", "paid", "void"] as const;
 export type InvoiceStatus = (typeof INVOICE_STATUSES)[number];
 
-export type InvoiceAction = "edit" | "delete" | "issue" | "send" | "record_payment" | "void" | "credit";
+export type InvoiceAction =
+  "edit" | "delete" | "issue" | "send" | "record_payment" | "void" | "credit";
 
 export interface LifecycleFacts {
   status: InvoiceStatus;
@@ -33,8 +34,12 @@ const ALLOWED: Readonly<Record<InvoiceStatus, ReadonlySet<InvoiceAction>>> = {
   void: new Set(),
 };
 
-export function can(facts: Pick<LifecycleFacts, "status" | "docType">, action: InvoiceAction): boolean {
-  if (facts.docType === "credit_note" && (action === "credit" || action === "record_payment")) return false;
+export function can(
+  facts: Pick<LifecycleFacts, "status" | "docType">,
+  action: InvoiceAction,
+): boolean {
+  if (facts.docType === "credit_note" && (action === "credit" || action === "record_payment"))
+    return false;
   return ALLOWED[facts.status].has(action);
 }
 
@@ -48,7 +53,10 @@ export class LifecycleError extends Error {
   }
 }
 
-export function assertCan(facts: Pick<LifecycleFacts, "status" | "docType">, action: InvoiceAction): void {
+export function assertCan(
+  facts: Pick<LifecycleFacts, "status" | "docType">,
+  action: InvoiceAction,
+): void {
   if (!can(facts, action)) throw new LifecycleError(facts.status, action);
 }
 
@@ -58,14 +66,7 @@ export function statusAfterPayment(total: number, amountPaid: number): "open" | 
 }
 
 export type DisplayStatus =
-  | "draft"
-  | "issued"
-  | "sent"
-  | "viewed"
-  | "partially_paid"
-  | "overdue"
-  | "paid"
-  | "void";
+  "draft" | "issued" | "sent" | "viewed" | "partially_paid" | "overdue" | "paid" | "void";
 
 /** What the UI shows. `today` is an ISO date in the org's time zone. */
 export function displayStatus(f: LifecycleFacts, today: string): DisplayStatus {

@@ -90,9 +90,10 @@ export function parseEuVatId(raw: string): ParsedVatId | null {
 }
 
 /** ISO 3166-1 alpha-2 codes, used for address pickers. Display names come from Intl. */
-export const COUNTRY_CODES: readonly string[] = (
-  "AD AE AL AR AT AU BA BE BG BR BY CA CH CL CN CO CY CZ DE DK EE EG ES FI FR GB GE GR HK HR HU ID IE IL IN IS IT JP KR KZ LI LT LU LV MA MC MD ME MK MT MX MY NG NL NO NZ PE PH PK PL PT QA RO RS RU SA SE SG SI SK SM TH TR TW UA US UY VN ZA"
-).split(" ");
+export const COUNTRY_CODES: readonly string[] =
+  "AD AE AL AR AT AU BA BE BG BR BY CA CH CL CN CO CY CZ DE DK EE EG ES FI FR GB GE GR HK HR HU ID IE IL IN IS IT JP KR KZ LI LT LU LV MA MC MD ME MK MT MX MY NG NL NO NZ PE PH PK PL PT QA RO RS RU SA SE SG SI SK SM TH TR TW UA US UY VN ZA".split(
+    " ",
+  );
 
 const displayNamesCache = new Map<string, Intl.DisplayNames>();
 
