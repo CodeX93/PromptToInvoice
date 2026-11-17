@@ -10,6 +10,8 @@ import {
   isCurrencyCode,
   isValidIban,
   minorUnitExponent,
+  divRound,
+  pow10,
   normalizeDecimal,
   parseDecimal,
   formatDecimal,
@@ -225,6 +227,15 @@ export function buildDocModel(
           : DEFAULT_EXEMPTION_NOTES[c];
       if (c !== "S" && c !== "Z" && note) taxNotes.push(note);
     }
+  }
+
+  if (inv.fxRate && inv.fxCurrency && isCurrencyCode(inv.fxCurrency) && inv.taxTotal !== 0) {
+    const rate = parseDecimal(inv.fxRate);
+    // Same rounding as every other amount (half-up), never truncation.
+    const taxNational = Number(divRound(BigInt(inv.taxTotal) * rate.coef, pow10(rate.scale), "half-up"));
+    taxNotes.push(
+      `${L.vat} in ${inv.fxCurrency}: ${formatMoney(taxNational, inv.fxCurrency, locale)} (1 ${currency} = ${formatDecimal(normalizeDecimal(rate))} ${inv.fxCurrency}, ECB reference rate).`,
+    );
   }
 
   const remittance = inv.number ?? "";

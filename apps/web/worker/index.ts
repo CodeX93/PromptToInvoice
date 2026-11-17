@@ -13,6 +13,7 @@ import { deliverInvoiceEmail, deliverReminder } from "@/server/services/emails";
 import { findDueReminders } from "@/server/services/reminders";
 import { findDueSchedules, runSchedule } from "@/server/services/recurring";
 import { buildExport } from "@/server/services/data-export";
+import { refreshEcbRates } from "@/server/services/fx";
 
 type Handler<N extends keyof JobPayloads> = (data: JobPayloads[N]) => Promise<void>;
 
@@ -45,6 +46,9 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
   "org.export": async (d) => {
     const r = await buildExport(await systemContext(d.orgId, d.requestedBy));
     logger.info({ orgId: d.orgId, bytes: r.bytes }, "export built");
+  },
+  "fx.refresh": async () => {
+    logger.info({ rates: await refreshEcbRates() }, "ECB rates refreshed");
   },
   "maintenance.purge": async () => {
     logger.info(
@@ -84,6 +88,8 @@ async function main() {
   await b.schedule("reminders.scan", "5 * * * *");
   await b.schedule("recurring.scan", "10 * * * *");
   await b.schedule("maintenance.purge", "30 3 * * *");
+  // ECB publishes around 16:00 CET on TARGET business days.
+  await b.schedule("fx.refresh", "45 15 * * 1-5");
   logger.info("worker started");
 
   const shutdown = async (signal: string) => {
