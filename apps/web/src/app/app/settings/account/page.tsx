@@ -22,7 +22,7 @@ export default async function AccountPage() {
   return (
     <>
       <Section title="Profile" description={ctx.user.email}>
-        <ProfileBasics name={ctx.user.name} timeZone={ctx.user.timeZone} zones={Intl.supportedValuesOf("timeZone")} />
+        <ProfileBasics name={ctx.user.name} timeZone={ctx.user.timeZone} zones={["UTC", ...Intl.supportedValuesOf("timeZone").filter((z) => z !== "UTC")]} />
       </Section>
       <Section title="Password">
         <ChangePassword />
