@@ -12,7 +12,7 @@
     "test": "vitest run",
     "seed": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed.ts",
     "worker": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local worker/index.ts",
-    "build:worker": "esbuild worker/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/worker.mjs --tsconfig=scripts/tsconfig.json --packages=external --alias:server-only=./test/server-only.ts"
+    "build:worker": "node scripts/bundle.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
@@ -34,12 +34,14 @@
     "@radix-ui/react-tooltip": "^1.4.1",
     "better-auth": "^1.7.25",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.4",
     "fflate": "^0.8.3",
     "next": "^16.4.6",
     "nodemailer": "^10.6.0",
     "pdfkit": "^0.20.2",
     "pg-boss": "^12.38.2",
     "pino": "^10.4.0",
+    "postgres": "^4.1.1",
     "qrcode": "^1.5.4",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
@@ -47,6 +49,7 @@
     "sharp": "^0.35.5",
     "stripe": "^23.1.0",
     "tailwind-merge": "^3.7.0",
+    "uuidv7": "^1.2.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
