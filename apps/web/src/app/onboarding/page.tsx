@@ -5,6 +5,7 @@ import { Wordmark } from "@/components/brand/wordmark";
 import { requireUser } from "@/server/session";
 import { sysDb } from "@/server/db";
 import { eq, schema } from "@pti/db";
+import { COUNTRY_CODES, countryName } from "@pti/core";
 import { guessCountry } from "@/lib/locale-defaults";
 import { safeNext } from "@/lib/safe-redirect";
 import { OnboardingForm } from "./onboarding-form";
@@ -28,7 +29,12 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
         later.
       </p>
       <div className="mt-12">
-        <OnboardingForm defaultName={user.name} defaultCountry={country} next={safeNext(next, "/app?welcome=1")} />
+        <OnboardingForm
+          defaultName={user.name}
+          defaultCountry={country}
+          next={safeNext(next, "/app?welcome=1")}
+          countries={COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) => a.name.localeCompare(b.name))}
+        />
       </div>
     </div>
   );
