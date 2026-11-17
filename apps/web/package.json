@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "seed": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1170.0",
@@ -52,6 +53,7 @@
     "eslint": "^10.15.0",
     "postcss": "^8.5.33",
     "tailwindcss": "^4.3.5",
+    "tsx": "^4.23.15",
     "vitest": "^5.1.0"
   }
 }
