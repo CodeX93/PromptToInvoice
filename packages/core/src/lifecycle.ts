@@ -22,6 +22,8 @@ export interface LifecycleFacts {
   docType: "invoice" | "credit_note";
   total: number;
   amountPaid: number;
+  /** Sum of issued credit notes against the invoice. */
+  creditedAmount?: number;
   dueDate: string | null;
   sentAt: Date | string | null;
   viewedAt: Date | string | null;
@@ -61,8 +63,8 @@ export function assertCan(
 }
 
 /** Status after a payment (or refund) changes the paid amount. */
-export function statusAfterPayment(total: number, amountPaid: number): "open" | "paid" {
-  return total > 0 && amountPaid >= total ? "paid" : "open";
+export function statusAfterPayment(total: number, amountPaid: number, creditedAmount = 0): "open" | "paid" {
+  return total > 0 && amountPaid + creditedAmount >= total ? "paid" : "open";
 }
 
 export type DisplayStatus =
@@ -79,7 +81,7 @@ export function displayStatus(f: LifecycleFacts, today: string): DisplayStatus {
       return "paid";
     case "open":
       if (f.dueDate !== null && f.dueDate < today && f.docType === "invoice") return "overdue";
-      if (f.amountPaid > 0) return "partially_paid";
+      if (f.amountPaid > 0 || (f.creditedAmount ?? 0) > 0) return "partially_paid";
       if (f.viewedAt) return "viewed";
       if (f.sentAt) return "sent";
       return "issued";
@@ -97,7 +99,9 @@ export const DISPLAY_STATUS_LABEL: Readonly<Record<DisplayStatus, string>> = {
   void: "Void",
 };
 
-export function amountDue(f: Pick<LifecycleFacts, "total" | "amountPaid" | "status">): number {
+export function amountDue(
+  f: Pick<LifecycleFacts, "total" | "amountPaid" | "status" | "creditedAmount">,
+): number {
   if (f.status === "void" || f.status === "draft") return 0;
-  return Math.max(0, f.total - f.amountPaid);
+  return Math.max(0, f.total - f.amountPaid - (f.creditedAmount ?? 0));
 }

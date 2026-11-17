@@ -86,5 +86,7 @@ describe("payments", () => {
     expect(amountDue(facts({ amountPaid: 2500 }))).toBe(7500);
     expect(amountDue(facts({ amountPaid: 20000 }))).toBe(0);
     expect(amountDue(facts({ status: "void" }))).toBe(0);
+    expect(amountDue(facts({ amountPaid: 2500, creditedAmount: 2500 }))).toBe(5000);
+    expect(statusAfterPayment(100, 60, 40)).toBe("paid");
   });
 });
