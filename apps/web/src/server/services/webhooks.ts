@@ -16,6 +16,7 @@ import {
 import { db, sysDb } from "../db";
 import { audit } from "../audit";
 import { decrypt, encrypt } from "../crypto";
+import { isPublicAddress, pinnedPost, type Poster } from "../net/egress";
 import { NotFound, ValidationError } from "../errors";
 import { logger } from "../logger";
 import { authorize, type OrgContext } from "../session";
@@ -23,34 +24,6 @@ import { enqueue } from "../jobs/queue";
 
 const MAX_ATTEMPTS = 8;
 const DISABLE_AFTER_FAILURES = 50;
-
-/** Block private, loopback, link-local and metadata ranges (SSRF). */
-export function isPrivateAddress(ip: string): boolean {
-  if (isIP(ip) === 6) {
-    const v = ip.toLowerCase();
-    if (
-      v === "::1" ||
-      v === "::" ||
-      v.startsWith("fc") ||
-      v.startsWith("fd") ||
-      v.startsWith("fe80")
-    )
-      return true;
-    const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/.exec(v);
-    return mapped?.[1] ? isPrivateAddress(mapped[1]) : false;
-  }
-  const [a = 0, b = 0] = ip.split(".").map(Number);
-  return (
-    a === 10 ||
-    a === 127 ||
-    a === 0 ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    a >= 224
-  );
-}
 
 export async function assertPublicUrl(raw: string): Promise<URL> {
   let u: URL;
@@ -71,7 +44,7 @@ export async function assertPublicUrl(raw: string): Promise<URL> {
     : await lookup(host, { all: true }).catch(() => []);
   if (addrs.length === 0)
     throw new ValidationError("That host doesn't resolve.", { url: ["Unknown host."] });
-  if (addrs.some((a) => isPrivateAddress(a.address)))
+  if (addrs.some((a) => !isPublicAddress(a.address)))
     throw new ValidationError("Webhook URLs must point to a public address.", {
       url: ["Private address."],
     });
@@ -228,7 +201,7 @@ export function sign(secret: string, body: string, t = Math.floor(Date.now() / 1
 }
 
 /** Worker: POST one delivery. Throws on failure so the queue retries with backoff. */
-export async function deliver(deliveryId: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+export async function deliver(deliveryId: string, post: Poster = pinnedPost): Promise<void> {
   const [d] = await sysDb
     .select({
       d: schema.webhookDeliveries,
@@ -250,9 +223,8 @@ export async function deliver(deliveryId: string, fetchImpl: typeof fetch = fetc
   let error: string | null = null;
   try {
     await assertPublicUrl(d.url); // re-check at send time (DNS may have changed)
-    const res = await fetchImpl(d.url, {
-      method: "POST",
-      redirect: "manual",
+    // Connection is pinned to vetted public addresses (no DNS-rebinding window).
+    const res = await post(d.url, {
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "PromptToInvoice-Webhooks/1",
@@ -261,7 +233,7 @@ export async function deliver(deliveryId: string, fetchImpl: typeof fetch = fetc
         "PTI-Delivery": deliveryId,
       },
       body,
-      signal: AbortSignal.timeout(10_000),
+      timeoutMs: 10_000,
     });
     status = res.status;
     if (res.status < 200 || res.status >= 300) error = `HTTP ${res.status}`;
