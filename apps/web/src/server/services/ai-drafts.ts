@@ -230,3 +230,31 @@ export async function aiMarksFor(ctx: OrgContext, aiDraftId: string | null, vers
   const o = row?.output as { aiFields?: string[]; notes?: string[] } | null | undefined;
   return o ? { fields: o.aiFields ?? [], notes: o.notes ?? [] } : null;
 }
+
+/**
+ * Quality telemetry: when an AI-drafted invoice is issued, record which of
+ * the AI-filled values the person changed. The per-field edit rate is the
+ * production signal for prompt/model quality (see docs/ai.md).
+ */
+export async function recordAiOutcome(ctx: OrgContext, invoiceId: string): Promise<void> {
+  await withOrg(db, ctx.org.id, async (tx) => {
+    const [inv] = await tx.select().from(schema.invoices).where(eq(schema.invoices.id, invoiceId));
+    if (!inv?.aiDraftId) return;
+    const [draft] = await tx.select().from(schema.aiDrafts).where(eq(schema.aiDrafts.id, inv.aiDraftId));
+    const raw = (draft?.output as { raw?: { lines?: { description: string; quantity: string; unitPrice: string | null }[]; currency?: string | null } } | null)?.raw;
+    if (!draft || !raw) return;
+    const lines = await tx.select().from(schema.invoiceLines).where(eq(schema.invoiceLines.invoiceId, invoiceId)).orderBy(schema.invoiceLines.position);
+    const edited: string[] = [];
+    const same = (a: string | null | undefined, b: string | null | undefined) => a != null && b != null && Number(a) === Number(b);
+    (raw.lines ?? []).forEach((l, i) => {
+      const f = lines[i];
+      if (!f) return edited.push(`lines.${i}`);
+      if (f.description.trim() !== l.description.trim()) edited.push(`lines.${i}.description`);
+      if (!same(f.quantity, l.quantity)) edited.push(`lines.${i}.quantity`);
+      if (l.unitPrice !== null && !same(f.unitPrice, l.unitPrice)) edited.push(`lines.${i}.unitPrice`);
+    });
+    if (lines.length > (raw.lines?.length ?? 0)) edited.push("lines.added");
+    if (raw.currency && raw.currency.toUpperCase() !== inv.currency) edited.push("currency");
+    await tx.update(schema.aiDrafts).set({ editedFields: edited }).where(eq(schema.aiDrafts.id, draft.id));
+  });
+}

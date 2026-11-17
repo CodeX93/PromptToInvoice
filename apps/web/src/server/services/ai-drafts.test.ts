@@ -2,7 +2,7 @@ import { afterAll, afterEach, describe, expect, it } from "vitest";
 import type { DraftOutput, ExtractResult } from "@pti/ai";
 import { eq, schema } from "@pti/db";
 import { dbs, orgContext } from "../../../test/fixtures";
-import { aiMarksFor, createAiDraft, setExtractorForTests } from "./ai-drafts";
+import { aiMarksFor, createAiDraft, recordAiOutcome, setExtractorForTests } from "./ai-drafts";
 import { getInvoice, issueInvoice, saveDraft } from "./invoices";
 
 afterAll(() => dbs.close());
@@ -103,6 +103,17 @@ describe("AI drafts", () => {
     await dbs.system.update(schema.usageCounters).set({ aiDrafts: 20 }).where(eq(schema.usageCounters.orgId, ctx.org.id));
     script(() => ({ lines: [{ description: "x", quantity: "1", unit: null, unitPrice: "1", discountPercent: null, taxHint: null }] }));
     await expect(createAiDraft(ctx, "one too many")).rejects.toThrow(/all 20 AI drafts/);
+  });
+
+  it("records which AI values were edited before issue", async () => {
+    const { ctx, seed, clientId } = await orgContext();
+    script(({ clients }) => ({ client: { matchedClientId: clients[0]?.id ?? null, name: "Acme GmbH", email: null, country: null, vatId: null }, currency: "EUR", lines: [{ description: "Design", quantity: "2", unit: "days", unitPrice: "800", discountPercent: null, taxHint: null }] }));
+    const { invoiceId, aiDraftId } = await createAiDraft(ctx, "2 days design for acme at 800");
+    await saveDraft(ctx, invoiceId, { businessProfileId: seed.profile.id, clientId, currency: "EUR", issueDate: "2026-11-17", lines: [{ description: "Design", quantity: "2", unit: "days", unitPrice: "850", taxCategory: "S", taxRate: "19" }] });
+    await issueInvoice(ctx, invoiceId);
+    await recordAiOutcome(ctx, invoiceId);
+    const [row] = await dbs.system.select().from(schema.aiDrafts).where(eq(schema.aiDrafts.id, aiDraftId));
+    expect(row?.editedFields).toEqual(["lines.0.unitPrice"]);
   });
 
   it("hides AI marks once a person has saved the draft", async () => {

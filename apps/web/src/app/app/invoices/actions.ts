@@ -9,6 +9,7 @@ import { run, type ActionResult } from "@/server/action";
 import { ValidationError } from "@/server/errors";
 import { logger } from "@/server/logger";
 import { archivePdf } from "@/server/documents/service";
+import { recordAiOutcome } from "@/server/services/ai-drafts";
 import {
   deleteDraft,
   draftCreditNote,
@@ -44,6 +45,7 @@ export async function issueInvoiceAction(id: string): Promise<ActionResult<{ num
     const ctx = await orgContextOrThrow();
     const r = await issueInvoice(ctx, idSchema.parse(id));
     after(async () => {
+      await recordAiOutcome(ctx, id).catch((err: unknown) => logger.warn({ err, invoiceId: id }, "AI outcome not recorded"));
       try {
         await archivePdf(ctx, id);
       } catch (err) {
