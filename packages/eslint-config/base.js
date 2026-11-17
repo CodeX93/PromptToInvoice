@@ -10,7 +10,7 @@ export default tseslint.config(
   {
     languageOptions: {
       parserOptions: {
-        projectService: { allowDefaultProject: ["*.js", "*.mjs", "*.config.ts"] },
+        projectService: { allowDefaultProject: ["*.js", "*.mjs"] },
       },
     },
     plugins: { "import-x": importX },
