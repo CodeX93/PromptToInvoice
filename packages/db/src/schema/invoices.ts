@@ -118,10 +118,7 @@ export const invoices = pgTable(
     index("invoices_corrects_idx").on(t.correctsInvoiceId),
     index("invoices_number_trgm_idx").using("gin", sql`${t.number} gin_trgm_ops`),
     check("invoices_status_chk", sql`${t.status} in ('draft','open','paid','void')`),
-    check(
-      "invoices_issued_has_number_chk",
-      sql`(${t.status} = 'draft') = (${t.number} is null)`,
-    ),
+    check("invoices_issued_has_number_chk", sql`(${t.status} = 'draft') = (${t.number} is null)`),
     check("invoices_paid_nonneg_chk", sql`${t.amountPaid} >= 0`),
   ],
 );
@@ -145,7 +142,9 @@ export const invoiceLines = pgTable(
     gross: money("gross").notNull(),
     lineDiscount: money("line_discount").notNull(),
     net: money("net").notNull(),
-    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, { onDelete: "set null" }),
+    catalogItemId: uuid("catalog_item_id").references(() => catalogItems.id, {
+      onDelete: "set null",
+    }),
   },
   (t) => [uniqueIndex("invoice_lines_position_uq").on(t.invoiceId, t.position)],
 );
@@ -230,7 +229,10 @@ export const recurringSchedules = pgTable(
     nextRunOn: date("next_run_on").notNull(),
     endsOn: date("ends_on"),
     remainingRuns: integer("remaining_runs"),
-    autoIssue: text("auto_issue").$type<"draft" | "issue" | "issue_and_send">().notNull().default("issue_and_send"),
+    autoIssue: text("auto_issue")
+      .$type<"draft" | "issue" | "issue_and_send">()
+      .notNull()
+      .default("issue_and_send"),
     status: text("status").$type<"active" | "paused" | "ended">().notNull().default("active"),
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     lastInvoiceId: uuid("last_invoice_id"),
@@ -239,7 +241,9 @@ export const recurringSchedules = pgTable(
     updatedAt: updatedAt(),
   },
   (t) => [
-    index("recurring_due_idx").on(t.nextRunOn).where(sql`${t.status} = 'active'`),
+    index("recurring_due_idx")
+      .on(t.nextRunOn)
+      .where(sql`${t.status} = 'active'`),
     index("recurring_org_idx").on(t.orgId),
     check("recurring_interval_chk", sql`${t.intervalCount} between 1 and 36`),
   ],

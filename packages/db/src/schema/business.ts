@@ -91,7 +91,10 @@ export const numberSeries = pgTable(
       .references(() => businessProfiles.id, { onDelete: "cascade" }),
     docType: text("doc_type").$type<DocType>().notNull(),
     pattern: text("pattern").notNull(),
-    resetPolicy: text("reset_policy").$type<"never" | "yearly" | "monthly">().notNull().default("yearly"),
+    resetPolicy: text("reset_policy")
+      .$type<"never" | "yearly" | "monthly">()
+      .notNull()
+      .default("yearly"),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -127,7 +130,10 @@ export const clients = pgTable(
     name: text("name").notNull(),
     /** Primary contact person, printed as "Attn:". */
     contactName: text("contact_name"),
-    emails: text("emails").array().notNull().default(sql`'{}'::text[]`),
+    emails: text("emails")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     phone: text("phone"),
     address: jsonb("address").$type<Address>(),
     isBusiness: boolean("is_business").notNull().default(true),

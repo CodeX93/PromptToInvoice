@@ -38,7 +38,11 @@ export function createDb(opts: CreateDbOptions): { db: Database; client: postgre
  * set_config(..., true)) confines the setting to this transaction, which is
  * safe with connection pooling; RLS policies read it through app_current_org().
  */
-export async function withOrg<T>(db: Database, orgId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export async function withOrg<T>(
+  db: Database,
+  orgId: string,
+  fn: (tx: Tx) => Promise<T>,
+): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(sql`select set_config('app.org_id', ${orgId}, true)`);
     return fn(tx);
@@ -83,8 +87,20 @@ export async function retryTx<T>(fn: () => Promise<T>, attempts = 3): Promise<T>
       return await fn();
     } catch (err) {
       const code = pgErrorCode(err);
-      if (i >= attempts || (code !== PG.serializationFailure && code !== PG.deadlockDetected)) throw err;
+      if (i >= attempts || (code !== PG.serializationFailure && code !== PG.deadlockDetected))
+        throw err;
       await new Promise((r) => setTimeout(r, 10 * 2 ** i + Math.random() * 10));
     }
   }
+}
+
+export class NotFoundError extends Error {
+  override readonly name = "NotFoundError";
+}
+
+/** First row of a result, or throw. Pairs with `.returning()` and single-row lookups. */
+export function one<T>(rows: readonly T[], what = "row"): T {
+  const row = rows[0];
+  if (row === undefined) throw new NotFoundError(`${what} not found`);
+  return row;
 }

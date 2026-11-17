@@ -23,7 +23,9 @@ export const files = pgTable(
   {
     id: id(),
     orgId: orgId(),
-    kind: text("kind").$type<"logo" | "invoice_pdf" | "einvoice_xml" | "export" | "attachment">().notNull(),
+    kind: text("kind")
+      .$type<"logo" | "invoice_pdf" | "einvoice_xml" | "export" | "attachment">()
+      .notNull(),
     storageKey: text("storage_key").notNull(),
     contentType: text("content_type").notNull(),
     size: bigint("size", { mode: "number" }).notNull(),
@@ -33,7 +35,10 @@ export const files = pgTable(
     retainUntil: timestamp("retain_until", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [uniqueIndex("files_storage_key_uq").on(t.storageKey), index("files_org_kind_idx").on(t.orgId, t.kind)],
+  (t) => [
+    uniqueIndex("files_storage_key_uq").on(t.storageKey),
+    index("files_org_kind_idx").on(t.orgId, t.kind),
+  ],
 );
 
 /** Outbound email log with provider delivery status. */
@@ -45,7 +50,10 @@ export const emailMessages = pgTable(
     invoiceId: uuid("invoice_id").references(() => invoices.id, { onDelete: "set null" }),
     kind: text("kind").$type<"invoice" | "reminder" | "receipt" | "credit_note">().notNull(),
     to: text("to").array().notNull(),
-    cc: text("cc").array().notNull().default(sql`'{}'::text[]`),
+    cc: text("cc")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     subject: text("subject").notNull(),
     provider: text("provider").notNull(),
     providerMessageId: text("provider_message_id"),
@@ -71,7 +79,10 @@ export const auditLog = pgTable(
     id: id(),
     orgId: uuid("org_id"),
     actorId: uuid("actor_id"),
-    actorType: text("actor_type").$type<"user" | "system" | "api_key" | "webhook">().notNull().default("user"),
+    actorType: text("actor_type")
+      .$type<"user" | "system" | "api_key" | "webhook">()
+      .notNull()
+      .default("user"),
     action: text("action").notNull(),
     entityType: text("entity_type").notNull(),
     entityId: text("entity_id"),

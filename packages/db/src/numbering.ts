@@ -18,7 +18,13 @@ export interface AllocatedNumber {
  */
 export async function allocateNumber(
   tx: Tx,
-  args: { orgId: string; seriesId: string; pattern: string; resetPolicy: ResetPolicy; issueDate: string },
+  args: {
+    orgId: string;
+    seriesId: string;
+    pattern: string;
+    resetPolicy: ResetPolicy;
+    issueDate: string;
+  },
 ): Promise<AllocatedNumber> {
   const periodKey = resetPeriodKey(args.resetPolicy, args.issueDate);
   const rows = await tx.execute<{ last_value: string | number }>(sql`
@@ -30,5 +36,9 @@ export async function allocateNumber(
   `);
   const sequence = Number(rows[0]?.last_value);
   if (!Number.isSafeInteger(sequence) || sequence < 1) throw new Error("Counter allocation failed");
-  return { number: formatDocumentNumber(args.pattern, sequence, args.issueDate), sequence, periodKey };
+  return {
+    number: formatDocumentNumber(args.pattern, sequence, args.issueDate),
+    sequence,
+    periodKey,
+  };
 }
