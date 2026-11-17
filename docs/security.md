@@ -2,16 +2,16 @@
 
 ## Threat model (summary)
 
-| Asset                             | Main threats                                         | Primary controls                                                                                                                                      |
-| --------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tenant data (clients, invoices)   | Cross-tenant reads/writes, IDOR                      | Postgres RLS (`FORCE`, `tenant_isolation`) on every `org_id` table; app role can't bypass it; `sysDb` (BYPASSRLS) used only with explicit org filters |
-| Accounts                          | Credential stuffing, mailbox takeover, session theft | Argon2 hashes, per-IP limits, TOTP enforced on **every** sign-in path, httpOnly/secure cookies, session re-validation per request                     |
-| Issued documents                  | Tampering, deletion                                  | DB triggers make issued invoices/lines/payments immutable; deletion only via the retention purge                                                      |
-| Money                             | Forged payment confirmations                         | Stripe signature + timestamp, event-id dedupe, PaymentIntent uniqueness, events bound to the invoice's own connected account                          |
-| Bank details, webhook/API secrets | Disclosure at rest or in logs                        | AES-GCM at the application layer with per-record AAD, logger redaction, API keys stored as SHA-256 only                                               |
-| Infrastructure                    | SSRF via outbound webhooks                           | https-only, range-based egress policy (incl. IPv4-in-IPv6 forms), connection pinned to vetted addresses, no redirects                                 |
-| Rate limits                       | Bypass via spoofed `X-Forwarded-For`                 | Right-to-left resolution past `TRUSTED_PROXIES`; IPv6 bucketed to /64                                                                                 |
-| Browser                           | XSS, clickjacking, open redirect                     | Per-request nonce CSP with `strict-dynamic`, `frame-ancestors 'none'`, escaped templates, normalised redirect validation                              |
+| Asset                             | Main threats                                         | Primary controls                                                                                                                                                              |
+| --------------------------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tenant data (clients, invoices)   | Cross-tenant reads/writes, IDOR                      | Postgres RLS (`FORCE`, `tenant_isolation`) on every `org_id` table; app role can't bypass it; `sysDb` (BYPASSRLS) used only with explicit org filters                         |
+| Accounts                          | Credential stuffing, mailbox takeover, session theft | scrypt password hashes (memory-hard, Better Auth default), per-IP limits, TOTP enforced on **every** sign-in path, httpOnly/secure cookies, session re-validation per request |
+| Issued documents                  | Tampering, deletion                                  | DB triggers make issued invoices/lines/payments immutable; deletion only via the retention purge                                                                              |
+| Money                             | Forged payment confirmations                         | Stripe signature + timestamp, event-id dedupe, PaymentIntent uniqueness, events bound to the invoice's own connected account                                                  |
+| Bank details, webhook/API secrets | Disclosure at rest or in logs                        | AES-GCM at the application layer with per-record AAD, logger redaction, API keys stored as SHA-256 only                                                                       |
+| Infrastructure                    | SSRF via outbound webhooks                           | https-only, range-based egress policy (incl. IPv4-in-IPv6 forms), connection pinned to vetted addresses, no redirects                                                         |
+| Rate limits                       | Bypass via spoofed `X-Forwarded-For`                 | Right-to-left resolution past `TRUSTED_PROXIES`; IPv6 bucketed to /64                                                                                                         |
+| Browser                           | XSS, clickjacking, open redirect                     | Per-request nonce CSP with `strict-dynamic`, `frame-ancestors 'none'`, escaped templates, normalised redirect validation                                                      |
 
 ## Review log
 
