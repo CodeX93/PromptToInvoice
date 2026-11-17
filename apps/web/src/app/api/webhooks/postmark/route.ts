@@ -48,14 +48,12 @@ export async function POST(req: Request) {
     )
     .returning({ orgId: schema.emailMessages.orgId, invoiceId: schema.emailMessages.invoiceId });
   if (msg?.invoiceId && (e.RecordType === "Bounce" || e.RecordType === "SpamComplaint")) {
-    await sysDb
-      .insert(schema.invoiceEvents)
-      .values({
-        orgId: msg.orgId,
-        invoiceId: msg.invoiceId,
-        type: "email_bounced",
-        data: { recipient: e.Email ?? e.Recipient ?? null, reason: e.Description ?? e.RecordType },
-      });
+    await sysDb.insert(schema.invoiceEvents).values({
+      orgId: msg.orgId,
+      invoiceId: msg.invoiceId,
+      type: "email_bounced",
+      data: { recipient: e.Email ?? e.Recipient ?? null, reason: e.Description ?? e.RecordType },
+    });
     logger.warn({ invoiceId: msg.invoiceId, type: e.RecordType }, "invoice email not delivered");
   }
   return Response.json({ ok: true });

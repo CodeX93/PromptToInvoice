@@ -304,7 +304,10 @@ export async function saveDraft(
   const input = parsed.data;
   const currency = cur(input.currency);
   if (!hasFeature(ctx.org.plan, "all_currencies") && !BASE_CURRENCIES.includes(currency)) {
-    throw new QuotaExceededError(`Invoicing in ${currency} is part of the Professional plan. Starter supports USD and EUR.`, { feature: "all_currencies" });
+    throw new QuotaExceededError(
+      `Invoicing in ${currency} is part of the Professional plan. Starter supports USD and EUR.`,
+      { feature: "all_currencies" },
+    );
   }
   const docType = opts.docType ?? "invoice";
   const calc = calculate(toCalcInput(currency, input.lines, input.discount));

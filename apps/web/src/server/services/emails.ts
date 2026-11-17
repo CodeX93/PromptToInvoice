@@ -179,15 +179,13 @@ export async function deliverInvoiceEmail(
         .update(schema.invoices)
         .set({ sentAt: sql`coalesce(${schema.invoices.sentAt}, now())` })
         .where(eq(schema.invoices.id, p.invoiceId));
-      await tx
-        .insert(schema.invoiceEvents)
-        .values({
-          orgId: ctx.org.id,
-          invoiceId: p.invoiceId,
-          type: "sent",
-          actorId: ctx.user.id,
-          data: { to: p.to, cc: p.cc, emailId: p.emailId },
-        });
+      await tx.insert(schema.invoiceEvents).values({
+        orgId: ctx.org.id,
+        invoiceId: p.invoiceId,
+        type: "sent",
+        actorId: ctx.user.id,
+        data: { to: p.to, cc: p.cc, emailId: p.emailId },
+      });
       await consume(tx, ctx.org.id, ctx.org.plan, "emails_sent");
     });
   } catch (err) {
@@ -236,19 +234,17 @@ export async function deliverReminder(
     tag: "reminder",
   });
   await withOrg(db, ctx.org.id, async (tx) => {
-    await tx
-      .insert(schema.emailMessages)
-      .values({
-        orgId: ctx.org.id,
-        invoiceId,
-        kind: "reminder",
-        to,
-        subject: t.subject,
-        provider: res.provider,
-        providerMessageId: res.providerMessageId,
-        status: "sent",
-        sentBy: null,
-      });
+    await tx.insert(schema.emailMessages).values({
+      orgId: ctx.org.id,
+      invoiceId,
+      kind: "reminder",
+      to,
+      subject: t.subject,
+      provider: res.provider,
+      providerMessageId: res.providerMessageId,
+      status: "sent",
+      sentBy: null,
+    });
     await tx
       .update(schema.invoices)
       .set({ lastReminderAt: new Date(), reminderCount: sql`${schema.invoices.reminderCount} + 1` })
@@ -292,14 +288,12 @@ export async function markSent(ctx: OrgContext, invoiceId: string): Promise<void
       .update(schema.invoices)
       .set({ sentAt: sql`coalesce(${schema.invoices.sentAt}, now())` })
       .where(eq(schema.invoices.id, invoiceId));
-    await tx
-      .insert(schema.invoiceEvents)
-      .values({
-        orgId: ctx.org.id,
-        invoiceId,
-        type: "sent",
-        actorId: ctx.user.id,
-        data: { manual: true },
-      });
+    await tx.insert(schema.invoiceEvents).values({
+      orgId: ctx.org.id,
+      invoiceId,
+      type: "sent",
+      actorId: ctx.user.id,
+      data: { manual: true },
+    });
   });
 }

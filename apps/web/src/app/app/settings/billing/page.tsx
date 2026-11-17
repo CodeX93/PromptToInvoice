@@ -26,7 +26,13 @@ function Meter({ label, used, limit }: { label: string; used: number; limit: num
         </span>
       </div>
       <div className="bg-rule mt-1.5 h-px">
-        <div className={cn("h-[3px] -translate-y-px", pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-ink")} style={{ width: `${limit === null ? 0 : pct}%` }} />
+        <div
+          className={cn(
+            "h-[3px] -translate-y-px",
+            pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-ink",
+          )}
+          style={{ width: `${limit === null ? 0 : pct}%` }}
+        />
       </div>
     </div>
   );
@@ -34,8 +40,21 @@ function Meter({ label, used, limit }: { label: string; used: number; limit: num
 
 const FEATURES: Partial<Record<PlanId, string[]>> = {
   starter: ["5 invoices / month", "20 AI drafts / month", "USD & EUR", "Online payments"],
-  pro: ["Unlimited invoices", "500 AI drafts / month", "All currencies", "Reminders & recurring", "E-invoices (ZUGFeRD, XRechnung)", "Your branding"],
-  business: ["Everything in Pro", "5 business profiles", "3 seats included", "Advanced reports", "2,000 AI drafts / month"],
+  pro: [
+    "Unlimited invoices",
+    "500 AI drafts / month",
+    "All currencies",
+    "Reminders & recurring",
+    "E-invoices (ZUGFeRD, XRechnung)",
+    "Your branding",
+  ],
+  business: [
+    "Everything in Pro",
+    "5 business profiles",
+    "3 seats included",
+    "Advanced reports",
+    "2,000 AI drafts / month",
+  ],
   enterprise: ["Everything in Business", "API & webhooks", "SSO", "SLA & onboarding"],
 };
 
@@ -70,12 +89,32 @@ export default async function BillingPage(props: PageProps<"/app/settings/billin
         }
       >
         <p className="font-serif text-3xl">{PLANS[plan].name}</p>
-        {sp.upgraded === "1" ? <p className="text-positive mt-2 text-sm">Thanks! Your plan updates as soon as Stripe confirms it.</p> : null}
+        {sp.upgraded === "1" ? (
+          <p className="text-positive mt-2 text-sm">
+            Thanks! Your plan updates as soon as Stripe confirms it.
+          </p>
+        ) : null}
         <div className="mt-6 grid gap-5 sm:grid-cols-2">
-          <Meter label="Invoices issued this month" used={usage.invoicesIssued} limit={limits.invoicesPerMonth} />
-          <Meter label="AI drafts this month" used={usage.aiDrafts} limit={limits.aiDraftsPerMonth} />
-          <Meter label="Seats" used={counts[0]?.seats ?? 1} limit={seatLimit(plan, sub?.extraSeats ?? 0)} />
-          <Meter label="Business profiles" used={counts[0]?.profiles ?? 1} limit={limits.businessProfiles} />
+          <Meter
+            label="Invoices issued this month"
+            used={usage.invoicesIssued}
+            limit={limits.invoicesPerMonth}
+          />
+          <Meter
+            label="AI drafts this month"
+            used={usage.aiDrafts}
+            limit={limits.aiDraftsPerMonth}
+          />
+          <Meter
+            label="Seats"
+            used={counts[0]?.seats ?? 1}
+            limit={seatLimit(plan, sub?.extraSeats ?? 0)}
+          />
+          <Meter
+            label="Business profiles"
+            used={counts[0]?.profiles ?? 1}
+            limit={limits.businessProfiles}
+          />
         </div>
         {sub && canManage && features.billing ? (
           <form action={manageBilling} className="mt-6">
@@ -86,10 +125,20 @@ export default async function BillingPage(props: PageProps<"/app/settings/billin
         ) : null}
       </Section>
 
-      <Section title="Plans" description="Prices exclude VAT where applicable. Cancel any time; you keep your invoices and data.">
+      <Section
+        title="Plans"
+        description="Prices exclude VAT where applicable. Cancel any time; you keep your invoices and data."
+      >
         <div className="mb-5 flex gap-4 text-[13px]">
           {(["month", "year"] as const).map((i) => (
-            <Link key={i} href={`/app/settings/billing?interval=${i}` as Route} className={cn("border-b pb-0.5", interval === i ? "border-ink text-ink" : "text-ink-3 border-transparent")}>
+            <Link
+              key={i}
+              href={`/app/settings/billing?interval=${i}` as Route}
+              className={cn(
+                "border-b pb-0.5",
+                interval === i ? "border-ink text-ink" : "text-ink-3 border-transparent",
+              )}
+            >
               {i === "month" ? "Monthly" : "Yearly · 2 months free"}
             </Link>
           ))}
@@ -99,7 +148,13 @@ export default async function BillingPage(props: PageProps<"/app/settings/billin
             const price = p === "pro" || p === "business" ? PLAN_PRICES[p][interval] : null;
             const current = p === plan;
             return (
-              <div key={p} className={cn("border-rule flex flex-col gap-3 border-b p-5 sm:border-r", current && "bg-paper-raised")}>
+              <div
+                key={p}
+                className={cn(
+                  "border-rule flex flex-col gap-3 border-b p-5 sm:border-r",
+                  current && "bg-paper-raised",
+                )}
+              >
                 <div>
                   <p className="font-serif text-xl">{PLANS[p].name}</p>
                   <p className="text-ink-3 text-xs">{PLAN_BLURB[p]}</p>
@@ -124,12 +179,22 @@ export default async function BillingPage(props: PageProps<"/app/settings/billin
                   <form action={upgrade}>
                     <input type="hidden" name="plan" value={p} />
                     <input type="hidden" name="interval" value={interval} />
-                    <Button type="submit" size="sm" variant={p === "pro" ? "primary" : "secondary"} className="w-full">
-                      {PLAN_IDS.indexOf(p) > PLAN_IDS.indexOf(plan) ? `Upgrade to ${PLANS[p].name}` : `Switch to ${PLANS[p].name}`}
+                    <Button
+                      type="submit"
+                      size="sm"
+                      variant={p === "pro" ? "primary" : "secondary"}
+                      className="w-full"
+                    >
+                      {PLAN_IDS.indexOf(p) > PLAN_IDS.indexOf(plan)
+                        ? `Upgrade to ${PLANS[p].name}`
+                        : `Switch to ${PLANS[p].name}`}
                     </Button>
                   </form>
                 ) : p === "enterprise" ? (
-                  <a href="mailto:sales@prompttoinvoice.com" className="text-ink-2 text-[13px] underline underline-offset-4">
+                  <a
+                    href="mailto:sales@prompttoinvoice.com"
+                    className="text-ink-2 text-[13px] underline underline-offset-4"
+                  >
                     Talk to us
                   </a>
                 ) : null}

@@ -59,6 +59,8 @@ export interface InvoiceEditorProps {
   /** Field paths filled by the AI ("client", "lines.0.description", …) — shown with a highlighter mark until edited. */
   aiFields?: string[];
   canIssue: boolean;
+  /** Currencies the plan allows; others are shown disabled with an upgrade hint. */
+  allowedCurrencies: readonly string[] | null;
   /** Assumptions the AI made, shown as a margin note. */
   aiNotes?: string[];
 }
@@ -532,7 +534,18 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
               className={cn(ai.has("currency") && "ai-field")}
             >
               {CURRENCY_CODES.map((c) => (
-                <option key={c}>{c}</option>
+                <option
+                  key={c}
+                  value={c}
+                  disabled={
+                    props.allowedCurrencies !== null && !props.allowedCurrencies.includes(c)
+                  }
+                >
+                  {c}
+                  {props.allowedCurrencies !== null && !props.allowedCurrencies.includes(c)
+                    ? " · Pro"
+                    : ""}
+                </option>
               ))}
             </Select>
           </RailField>

@@ -42,7 +42,10 @@ export function publicUrl(token: string | null): string | null {
 
 export async function modelFor(ctx: OrgContext, detail: InvoiceDetail): Promise<InvoiceDocModel> {
   const profile = await loadProfile(ctx.org.id, detail.invoice.businessProfileId);
-  return buildDocModel(detail, profile, { payUrl: publicUrl(detail.invoice.publicToken), customBranding: hasFeature(ctx.org.plan, "custom_branding") });
+  return buildDocModel(detail, profile, {
+    payUrl: publicUrl(detail.invoice.publicToken),
+    customBranding: hasFeature(ctx.org.plan, "custom_branding"),
+  });
 }
 
 /** Hook for the e-invoice module to add XML + XMP to the archived PDF (set in M8). */

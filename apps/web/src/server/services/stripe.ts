@@ -238,14 +238,12 @@ async function recordStripePayment(args: {
         version: inv.version + 1,
       })
       .where(eq(schema.invoices.id, inv.id));
-    await tx
-      .insert(schema.invoiceEvents)
-      .values({
-        orgId: args.orgId,
-        invoiceId: inv.id,
-        type: "payment_recorded",
-        data: { amount: args.amount, method: "stripe", paymentIntentId: args.paymentIntentId },
-      });
+    await tx.insert(schema.invoiceEvents).values({
+      orgId: args.orgId,
+      invoiceId: inv.id,
+      type: "payment_recorded",
+      data: { amount: args.amount, method: "stripe", paymentIntentId: args.paymentIntentId },
+    });
     if (status === "paid")
       await tx
         .insert(schema.invoiceEvents)
@@ -303,14 +301,12 @@ async function recordRefund(charge: Stripe.Charge, account: string | null): Prom
         version: inv.version + 1,
       })
       .where(eq(schema.invoices.id, inv.id));
-    await tx
-      .insert(schema.invoiceEvents)
-      .values({
-        orgId: p.orgId,
-        invoiceId: inv.id,
-        type: "payment_refunded",
-        data: { amount: delta, account },
-      });
+    await tx.insert(schema.invoiceEvents).values({
+      orgId: p.orgId,
+      invoiceId: inv.id,
+      type: "payment_refunded",
+      data: { amount: delta, account },
+    });
   });
 }
 
