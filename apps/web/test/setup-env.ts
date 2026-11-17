@@ -8,3 +8,7 @@ process.env.LOG_LEVEL ??= "error";
 process.env.ANTHROPIC_API_KEY ??= "sk-test-not-used";
 process.env.STRIPE_SECRET_KEY ??= "sk_test_dummy_not_used_for_network";
 process.env.STRIPE_WEBHOOK_SECRET ??= "whsec_test_secret";
+process.env.STRIPE_PRICE_PRO_MONTH ??= "price_pro_m";
+process.env.STRIPE_PRICE_PRO_YEAR ??= "price_pro_y";
+process.env.STRIPE_PRICE_BUSINESS_MONTH ??= "price_bus_m";
+process.env.STRIPE_PRICE_SEAT_MONTH ??= "price_seat_m";
