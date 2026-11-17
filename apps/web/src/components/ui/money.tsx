@@ -16,7 +16,9 @@ export function Money({
   signed?: boolean;
 }) {
   return (
-    <span className={cn("figures whitespace-nowrap", signed && minor < 0 && "text-danger", className)}>
+    <span
+      className={cn("figures whitespace-nowrap", signed && minor < 0 && "text-danger", className)}
+    >
       {formatMoney(minor, currency, locale)}
     </span>
   );

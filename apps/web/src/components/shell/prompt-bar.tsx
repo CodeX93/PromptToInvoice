@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type SubmitEvent } from "react";
 import type { Route } from "next";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { cn } from "@/lib/cn";
@@ -34,7 +34,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
     "g s": () => router.push("/app/settings"),
   });
 
-  function submit(e: FormEvent) {
+  function submit(e: SubmitEvent) {
     e.preventDefault();
     const text = value.trim();
     if (!text) return;
@@ -46,7 +46,12 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
   if (!aiEnabled) return <div className="h-12" />;
 
   return (
-    <form onSubmit={submit} role="search" aria-label="Draft an invoice from a description" className="relative">
+    <form
+      onSubmit={submit}
+      role="search"
+      aria-label="Draft an invoice from a description"
+      className="relative"
+    >
       <label
         className={cn(
           "flex h-12 items-center gap-3 border-b px-6 transition-colors",

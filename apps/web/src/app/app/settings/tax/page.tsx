@@ -17,7 +17,14 @@ export default async function TaxSettingsPage() {
     >
       <TaxTable
         canEdit={can(ctx, "settings:write")}
-        rows={rows.map((r) => ({ id: r.id, name: r.name, category: r.category as TaxCategory, rate: r.rate, isDefault: r.isDefault, note: r.note }))}
+        rows={rows.map((r) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category as TaxCategory,
+          rate: r.rate,
+          isDefault: r.isDefault,
+          note: r.note,
+        }))}
       />
     </Section>
   );

@@ -19,8 +19,18 @@ const g = globalThis as typeof globalThis & { __ptiPools?: Pools };
 function init(): Pools {
   const prepare = !env.DATABASE_DISABLE_PREPARE;
   return {
-    db: createDb({ url: env.DATABASE_URL, max: env.DATABASE_POOL_MAX, prepare, applicationName: "pti-web" }).db,
-    sysDb: createDb({ url: env.SYSTEM_DATABASE_URL, max: Math.max(2, Math.floor(env.DATABASE_POOL_MAX / 2)), prepare, applicationName: "pti-web-sys" }).db,
+    db: createDb({
+      url: env.DATABASE_URL,
+      max: env.DATABASE_POOL_MAX,
+      prepare,
+      applicationName: "pti-web",
+    }).db,
+    sysDb: createDb({
+      url: env.SYSTEM_DATABASE_URL,
+      max: Math.max(2, Math.floor(env.DATABASE_POOL_MAX / 2)),
+      prepare,
+      applicationName: "pti-web-sys",
+    }).db,
   };
 }
 

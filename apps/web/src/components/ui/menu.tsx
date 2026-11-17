@@ -7,13 +7,24 @@ import { cn } from "@/lib/cn";
 export const Menu = M.Root;
 export const MenuTrigger = M.Trigger;
 
-export function MenuContent({ children, align = "end", className }: { children: ReactNode; align?: "start" | "end"; className?: string }) {
+export function MenuContent({
+  children,
+  align = "end",
+  className,
+}: {
+  children: ReactNode;
+  align?: "start" | "end";
+  className?: string;
+}) {
   return (
     <M.Portal>
       <M.Content
         align={align}
         sideOffset={6}
-        className={cn("border-rule-strong bg-paper-raised shadow-pop z-50 min-w-48 rounded-sm border p-1", className)}
+        className={cn(
+          "border-rule-strong bg-paper-raised shadow-pop z-50 min-w-48 rounded-sm border p-1",
+          className,
+        )}
       >
         {children}
       </M.Content>
@@ -21,7 +32,11 @@ export function MenuContent({ children, align = "end", className }: { children: 
   );
 }
 
-export function MenuItem({ className, danger, ...props }: ComponentProps<typeof M.Item> & { danger?: boolean }) {
+export function MenuItem({
+  className,
+  danger,
+  ...props
+}: ComponentProps<typeof M.Item> & { danger?: boolean }) {
   return (
     <M.Item
       className={cn(

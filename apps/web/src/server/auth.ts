@@ -22,7 +22,13 @@ import { logger } from "./logger";
  * via the auth API is disabled.
  */
 
-const accountant = defaultAc.newRole({ organization: [], member: [], invitation: [], team: [], ac: [] });
+const accountant = defaultAc.newRole({
+  organization: [],
+  member: [],
+  invitation: [],
+  team: [],
+  ac: [],
+});
 
 export const auth = betterAuth({
   appName: "PromptToInvoice",
@@ -86,10 +92,18 @@ export const auth = betterAuth({
   },
   socialProviders: {
     ...(features.google && {
-      google: { clientId: env.GOOGLE_CLIENT_ID ?? "", clientSecret: env.GOOGLE_CLIENT_SECRET ?? "", prompt: "select_account" },
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID ?? "",
+        clientSecret: env.GOOGLE_CLIENT_SECRET ?? "",
+        prompt: "select_account",
+      },
     }),
     ...(features.microsoft && {
-      microsoft: { clientId: env.MICROSOFT_CLIENT_ID ?? "", clientSecret: env.MICROSOFT_CLIENT_SECRET ?? "", tenantId: "common" },
+      microsoft: {
+        clientId: env.MICROSOFT_CLIENT_ID ?? "",
+        clientSecret: env.MICROSOFT_CLIENT_SECRET ?? "",
+        tenantId: "common",
+      },
     }),
   },
   account: {
@@ -117,8 +131,9 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
-        after: async (user) => {
+        after: (user) => {
           logger.info({ userId: user.id }, "user signed up");
+          return Promise.resolve();
         },
       },
     },

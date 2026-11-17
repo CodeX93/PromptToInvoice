@@ -16,7 +16,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           </Link>
           <Specimen />
           <p className="text-ink-3 max-w-sm text-xs leading-relaxed">
-            EU and US ready: VAT, reverse charge, multi-currency, gap-free numbering and e-invoices built in.
+            EU and US ready: VAT, reverse charge, multi-currency, gap-free numbering and e-invoices
+            built in.
           </p>
         </div>
       </aside>
@@ -24,7 +25,9 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <Link href="/" className="mb-12 text-lg lg:hidden">
           <Wordmark />
         </Link>
-        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">{children}</div>
+        <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center">
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -39,8 +42,9 @@ function Specimen() {
   return (
     <div className="mx-auto w-full max-w-lg">
       <p className="figures text-ink-2 mb-6 text-[13px] leading-relaxed">
-        <span className="text-ink-4">›</span> workshop + 16h build for Halden &amp; Co at €120/h, hosting €120, due in 14
-        days<span className="bg-ink ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-pulse" />
+        <span className="text-ink-4">›</span> workshop + 16h build for Halden &amp; Co at €120/h,
+        hosting €120, due in 14 days
+        <span className="bg-ink ml-0.5 inline-block h-[1.1em] w-[2px] translate-y-[3px] animate-pulse" />
       </p>
       <div className="border-rule-strong bg-paper-raised shadow-pop -rotate-[0.6deg] rounded-xs border px-8 py-7">
         <div className="flex items-start justify-between">

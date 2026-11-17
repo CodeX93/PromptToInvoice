@@ -1,7 +1,17 @@
 import type { ReactNode } from "react";
 
 /** Page title set like a document heading, with actions on the right margin. */
-export function PageHeader({ title, eyebrow, children, description }: { title: ReactNode; eyebrow?: ReactNode; description?: ReactNode; children?: ReactNode }) {
+export function PageHeader({
+  title,
+  eyebrow,
+  children,
+  description,
+}: {
+  title: ReactNode;
+  eyebrow?: ReactNode;
+  description?: ReactNode;
+  children?: ReactNode;
+}) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-4 px-6 pt-8 pb-6 lg:px-10">
       <div className="min-w-0">

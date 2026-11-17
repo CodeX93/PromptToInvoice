@@ -8,7 +8,10 @@ export default async function OverviewPage() {
   const ctx = await requireOrg();
   return (
     <>
-      <PageHeader eyebrow={ctx.org.name} title={`Good to see you, ${ctx.user.name.split(" ")[0] ?? ""}.`} />
+      <PageHeader
+        eyebrow={ctx.org.name}
+        title={`Good to see you, ${ctx.user.name.split(" ")[0] ?? ""}.`}
+      />
     </>
   );
 }

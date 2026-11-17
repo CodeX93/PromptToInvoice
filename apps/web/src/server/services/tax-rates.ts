@@ -1,6 +1,11 @@
 import "server-only";
 import { z } from "zod";
-import { isZeroRateCategory, percentSchema, taxCategorySchema, DEFAULT_EXEMPTION_NOTES } from "@pti/core";
+import {
+  isZeroRateCategory,
+  percentSchema,
+  taxCategorySchema,
+  DEFAULT_EXEMPTION_NOTES,
+} from "@pti/core";
 import { and, asc, eq, isNull, schema, sql, withOrg } from "@pti/db";
 import { db } from "../db";
 import { audit } from "../audit";
@@ -24,7 +29,11 @@ export async function listTaxRates(ctx: OrgContext) {
       .select()
       .from(schema.taxRates)
       .where(isNull(schema.taxRates.archivedAt))
-      .orderBy(sql`${schema.taxRates.isDefault} desc`, asc(schema.taxRates.category), asc(schema.taxRates.name)),
+      .orderBy(
+        sql`${schema.taxRates.isDefault} desc`,
+        asc(schema.taxRates.category),
+        asc(schema.taxRates.name),
+      ),
   );
 }
 
@@ -33,17 +42,39 @@ export async function createTaxRate(ctx: OrgContext, input: z.infer<typeof taxRa
   await withOrg(db, ctx.org.id, async (tx) => {
     const [row] = await tx
       .insert(schema.taxRates)
-      .values({ orgId: ctx.org.id, name: input.name, category: input.category, rate: input.rate, note: input.note || DEFAULT_EXEMPTION_NOTES[input.category] || null })
+      .values({
+        orgId: ctx.org.id,
+        name: input.name,
+        category: input.category,
+        rate: input.rate,
+        note: input.note || DEFAULT_EXEMPTION_NOTES[input.category] || null,
+      })
       .returning({ id: schema.taxRates.id });
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "tax_rate.created", entityType: "tax_rate", entityId: row?.id, diff: input });
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: "tax_rate.created",
+      entityType: "tax_rate",
+      entityId: row?.id,
+      diff: input,
+    });
   });
 }
 
 export async function setDefaultTaxRate(ctx: OrgContext, id: string) {
   authorize(ctx, "settings:write");
   await withOrg(db, ctx.org.id, async (tx) => {
-    await tx.update(schema.taxRates).set({ isDefault: sql`${schema.taxRates.id} = ${id}` }).where(isNull(schema.taxRates.archivedAt));
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "tax_rate.default_set", entityType: "tax_rate", entityId: id });
+    await tx
+      .update(schema.taxRates)
+      .set({ isDefault: sql`${schema.taxRates.id} = ${id}` })
+      .where(isNull(schema.taxRates.archivedAt));
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: "tax_rate.default_set",
+      entityType: "tax_rate",
+      entityId: id,
+    });
   });
 }
 
@@ -51,7 +82,16 @@ export async function setDefaultTaxRate(ctx: OrgContext, id: string) {
 export async function archiveTaxRate(ctx: OrgContext, id: string) {
   authorize(ctx, "settings:write");
   await withOrg(db, ctx.org.id, async (tx) => {
-    await tx.update(schema.taxRates).set({ archivedAt: new Date(), isDefault: false }).where(and(eq(schema.taxRates.id, id)));
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "tax_rate.archived", entityType: "tax_rate", entityId: id });
+    await tx
+      .update(schema.taxRates)
+      .set({ archivedAt: new Date(), isDefault: false })
+      .where(and(eq(schema.taxRates.id, id)));
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: "tax_rate.archived",
+      entityType: "tax_rate",
+      entityId: id,
+    });
   });
 }

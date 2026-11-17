@@ -1,8 +1,9 @@
 "use client";
 
+import { str } from "@/lib/form-data";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useState, type SubmitEvent } from "react";
 import type { Route } from "next";
 import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
@@ -18,10 +19,10 @@ export function SignInForm({ next, providers }: { next: string; providers: OAuth
   const [error, setError] = useState<string | null>(null);
   const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
 
-  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email") ?? "").trim();
+    const email = str(fd, "email").trim();
     setPending(true);
     setError(null);
     if (mode === "link") {
@@ -33,7 +34,7 @@ export function SignInForm({ next, providers }: { next: string; providers: OAuth
     }
     const { error: err } = await authClient.signIn.email({
       email,
-      password: String(fd.get("password") ?? ""),
+      password: str(fd, "password"),
       rememberMe: fd.get("remember") === "on",
       callbackURL: next,
     });
@@ -51,8 +52,8 @@ export function SignInForm({ next, providers }: { next: string; providers: OAuth
       <div>
         <h1 className="text-3xl">Check your inbox</h1>
         <p className="text-ink-2 mt-3 leading-relaxed">
-          We sent a sign-in link to <span className="text-ink font-medium">{linkSentTo}</span>. It works once and expires in
-          10 minutes.
+          We sent a sign-in link to <span className="text-ink font-medium">{linkSentTo}</span>. It
+          works once and expires in 10 minutes.
         </p>
         <Button variant="link" className="mt-6" onClick={() => setLinkSentTo(null)}>
           Use a different email
@@ -66,7 +67,10 @@ export function SignInForm({ next, providers }: { next: string; providers: OAuth
       <h1 className="text-3xl">Sign in</h1>
       <p className="text-ink-3 mt-2">
         New here?{" "}
-        <Link href={`/sign-up${next !== "/app" ? `?next=${encodeURIComponent(next)}` : ""}` as Route} className="text-ink underline underline-offset-4">
+        <Link
+          href={`/sign-up${next !== "/app" ? `?next=${encodeURIComponent(next)}` : ""}` as Route}
+          className="text-ink underline underline-offset-4"
+        >
           Create an account
         </Link>
       </p>
@@ -78,25 +82,41 @@ export function SignInForm({ next, providers }: { next: string; providers: OAuth
 
       <form onSubmit={onSubmit} className="flex flex-col gap-5" noValidate>
         <Field label="Email">
-          {(f) => <Input id={f.id} name="email" type="email" autoComplete="email" required autoFocus />}
+          {(f) => (
+            <Input id={f.id} name="email" type="email" autoComplete="email" required autoFocus />
+          )}
         </Field>
         {mode === "password" ? (
           <Field
             label={
               <span className="flex w-full justify-between">
                 Password
-                <Link href="/forgot-password" className="text-ink-3 hover:text-ink normal-case tracking-normal">
+                <Link
+                  href="/forgot-password"
+                  className="text-ink-3 hover:text-ink tracking-normal normal-case"
+                >
                   Forgot?
                 </Link>
               </span>
             }
           >
-            {(f) => <Input id={f.id} name="password" type="password" autoComplete="current-password" required />}
+            {(f) => (
+              <Input
+                id={f.id}
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+              />
+            )}
           </Field>
         ) : null}
 
         {error ? (
-          <p role="alert" className="border-danger bg-danger-soft text-danger border-l-2 px-3 py-2 text-sm">
+          <p
+            role="alert"
+            className="border-danger bg-danger-soft text-danger border-l-2 px-3 py-2 text-sm"
+          >
             {error}
           </p>
         ) : null}

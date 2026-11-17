@@ -23,7 +23,10 @@ export const RULES = {
  * infrastructure. Good for thousands of req/s; swap for Redis if a single
  * key ever becomes hot.
  */
-export async function hit(key: string, rule: RateLimitRule): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
+export async function hit(
+  key: string,
+  rule: RateLimitRule,
+): Promise<{ allowed: boolean; remaining: number; resetIn: number }> {
   const nowSec = Math.floor(Date.now() / 1000);
   const windowStartSec = nowSec - (nowSec % rule.windowSeconds);
   const rows = await sysDb.execute<{ count: number }>(sql`
@@ -32,7 +35,7 @@ export async function hit(key: string, rule: RateLimitRule): Promise<{ allowed: 
     on conflict (key, window_start) do update set count = rate_limits.count + 1
     returning count
   `);
-  const count = Number(rows[0]?.count ?? 1);
+  const count = rows[0]?.count ?? 1;
   return {
     allowed: count <= rule.limit,
     remaining: Math.max(0, rule.limit - count),

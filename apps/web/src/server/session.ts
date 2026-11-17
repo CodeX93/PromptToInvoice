@@ -31,7 +31,11 @@ export const getSession = cache(async () => {
 });
 
 function toUser(u: NonNullable<Awaited<ReturnType<typeof getSession>>>["user"]): CurrentUser {
-  const extra = u as typeof u & { locale?: string; timeZone?: string; twoFactorEnabled?: boolean | null };
+  const extra = u as typeof u & {
+    locale?: string;
+    timeZone?: string;
+    twoFactorEnabled?: boolean | null;
+  };
   return {
     id: u.id,
     name: u.name,
@@ -44,12 +48,15 @@ function toUser(u: NonNullable<Awaited<ReturnType<typeof getSession>>>["user"]):
 }
 
 /** For pages: signed-in user or redirect to sign-in. */
-export const requireUser = cache(async (): Promise<{ user: CurrentUser; sessionId: string; activeOrgId: string | null }> => {
-  const s = await getSession();
-  if (!s) redirect("/sign-in");
-  const active = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
-  return { user: toUser(s.user), sessionId: s.session.id, activeOrgId: active };
-});
+export const requireUser = cache(
+  async (): Promise<{ user: CurrentUser; sessionId: string; activeOrgId: string | null }> => {
+    const s = await getSession();
+    if (!s) redirect("/sign-in");
+    const active =
+      (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+    return { user: toUser(s.user), sessionId: s.session.id, activeOrgId: active };
+  },
+);
 
 async function loadMembership(userId: string, preferredOrgId: string | null) {
   const base = sysDb
@@ -69,11 +76,16 @@ async function loadMembership(userId: string, preferredOrgId: string | null) {
 
   if (preferredOrgId) {
     const [m] = await base
-      .where(and(eq(schema.members.userId, userId), eq(schema.members.organizationId, preferredOrgId)))
+      .where(
+        and(eq(schema.members.userId, userId), eq(schema.members.organizationId, preferredOrgId)),
+      )
       .limit(1);
     if (m) return m;
   }
-  const [first] = await base.where(eq(schema.members.userId, userId)).orderBy(asc(schema.members.createdAt)).limit(1);
+  const [first] = await base
+    .where(eq(schema.members.userId, userId))
+    .orderBy(asc(schema.members.createdAt))
+    .limit(1);
   return first ?? null;
 }
 
@@ -102,7 +114,8 @@ export const requireOrg = cache(async (): Promise<OrgContext> => {
 export async function orgContextOrThrow(): Promise<OrgContext> {
   const s = await getSession();
   if (!s) throw new UnauthorizedError();
-  const active = (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
+  const active =
+    (s.session as { activeOrganizationId?: string | null }).activeOrganizationId ?? null;
   const m = await loadMembership(s.user.id, active);
   if (!m || !isRole(m.role)) throw new ForbiddenError("You're not a member of this organisation.");
   return {

@@ -16,6 +16,8 @@ export default [
       ...nextPlugin.configs["core-web-vitals"].rules,
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.configs.strict.rules,
+      // Autofocus is used only on single-purpose auth/onboarding screens, where it is the expected behaviour.
+      "jsx-a11y/no-autofocus": "off",
       "@typescript-eslint/no-misused-promises": [
         "error",
         { checksVoidReturn: { attributes: false } },

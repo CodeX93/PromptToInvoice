@@ -23,7 +23,10 @@ const C = {
 };
 
 export function escapeHtml(s: string): string {
-  return s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c);
+  return s.replace(
+    /[&<>"']/g,
+    (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c,
+  );
 }
 
 interface LayoutOpts {
@@ -62,7 +65,9 @@ export function verifyEmail(args: { name: string; url: string }): RenderedEmail 
     html: layout({
       preheader: "One click to confirm your email.",
       heading: "Confirm your email",
-      body: p(`Hi ${escapeHtml(args.name)}, confirm this address to finish setting up your account. The link expires in 24 hours.`),
+      body: p(
+        `Hi ${escapeHtml(args.name)}, confirm this address to finish setting up your account. The link expires in 24 hours.`,
+      ),
       action: { label: "Confirm email", url: args.url },
       footer: "If you didn't create an account, you can ignore this email.",
     }),
@@ -76,9 +81,12 @@ export function resetPassword(args: { name: string; url: string }): RenderedEmai
     html: layout({
       preheader: "A link to choose a new password.",
       heading: "Reset your password",
-      body: p(`Hi ${escapeHtml(args.name)}, use the button below to choose a new password. The link expires in one hour and works once.`),
+      body: p(
+        `Hi ${escapeHtml(args.name)}, use the button below to choose a new password. The link expires in one hour and works once.`,
+      ),
       action: { label: "Choose a new password", url: args.url },
-      footer: "If you didn't ask for this, your password is unchanged and you can ignore this email.",
+      footer:
+        "If you didn't ask for this, your password is unchanged and you can ignore this email.",
     }),
     text: `Hi ${args.name},\n\nChoose a new password: ${args.url}\n\nThe link expires in one hour. If you didn't ask for this, ignore this email.`,
   };
@@ -98,13 +106,20 @@ export function magicLink(args: { url: string }): RenderedEmail {
   };
 }
 
-export function invitation(args: { inviter: string; org: string; role: string; url: string }): RenderedEmail {
+export function invitation(args: {
+  inviter: string;
+  org: string;
+  role: string;
+  url: string;
+}): RenderedEmail {
   return {
     subject: `${args.inviter} invited you to ${args.org}`,
     html: layout({
       preheader: `Join ${args.org} on PromptToInvoice.`,
       heading: `Join ${args.org}`,
-      body: p(`${escapeHtml(args.inviter)} invited you to join <strong>${escapeHtml(args.org)}</strong> as ${escapeHtml(args.role)}. The invitation expires in 7 days.`),
+      body: p(
+        `${escapeHtml(args.inviter)} invited you to join <strong>${escapeHtml(args.org)}</strong> as ${escapeHtml(args.role)}. The invitation expires in 7 days.`,
+      ),
       action: { label: "Accept invitation", url: args.url },
     }),
     text: `${args.inviter} invited you to join ${args.org} as ${args.role}.\n\nAccept: ${args.url}\n\nThe invitation expires in 7 days.`,
@@ -147,8 +162,13 @@ export function invoiceEmail(a: InvoiceEmailArgs): RenderedEmail {
         p(`Hello ${escapeHtml(a.clientName)},`) +
         messageBlock(a.message) +
         amountBlock(a.docLabel === "Invoice" ? "Amount due" : "Credit amount", a.amount, sub) +
-        p(`The PDF is attached. You can also view${a.docLabel === "Invoice" ? " and pay" : ""} it online.`),
-      action: { label: a.docLabel === "Invoice" ? "View & pay invoice" : "View credit note", url: a.url },
+        p(
+          `The PDF is attached. You can also view${a.docLabel === "Invoice" ? " and pay" : ""} it online.`,
+        ),
+      action: {
+        label: a.docLabel === "Invoice" ? "View & pay invoice" : "View credit note",
+        url: a.url,
+      },
       footer: a.replyTo
         ? `Questions? Reply to this email to reach ${escapeHtml(a.businessName)} at ${escapeHtml(a.replyTo)}.`
         : `Sent by ${escapeHtml(a.businessName)} using PromptToInvoice.`,
@@ -158,7 +178,10 @@ export function invoiceEmail(a: InvoiceEmailArgs): RenderedEmail {
 }
 
 export function reminderEmail(a: InvoiceEmailArgs & { daysOverdue: number }): RenderedEmail {
-  const when = a.daysOverdue > 0 ? `${a.daysOverdue} day${a.daysOverdue === 1 ? "" : "s"} overdue` : `due ${a.dueDate ?? "now"}`;
+  const when =
+    a.daysOverdue > 0
+      ? `${a.daysOverdue} day${a.daysOverdue === 1 ? "" : "s"} overdue`
+      : `due ${a.dueDate ?? "now"}`;
   return {
     subject: `Reminder: invoice ${a.number} is ${a.daysOverdue > 0 ? "overdue" : "due soon"}`,
     html: layout({
@@ -171,20 +194,31 @@ export function reminderEmail(a: InvoiceEmailArgs & { daysOverdue: number }): Re
         amountBlock("Outstanding", a.amount, `Invoice ${a.number} · ${when}`) +
         p("If you've already paid, thank you, and please ignore this reminder."),
       action: { label: "View & pay invoice", url: a.url },
-      footer: a.replyTo ? `Questions? Reply to reach ${escapeHtml(a.businessName)}.` : `Sent by ${escapeHtml(a.businessName)}.`,
+      footer: a.replyTo
+        ? `Questions? Reply to reach ${escapeHtml(a.businessName)}.`
+        : `Sent by ${escapeHtml(a.businessName)}.`,
     }),
     text: `Hello ${a.clientName},\n\n${a.message ? a.message + "\n\n" : ""}Invoice ${a.number} for ${a.amount} is ${when}.\n\nView and pay: ${a.url}\n\nIf you've already paid, please ignore this reminder.\n\n${a.businessName}`,
   };
 }
 
-export function receiptEmail(a: { businessName: string; clientName: string; number: string; amount: string; url: string }): RenderedEmail {
+export function receiptEmail(a: {
+  businessName: string;
+  clientName: string;
+  number: string;
+  amount: string;
+  url: string;
+}): RenderedEmail {
   return {
     subject: `Payment received for invoice ${a.number}`,
     html: layout({
       from: a.businessName,
       preheader: `Thanks — ${a.amount} received.`,
       heading: "Payment received",
-      body: p(`Hello ${escapeHtml(a.clientName)},`) + amountBlock("Paid", a.amount, `Invoice ${a.number}`) + p("Thank you. This email is your receipt."),
+      body:
+        p(`Hello ${escapeHtml(a.clientName)},`) +
+        amountBlock("Paid", a.amount, `Invoice ${a.number}`) +
+        p("Thank you. This email is your receipt."),
       action: { label: "View invoice", url: a.url },
     }),
     text: `Hello ${a.clientName},\n\nWe received ${a.amount} for invoice ${a.number}. Thank you.\n\n${a.url}\n\n${a.businessName}`,

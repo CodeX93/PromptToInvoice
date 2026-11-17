@@ -29,7 +29,10 @@ const logTransport: Transport = {
   name: "log",
   send(msg) {
     // Dev only (prod rejects the log provider): print the text body so links are clickable.
-    logger.info({ to: msg.to, subject: msg.subject, tag: msg.tag, text: msg.text }, "email (log transport)");
+    logger.info(
+      { to: msg.to, subject: msg.subject, tag: msg.tag, text: msg.text },
+      "email (log transport)",
+    );
     return Promise.resolve({ provider: "log", providerMessageId: null });
   },
 };
@@ -63,7 +66,11 @@ function postmarkTransport(): Transport {
     async send(msg) {
       const res = await fetch("https://api.postmarkapp.com/email", {
         method: "POST",
-        headers: { Accept: "application/json", "Content-Type": "application/json", "X-Postmark-Server-Token": token },
+        headers: {
+          Accept: "application/json",
+          "Content-Type": "application/json",
+          "X-Postmark-Server-Token": token,
+        },
         body: JSON.stringify({
           From: env.EMAIL_FROM,
           To: msg.to.join(","),
@@ -84,8 +91,13 @@ function postmarkTransport(): Transport {
         }),
         signal: AbortSignal.timeout(15_000),
       });
-      const body = (await res.json()) as { MessageID?: string; ErrorCode?: number; Message?: string };
-      if (!res.ok || body.ErrorCode) throw new Error(`Postmark ${res.status}: ${body.Message ?? "unknown error"}`);
+      const body = (await res.json()) as {
+        MessageID?: string;
+        ErrorCode?: number;
+        Message?: string;
+      };
+      if (!res.ok || body.ErrorCode)
+        throw new Error(`Postmark ${res.status}: ${body.Message ?? "unknown error"}`);
       return { provider: "postmark", providerMessageId: body.MessageID ?? null };
     },
   };

@@ -23,7 +23,7 @@ export function DialogContent({
 }) {
   return (
     <D.Portal>
-      <D.Overlay className="fixed inset-0 z-40 bg-ink/25 backdrop-grayscale data-[state=open]:animate-[fade-in_120ms_ease-out]" />
+      <D.Overlay className="bg-ink/25 fixed inset-0 z-40 backdrop-grayscale data-[state=open]:animate-[fade-in_120ms_ease-out]" />
       <D.Content
         className={cn(
           "fixed top-[12vh] left-1/2 z-50 w-[calc(100vw-32px)] -translate-x-1/2",
@@ -35,7 +35,9 @@ export function DialogContent({
       >
         <div className="border-rule border-b px-6 pt-5 pb-4">
           <D.Title className="font-serif text-xl">{title}</D.Title>
-          {description ? <D.Description className="text-ink-3 mt-1 text-sm">{description}</D.Description> : null}
+          {description ? (
+            <D.Description className="text-ink-3 mt-1 text-sm">{description}</D.Description>
+          ) : null}
         </div>
         <div className="px-6 py-5">{children}</div>
         <D.Close

@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { orgContextOrThrow } from "@/server/session";
 import { parseOrThrow, run, type ActionResult } from "@/server/action";
-import { archiveTaxRate, createTaxRate, setDefaultTaxRate, taxRateSchema } from "@/server/services/tax-rates";
+import {
+  archiveTaxRate,
+  createTaxRate,
+  setDefaultTaxRate,
+  taxRateSchema,
+} from "@/server/services/tax-rates";
 
 export async function addTaxRate(_prev: ActionResult, fd: FormData): Promise<ActionResult> {
   return run("tax.add", async () => {

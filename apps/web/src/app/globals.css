@@ -143,7 +143,7 @@
   h1,
   h2,
   h3 {
-    @apply font-serif text-ink;
+    @apply text-ink font-serif;
     font-optical-sizing: auto;
     letter-spacing: -0.01em;
   }

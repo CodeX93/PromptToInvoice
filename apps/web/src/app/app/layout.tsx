@@ -37,9 +37,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           <Nav items={items} />
         </div>
         <div className="border-rule border-t p-2">
-          <p className="text-ink-4 px-2 pb-2 text-2xs">
-            {PLANS[ctx.org.plan].name} plan
-          </p>
+          <p className="text-ink-4 text-2xs px-2 pb-2">{PLANS[ctx.org.plan].name} plan</p>
           <UserMenu name={ctx.user.name} email={ctx.user.email} orgName={ctx.org.name} />
         </div>
       </aside>

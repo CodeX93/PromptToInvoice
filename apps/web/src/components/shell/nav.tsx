@@ -30,12 +30,17 @@ export function Nav({ items }: { items: NavItem[] }) {
             )}
           >
             {/* Active item is marked like a ruled margin, not a filled pill. */}
-            <span className={cn("absolute top-1.5 bottom-1.5 left-0 w-[2px]", active ? "bg-ink" : "bg-transparent")} />
+            <span
+              className={cn(
+                "absolute top-1.5 bottom-1.5 left-0 w-[2px]",
+                active ? "bg-ink" : "bg-transparent",
+              )}
+            />
             <span>{it.label}</span>
             {it.count ? (
               <span className="figures text-ink-3 text-2xs">{it.count}</span>
             ) : it.keys ? (
-              <kbd className="figures text-ink-4 hidden text-2xs group-hover:inline">{it.keys}</kbd>
+              <kbd className="figures text-ink-4 text-2xs hidden group-hover:inline">{it.keys}</kbd>
             ) : null}
           </Link>
         );
