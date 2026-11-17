@@ -116,7 +116,10 @@ export async function recordPaymentAction(
   });
 }
 
-export async function sendInvoiceAction(id: string, input: { to: string[]; cc: string[]; message: string }): Promise<ActionResult> {
+export async function sendInvoiceAction(
+  id: string,
+  input: { to: string[]; cc: string[]; message: string },
+): Promise<ActionResult> {
   return run("invoices.send", async () => {
     const ctx = await orgContextOrThrow();
     const { queueInvoiceEmail } = await import("@/server/services/emails");
@@ -125,14 +128,29 @@ export async function sendInvoiceAction(id: string, input: { to: string[]; cc: s
   });
 }
 
-export async function makeRecurringAction(id: string, input: Record<string, unknown>): Promise<ActionResult> {
+export async function makeRecurringAction(
+  id: string,
+  input: Record<string, unknown>,
+): Promise<ActionResult> {
   return run("invoices.recurring", async () => {
     const ctx = await orgContextOrThrow();
     const { createSchedule, scheduleSchema } = await import("@/server/services/recurring");
     const p = scheduleSchema.safeParse(input);
-    if (!p.success) throw new ValidationError("Check the schedule.", Object.fromEntries(p.error.issues.map((i) => [i.path.join("."), [i.message]])));
+    if (!p.success)
+      throw new ValidationError(
+        "Check the schedule.",
+        Object.fromEntries(p.error.issues.map((i) => [i.path.join("."), [i.message]])),
+      );
     await createSchedule(ctx, idSchema.parse(id), p.data);
     revalidatePath(`/app/invoices/${id}`);
     revalidatePath("/app/invoices/recurring");
+  });
+}
+
+export async function markSentAction(id: string): Promise<ActionResult> {
+  return run("invoices.mark-sent", async () => {
+    const { markSent } = await import("@/server/services/emails");
+    await markSent(await orgContextOrThrow(), idSchema.parse(id));
+    revalidatePath(`/app/invoices/${id}`);
   });
 }

@@ -9,9 +9,20 @@ import { logger } from "@/server/logger";
  * invoice timeline. Postmark authenticates with HTTP basic auth configured
  * on the webhook URL; the password is POSTMARK_WEBHOOK_SECRET.
  */
-type PostmarkEvent = { RecordType: "Delivery" | "Bounce" | "SpamComplaint" | "Open"; MessageID: string; Description?: string; Email?: string; Recipient?: string };
+type PostmarkEvent = {
+  RecordType: "Delivery" | "Bounce" | "SpamComplaint" | "Open";
+  MessageID: string;
+  Description?: string;
+  Email?: string;
+  Recipient?: string;
+};
 
-const STATUS = { Delivery: "delivered", Bounce: "bounced", SpamComplaint: "complained", Open: "opened" } as const;
+const STATUS = {
+  Delivery: "delivered",
+  Bounce: "bounced",
+  SpamComplaint: "complained",
+  Open: "opened",
+} as const;
 
 export async function POST(req: Request) {
   if (!env.POSTMARK_WEBHOOK_SECRET) return new Response("Not configured", { status: 404 });
@@ -25,11 +36,26 @@ export async function POST(req: Request) {
 
   const [msg] = await sysDb
     .update(schema.emailMessages)
-    .set({ status, error: e.RecordType === "Bounce" ? (e.Description ?? "Bounced").slice(0, 500) : null })
-    .where(and(eq(schema.emailMessages.provider, "postmark"), eq(schema.emailMessages.providerMessageId, e.MessageID)))
+    .set({
+      status,
+      error: e.RecordType === "Bounce" ? (e.Description ?? "Bounced").slice(0, 500) : null,
+    })
+    .where(
+      and(
+        eq(schema.emailMessages.provider, "postmark"),
+        eq(schema.emailMessages.providerMessageId, e.MessageID),
+      ),
+    )
     .returning({ orgId: schema.emailMessages.orgId, invoiceId: schema.emailMessages.invoiceId });
   if (msg?.invoiceId && (e.RecordType === "Bounce" || e.RecordType === "SpamComplaint")) {
-    await sysDb.insert(schema.invoiceEvents).values({ orgId: msg.orgId, invoiceId: msg.invoiceId, type: "email_bounced", data: { recipient: e.Email ?? e.Recipient ?? null, reason: e.Description ?? e.RecordType } });
+    await sysDb
+      .insert(schema.invoiceEvents)
+      .values({
+        orgId: msg.orgId,
+        invoiceId: msg.invoiceId,
+        type: "email_bounced",
+        data: { recipient: e.Email ?? e.Recipient ?? null, reason: e.Description ?? e.RecordType },
+      });
     logger.warn({ invoiceId: msg.invoiceId, type: e.RecordType }, "invoice email not delivered");
   }
   return Response.json({ ok: true });

@@ -8,7 +8,12 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { toast } from "@/components/ui/toast";
-import { creditNoteAction, duplicateAction, recordPaymentAction } from "@/app/app/invoices/actions";
+import {
+  creditNoteAction,
+  duplicateAction,
+  markSentAction,
+  recordPaymentAction,
+} from "@/app/app/invoices/actions";
 import { SendDialog } from "./send-dialog";
 import { RecurringDialog } from "./recurring-dialog";
 
@@ -53,12 +58,20 @@ export function InvoiceActions(p: InvoiceActionsProps) {
         <a href={`/app/invoices/${p.id}/pdf?download`}>Download PDF</a>
       </Button>
       {p.canPay ? (
-        <Button size="sm" variant={p.canSend && !p.sentBefore ? "secondary" : "primary"} onClick={() => setPayOpen(true)}>
+        <Button
+          size="sm"
+          variant={p.canSend && !p.sentBefore ? "secondary" : "primary"}
+          onClick={() => setPayOpen(true)}
+        >
           Record payment
         </Button>
       ) : null}
       {p.canSend ? (
-        <Button size="sm" variant={p.sentBefore ? "secondary" : "primary"} onClick={() => setSendOpen(true)}>
+        <Button
+          size="sm"
+          variant={p.sentBefore ? "secondary" : "primary"}
+          onClick={() => setSendOpen(true)}
+        >
           {p.sentBefore ? "Send again" : "Send"}
         </Button>
       ) : null}
@@ -80,6 +93,19 @@ export function InvoiceActions(p: InvoiceActionsProps) {
               Copy client link
             </MenuItem>
           ) : null}
+          {p.canSend && !p.sentBefore ? (
+            <MenuItem
+              onSelect={() =>
+                start(async () => {
+                  const r = await markSentAction(p.id);
+                  if (!r.ok) toast.error(r.error);
+                  else router.refresh();
+                })
+              }
+            >
+              Mark as sent (delivered elsewhere)
+            </MenuItem>
+          ) : null}
           <MenuItem onSelect={() => window.open(`/app/invoices/${p.id}/pdf`, "_blank", "noopener")}>
             Open PDF
           </MenuItem>
@@ -91,7 +117,9 @@ export function InvoiceActions(p: InvoiceActionsProps) {
               >
                 Duplicate as new draft
               </MenuItem>
-              {p.canRepeat ? <MenuItem onSelect={() => setRepeatOpen(true)}>Repeat on a schedule…</MenuItem> : null}
+              {p.canRepeat ? (
+                <MenuItem onSelect={() => setRepeatOpen(true)}>Repeat on a schedule…</MenuItem>
+              ) : null}
               {p.canCredit ? (
                 <MenuItem
                   danger
@@ -107,8 +135,22 @@ export function InvoiceActions(p: InvoiceActionsProps) {
         </MenuContent>
       </Menu>
       <PaymentDialog open={payOpen} onOpenChange={setPayOpen} {...p} />
-      <SendDialog id={p.id} open={sendOpen} onOpenChange={setSendOpen} defaultTo={p.clientEmails} number={p.number} sentBefore={p.sentBefore} />
-      {p.canRepeat ? <RecurringDialog id={p.id} open={repeatOpen} onOpenChange={setRepeatOpen} startOn={p.today} /> : null}
+      <SendDialog
+        id={p.id}
+        open={sendOpen}
+        onOpenChange={setSendOpen}
+        defaultTo={p.clientEmails}
+        number={p.number}
+        sentBefore={p.sentBefore}
+      />
+      {p.canRepeat ? (
+        <RecurringDialog
+          id={p.id}
+          open={repeatOpen}
+          onOpenChange={setRepeatOpen}
+          startOn={p.today}
+        />
+      ) : null}
     </div>
   );
 }

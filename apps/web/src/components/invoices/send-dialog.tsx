@@ -14,13 +14,31 @@ const split = (s: string) =>
     .map((x) => x.trim())
     .filter(Boolean);
 
-export function SendDialog({ id, open, onOpenChange, defaultTo, number, sentBefore }: { id: string; open: boolean; onOpenChange: (o: boolean) => void; defaultTo: string[]; number: string; sentBefore: boolean }) {
+export function SendDialog({
+  id,
+  open,
+  onOpenChange,
+  defaultTo,
+  number,
+  sentBefore,
+}: {
+  id: string;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  defaultTo: string[];
+  number: string;
+  sentBefore: boolean;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title={sentBefore ? `Send ${number} again` : `Send ${number}`} description="The PDF is attached, with a link to view and pay online." wide>
+      <DialogContent
+        title={sentBefore ? `Send ${number} again` : `Send ${number}`}
+        description="The PDF is attached, with a link to view and pay online."
+        wide
+      >
         <form
           className="grid gap-5"
           onSubmit={(e) => {
@@ -31,7 +49,11 @@ export function SendDialog({ id, open, onOpenChange, defaultTo, number, sentBefo
               return typeof x === "string" ? x : "";
             };
             start(async () => {
-              const r = await sendInvoiceAction(id, { to: split(v("to")), cc: split(v("cc")), message: v("message") });
+              const r = await sendInvoiceAction(id, {
+                to: split(v("to")),
+                cc: split(v("cc")),
+                message: v("message"),
+              });
               if (!r.ok) {
                 setErrors(r.fieldErrors ?? {});
                 return toast.error(r.error);
@@ -42,14 +64,34 @@ export function SendDialog({ id, open, onOpenChange, defaultTo, number, sentBefo
             });
           }}
         >
-          <Field label="To" error={errors.to ?? errors["to.0"]} hint="Separate several addresses with commas.">
-            {(f) => <Input id={f.id} name="to" defaultValue={defaultTo.join(", ")} required inputMode="email" />}
+          <Field
+            label="To"
+            error={errors.to ?? errors["to.0"]}
+            hint="Separate several addresses with commas."
+          >
+            {(f) => (
+              <Input
+                id={f.id}
+                name="to"
+                defaultValue={defaultTo.join(", ")}
+                required
+                inputMode="email"
+              />
+            )}
           </Field>
           <Field label="Cc" optional error={errors["cc.0"]}>
             {(f) => <Input id={f.id} name="cc" inputMode="email" />}
           </Field>
           <Field label="Message" optional>
-            {(f) => <Textarea id={f.id} name="message" rows={4} placeholder="Hi, please find the invoice attached. Thanks!" maxLength={2000} />}
+            {(f) => (
+              <Textarea
+                id={f.id}
+                name="message"
+                rows={4}
+                placeholder="Hi, please find the invoice attached. Thanks!"
+                maxLength={2000}
+              />
+            )}
           </Field>
           <div>
             <Button type="submit" pending={pending}>

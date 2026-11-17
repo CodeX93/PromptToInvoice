@@ -5,7 +5,8 @@ import { pdfFor } from "@/server/documents/service";
 export async function GET(req: Request, ctx: RouteContext<"/i/[token]/pdf">) {
   const { token } = await ctx.params;
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (!(await hit(`pub:${ip}`, RULES.publicInvoice)).allowed) return new Response("Too many requests", { status: 429 });
+  if (!(await hit(`pub:${ip}`, RULES.publicInvoice)).allowed)
+    return new Response("Too many requests", { status: 429 });
   const found = await loadPublicInvoice(token);
   if (!found) return new Response("Not found", { status: 404 });
   const { pdf, fileName } = await pdfFor(found.ctx, found.detail.invoice.id);

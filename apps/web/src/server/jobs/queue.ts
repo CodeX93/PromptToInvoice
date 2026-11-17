@@ -9,7 +9,15 @@ import { logger } from "../logger";
  * The web process only *sends*; the worker process (worker.ts) consumes.
  */
 export interface JobPayloads {
-  "invoice.send": { orgId: string; invoiceId: string; actorId: string; to: string[]; cc: string[]; message: string; emailId: string };
+  "invoice.send": {
+    orgId: string;
+    invoiceId: string;
+    actorId: string;
+    to: string[];
+    cc: string[];
+    message: string;
+    emailId: string;
+  };
   "invoice.archive-pdf": { orgId: string; invoiceId: string };
   "stripe.event": { eventId: string; account: string | null };
   "reminders.scan": Record<string, never>;
@@ -47,13 +55,24 @@ export function boss(opts: { worker?: boolean } = {}): Promise<PgBoss> {
     b.on("error", (err: unknown) => logger.error({ err }, "pg-boss error"));
     await b.start();
     for (const q of QUEUES) {
-      await b.createQueue(q.name, { retryLimit: q.retryLimit, retryBackoff: true, expireInSeconds: q.expireInSeconds });
+      await b.createQueue(q.name, {
+        retryLimit: q.retryLimit,
+        retryBackoff: true,
+        expireInSeconds: q.expireInSeconds,
+      });
     }
     return b;
   })();
   return g.__ptiBoss;
 }
 
-export async function enqueue<N extends JobName>(name: N, data: JobPayloads[N], opts: { singletonKey?: string; startAfter?: number | Date } = {}): Promise<string | null> {
-  return (await boss()).send(name, data, { singletonKey: opts.singletonKey, startAfter: opts.startAfter });
+export async function enqueue<N extends JobName>(
+  name: N,
+  data: JobPayloads[N],
+  opts: { singletonKey?: string; startAfter?: number | Date } = {},
+): Promise<string | null> {
+  return (await boss()).send(name, data, {
+    singletonKey: opts.singletonKey,
+    startAfter: opts.startAfter,
+  });
 }

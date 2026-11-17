@@ -27,7 +27,9 @@ export async function saveReminders(_prev: ActionResult, fd: FormData): Promise<
       .map((v) => Number(v))
       .filter((n) => Number.isInteger(n))
       .sort((a, b) => a - b);
-    await updateOrgSettings(ctx, { reminders: { enabled: fd.get("enabled") === "on", offsets: [...new Set(offsets)] } });
+    await updateOrgSettings(ctx, {
+      reminders: { enabled: fd.get("enabled") === "on", offsets: [...new Set(offsets)] },
+    });
     revalidatePath("/app/settings/payments");
   });
 }

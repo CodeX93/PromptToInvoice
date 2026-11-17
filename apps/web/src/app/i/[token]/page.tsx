@@ -37,9 +37,10 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
   after(() => recordPublicView(inv.orgId, inv.id, session?.user.id ?? null));
 
   const m = await modelFor(ctx, detail);
-  const currency = m.currency as CurrencyCode;
+  const currency: CurrencyCode = m.currency;
   const due = amountDue(inv);
-  const canPay = features.stripe && stripeReady && inv.docType === "invoice" && inv.status === "open" && due > 0;
+  const canPay =
+    features.stripe && stripeReady && inv.docType === "invoice" && inv.status === "open" && due > 0;
   const justPaid = sp.paid === "1";
   const error = typeof sp.error === "string" ? (ERRORS[sp.error] ?? ERRORS.stripe_error) : null;
 
@@ -47,7 +48,10 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
     <div className="bg-paper-sunk min-h-dvh">
       <header className="mx-auto flex max-w-[1080px] items-center justify-between px-4 py-5 sm:px-6">
         <p className="font-serif text-lg">{m.seller.name}</p>
-        <a href={`/i/${token}/pdf`} className="text-ink-2 hover:text-ink text-[13px] underline underline-offset-4">
+        <a
+          href={`/i/${token}/pdf`}
+          className="text-ink-2 hover:text-ink text-[13px] underline underline-offset-4"
+        >
           Download PDF
         </a>
       </header>
@@ -65,39 +69,60 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
               <>
                 <p className="label-caps">Status</p>
                 <p className="mt-1 font-serif text-2xl">Cancelled</p>
-                <p className="text-ink-3 mt-2 text-sm">This invoice was cancelled with a credit note. Nothing is due.</p>
+                <p className="text-ink-3 mt-2 text-sm">
+                  This invoice was cancelled with a credit note. Nothing is due.
+                </p>
               </>
             ) : inv.docType === "credit_note" ? (
               <>
                 <p className="label-caps">Credit note</p>
-                <p className="figures mt-1 text-2xl">{formatMoney(Math.abs(inv.total), currency, m.locale)}</p>
+                <p className="figures mt-1 text-2xl">
+                  {formatMoney(Math.abs(inv.total), currency, m.locale)}
+                </p>
               </>
             ) : (
               <>
                 <p className="label-caps">Amount due</p>
                 <p className="figures mt-1 text-3xl">{formatMoney(due, currency, m.locale)}</p>
-                {inv.dueDate ? <p className="text-ink-3 mt-1 text-sm">by {formatDate(inv.dueDate, m.locale, "long")}</p> : null}
+                {inv.dueDate ? (
+                  <p className="text-ink-3 mt-1 text-sm">
+                    by {formatDate(inv.dueDate, m.locale, "long")}
+                  </p>
+                ) : null}
                 {justPaid ? (
-                  <p role="status" className="border-positive bg-positive-soft text-positive mt-5 border-l-2 px-3 py-2 text-sm">
+                  <p
+                    role="status"
+                    className="border-positive bg-positive-soft text-positive mt-5 border-l-2 px-3 py-2 text-sm"
+                  >
                     Payment received. It can take a moment to show here; a receipt is on its way.
                   </p>
                 ) : null}
                 {error ? (
-                  <p role="alert" className="border-warning bg-warning-soft text-warning mt-5 border-l-2 px-3 py-2 text-sm">
+                  <p
+                    role="alert"
+                    className="border-warning bg-warning-soft text-warning mt-5 border-l-2 px-3 py-2 text-sm"
+                  >
                     {error}
                   </p>
                 ) : null}
                 {canPay && !justPaid ? (
                   <form method="post" action={`/i/${token}/pay`} className="mt-6">
-                    <button type="submit" className="bg-ink text-paper hover:bg-ink-2 h-11 w-full rounded-sm text-[15px] font-medium">
+                    <button
+                      type="submit"
+                      className="bg-ink text-paper hover:bg-ink-2 h-11 w-full rounded-sm text-[15px] font-medium"
+                    >
                       Pay {formatMoney(due, currency, m.locale)}
                     </button>
-                    <p className="text-ink-3 mt-2 text-center text-xs">Card, bank debit and local methods via Stripe.</p>
+                    <p className="text-ink-3 mt-2 text-center text-xs">
+                      Card, bank debit and local methods via Stripe.
+                    </p>
                   </form>
                 ) : null}
                 {m.payment?.iban ? (
                   <dl className="border-rule mt-6 grid gap-1 border-t pt-4 text-[13px]">
-                    <p className="label-caps mb-1">{canPay ? "Or pay by bank transfer" : "Pay by bank transfer"}</p>
+                    <p className="label-caps mb-1">
+                      {canPay ? "Or pay by bank transfer" : "Pay by bank transfer"}
+                    </p>
                     <dt className="text-ink-3">IBAN</dt>
                     <dd className="figures">{m.payment.iban}</dd>
                     {m.payment.bic ? (
