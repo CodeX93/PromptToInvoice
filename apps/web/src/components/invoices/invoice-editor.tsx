@@ -363,7 +363,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                       }}
                       className={cn(
                         "placeholder:text-ink-4 block [field-sizing:content] w-full resize-none bg-transparent py-1 leading-snug outline-none",
-                        ai.has(`lines.${i}.description`) && "ai-mark",
+                        ai.has(`lines.${i}.description`) && "ai-field",
                       )}
                     />
                   </td>
@@ -384,7 +384,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                       onChange={(e) => setLine(i, { unit: e.target.value }, "unit")}
                       className={cn(
                         "placeholder:text-ink-4 w-full bg-transparent py-1 outline-none",
-                        ai.has(`lines.${i}.unit`) && "ai-mark",
+                        ai.has(`lines.${i}.unit`) && "ai-field",
                       )}
                     />
                   </td>
@@ -528,7 +528,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
               value={state.currency}
               onChange={(e) => update({ currency: e.target.value as CurrencyCode }, "currency")}
               aria-label="Currency"
-              className={cn(ai.has("currency") && "ai-mark")}
+              className={cn(ai.has("currency") && "ai-field")}
             >
               {CURRENCY_CODES.map((c) => (
                 <option key={c}>{c}</option>
