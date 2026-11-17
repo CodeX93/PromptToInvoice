@@ -23,6 +23,7 @@ export function TwoFactor({ enabled }: { enabled: boolean }) {
     const { data, error } = await authClient.twoFactor.enable({ password });
     setPending(false);
     if (error) return toast.error(authErrorMessage(error));
+    if (data.method !== "totp") return toast.error("Authenticator setup is unavailable.");
     const svg = await QRCode.toString(data.totpURI, { type: "svg", margin: 0, color: { dark: "#16140f", light: "#00000000" } });
     setStep({ kind: "scan", svg, secret: new URL(data.totpURI).searchParams.get("secret") ?? "", backupCodes: data.backupCodes });
   }
