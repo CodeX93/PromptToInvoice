@@ -1,0 +1,12 @@
+pre-commit:
+  parallel: true
+  commands:
+    prettier:
+      glob: "*.{ts,tsx,js,json,md,css,yml}"
+      run: pnpm prettier --check {staged_files}
+commit-msg:
+  commands:
+    conventional:
+      run: |
+        head -1 {1} | grep -qE '^(feat|fix|perf|refactor|docs|test|build|ci|chore|style|revert)(\([a-z0-9/-]+\))?!?: .{3,}' \
+          || { echo "Commit message must follow Conventional Commits"; exit 1; }
