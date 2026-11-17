@@ -13,7 +13,12 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "db:migrate": "pnpm --filter @pti/db db:migrate",
+    "db:generate": "pnpm --filter @pti/db db:generate",
+    "db:studio": "pnpm --filter @pti/db db:studio",
+    "db:seed": "pnpm --filter @pti/db db:seed",
+    "dev:services": "docker compose up -d postgres minio minio-setup mailpit"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
