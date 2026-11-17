@@ -81,7 +81,7 @@ export async function overview(ctx: OrgContext, primaryCurrency: CurrencyCode): 
       order by outstanding desc limit 5
     `);
 
-    const activity = await tx.execute<{ invoice_id: string; number: string | null; client: string | null; type: string; at: Date }>(sql`
+    const activity = await tx.execute<{ invoice_id: string; number: string | null; client: string | null; type: string; at: string }>(sql`
       select e.invoice_id, i.number, c.name as client, e.type, e.created_at as at
       from invoice_events e join invoices i on i.id = e.invoice_id left join clients c on c.id = i.client_id
       where e.type in ('issued','sent','viewed','paid','payment_recorded','voided','email_bounced','reminder_sent')
@@ -103,7 +103,8 @@ export async function overview(ctx: OrgContext, primaryCurrency: CurrencyCode): 
       agingCurrency: primaryCurrency,
       collectedByMonth: monthly.map((m) => ({ month: m.month, amount: Number(m.amount) })),
       topClients: top.map((t) => ({ id: t.id, name: t.name, outstanding: Number(t.outstanding), currency: cur(t.currency) })),
-      activity: activity.map((a) => ({ invoiceId: a.invoice_id, number: a.number, client: a.client, type: a.type, at: a.at })),
+      // Raw execute() returns timestamptz as strings; normalise to Date at the boundary.
+      activity: activity.map((a) => ({ invoiceId: a.invoice_id, number: a.number, client: a.client, type: a.type, at: new Date(a.at) })),
       drafts: drafts?.n ?? 0,
     };
   });
