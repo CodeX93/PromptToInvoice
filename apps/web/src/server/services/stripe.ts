@@ -350,6 +350,13 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<boolean> {
         });
         break;
       }
+      case "customer.subscription.created":
+      case "customer.subscription.updated":
+      case "customer.subscription.deleted": {
+        const { applySubscription } = await import("./billing");
+        await applySubscription(event.data.object);
+        break;
+      }
       case "account.updated":
         await syncAccount(event.data.object);
         break;
