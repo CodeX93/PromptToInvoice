@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
-import { amountDue, formatDate, formatMoney, type CurrencyCode } from "@pti/core";
+import { amountDue, formatDate, formatMoney, hasFeature, type CurrencyCode } from "@pti/core";
 import { DocumentView } from "@/components/invoices/document-view";
 import { Wordmark } from "@/components/brand/wordmark";
 import { features } from "@/server/env";
@@ -144,9 +144,11 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
         </div>
       </main>
 
-      <footer className="text-ink-4 flex items-center justify-center gap-2 pb-10 text-xs">
-        Sent with <Wordmark className="text-ink-3 text-[13px]" />
-      </footer>
+      {hasFeature(ctx.org.plan, "remove_branding") ? null : (
+        <footer className="text-ink-4 flex items-center justify-center gap-2 pb-10 text-xs">
+          Sent with <Wordmark className="text-ink-3 text-[13px]" />
+        </footer>
+      )}
     </div>
   );
 }

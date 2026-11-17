@@ -1,6 +1,8 @@
 import "server-only";
 import {
+  BASE_CURRENCIES,
   addDays,
+  hasFeature,
   assertCan,
   calculate,
   displayStatus,
@@ -34,7 +36,7 @@ import {
 import { db } from "../db";
 import { audit } from "../audit";
 import { randomToken } from "../crypto";
-import { ConflictError, NotFound, ValidationError } from "../errors";
+import { ConflictError, NotFound, QuotaExceededError, ValidationError } from "../errors";
 import { authorize, type OrgContext } from "../session";
 import { readBank } from "./business-profiles";
 import { consume } from "./usage";
@@ -301,6 +303,9 @@ export async function saveDraft(
   }
   const input = parsed.data;
   const currency = cur(input.currency);
+  if (!hasFeature(ctx.org.plan, "all_currencies") && !BASE_CURRENCIES.includes(currency)) {
+    throw new QuotaExceededError(`Invoicing in ${currency} is part of the Professional plan. Starter supports USD and EUR.`, { feature: "all_currencies" });
+  }
   const docType = opts.docType ?? "invoice";
   const calc = calculate(toCalcInput(currency, input.lines, input.discount));
   if (docType === "invoice" && calc.taxInclusive < 0)
