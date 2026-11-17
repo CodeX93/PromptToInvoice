@@ -22,6 +22,9 @@ export async function purge(): Promise<Record<string, number>> {
       where created_at < now() - interval '90 days' and prompt not like 'sha256:%'
     `),
     sessions: await run(sql`delete from sessions where expires_at < now() - interval '7 days'`),
+    webhookDeliveries: await run(
+      sql`delete from webhook_deliveries where created_at < now() - interval '30 days' and status <> 'pending'`,
+    ),
     verifications: await run(
       sql`delete from verifications where expires_at < now() - interval '1 day'`,
     ),
