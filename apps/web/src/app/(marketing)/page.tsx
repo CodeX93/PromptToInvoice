@@ -82,7 +82,7 @@ const ROWS: { label: string; get: (p: PlanId) => string | boolean }[] = [
   { label: "Business profiles", get: (p) => PLANS[p].limits.businessProfiles?.toString() ?? "Any" },
   ...(
     [
-      ["all_currencies", "All currencies (Starter: USD, EUR)"],
+      ["all_currencies", "Any currency (Starter: yours, USD, EUR)"],
       ["recurring", "Recurring invoices"],
       ["reminders", "Automatic reminders"],
       ["einvoice", "Factur-X / XRechnung"],

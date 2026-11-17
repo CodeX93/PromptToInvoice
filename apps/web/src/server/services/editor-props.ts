@@ -1,5 +1,5 @@
 import "server-only";
-import { BASE_CURRENCIES, hasFeature, parseEuVatId, type TaxCategory } from "@pti/core";
+import { allowedCurrencies, isCurrencyCode, parseEuVatId, type TaxCategory } from "@pti/core";
 import { can, type OrgContext } from "../session";
 import { countryOptions } from "@/lib/countries";
 import { blankLine, newKey, type EditorState } from "@/lib/invoice-editor";
@@ -120,6 +120,9 @@ export async function editorProps(
     aiFields: opts.aiFields,
     aiNotes: opts.aiNotes,
     canIssue: can(ctx, "invoice:issue"),
-    allowedCurrencies: hasFeature(ctx.org.plan, "all_currencies") ? null : BASE_CURRENCIES,
+    allowedCurrencies: allowedCurrencies(
+      ctx.org.plan,
+      isCurrencyCode(p.defaultCurrency) ? p.defaultCurrency : "USD",
+    ),
   };
 }

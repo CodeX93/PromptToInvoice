@@ -1,6 +1,7 @@
 import "server-only";
 import {
   BASE_CURRENCIES,
+  currencyAllowed,
   addDays,
   hasFeature,
   assertCan,
@@ -311,12 +312,6 @@ export async function saveDraft(
   }
   const input = parsed.data;
   const currency = cur(input.currency);
-  if (!hasFeature(ctx.org.plan, "all_currencies") && !BASE_CURRENCIES.includes(currency)) {
-    throw new QuotaExceededError(
-      `Invoicing in ${currency} is part of the Professional plan. Starter supports USD and EUR.`,
-      { feature: "all_currencies" },
-    );
-  }
   const docType = opts.docType ?? "invoice";
   const calc = calculate(toCalcInput(currency, input.lines, input.discount));
   if (docType === "invoice" && calc.taxInclusive < 0)
@@ -324,13 +319,19 @@ export async function saveDraft(
 
   return withOrg(db, ctx.org.id, async (tx) => {
     // Profile and client must belong to this org (RLS makes foreign ids invisible).
-    one(
+    const profile = one(
       await tx
-        .select({ id: schema.businessProfiles.id })
+        .select({ defaultCurrency: schema.businessProfiles.defaultCurrency })
         .from(schema.businessProfiles)
         .where(eq(schema.businessProfiles.id, input.businessProfileId)),
       "Business profile",
     );
+    const home = cur(profile.defaultCurrency);
+    if (!currencyAllowed(ctx.org.plan, currency, home))
+      throw new QuotaExceededError(
+        `Invoicing in ${currency} is part of the Professional plan. On Starter you can bill in ${[...new Set([home, ...BASE_CURRENCIES])].join(", ")}.`,
+        { feature: "all_currencies" },
+      );
     if (input.clientId)
       one(
         await tx

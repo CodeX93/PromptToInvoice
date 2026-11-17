@@ -1,3 +1,5 @@
+import { BASE_CURRENCIES, type CurrencyCode } from "./currency";
+
 /**
  * Plan catalogue and entitlement checks. Prices live in Stripe; this file
  * describes what each plan unlocks so enforcement never depends on a network call.
@@ -150,3 +152,20 @@ export const PLAN_BLURB: Readonly<Record<PlanId, string>> = {
   business: "For studios with several people or brands.",
   enterprise: "API, SSO and a contract.",
 };
+
+/**
+ * Currencies a plan may invoice in, or null for all. Everyone can bill in
+ * their own home currency (a UK freelancer on Starter bills in GBP); the
+ * paid feature is invoicing in *other* currencies.
+ */
+export function allowedCurrencies(
+  plan: PlanId,
+  home: CurrencyCode,
+): readonly CurrencyCode[] | null {
+  if (hasFeature(plan, "all_currencies")) return null;
+  return BASE_CURRENCIES.includes(home) ? BASE_CURRENCIES : [home, ...BASE_CURRENCIES];
+}
+
+export function currencyAllowed(plan: PlanId, currency: CurrencyCode, home: CurrencyCode): boolean {
+  return allowedCurrencies(plan, home)?.includes(currency) ?? true;
+}
