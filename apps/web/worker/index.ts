@@ -12,6 +12,7 @@ import { archivePdf } from "@/server/documents/service";
 import { deliverInvoiceEmail, deliverReminder } from "@/server/services/emails";
 import { findDueReminders } from "@/server/services/reminders";
 import { findDueSchedules, runSchedule } from "@/server/services/recurring";
+import { buildExport } from "@/server/services/data-export";
 
 type Handler<N extends keyof JobPayloads> = (data: JobPayloads[N]) => Promise<void>;
 
@@ -40,6 +41,10 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
   "recurring.run": async (d) => {
     const id = await runSchedule(await systemContext(d.orgId), d.scheduleId, d.runOn);
     logger.info({ scheduleId: d.scheduleId, invoiceId: id }, "recurring run complete");
+  },
+  "org.export": async (d) => {
+    const r = await buildExport(await systemContext(d.orgId, d.requestedBy));
+    logger.info({ orgId: d.orgId, bytes: r.bytes }, "export built");
   },
   "maintenance.purge": async () => {
     logger.info(await purge(), "maintenance purge");

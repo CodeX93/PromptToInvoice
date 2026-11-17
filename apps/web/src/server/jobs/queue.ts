@@ -25,6 +25,7 @@ export interface JobPayloads {
   "recurring.scan": Record<string, never>;
   "recurring.run": { orgId: string; scheduleId: string; runOn: string };
   "maintenance.purge": Record<string, never>;
+  "org.export": { orgId: string; requestedBy: string };
 }
 export type JobName = keyof JobPayloads;
 
@@ -37,6 +38,7 @@ export const QUEUES: { name: JobName; retryLimit: number; expireInSeconds: numbe
   { name: "recurring.scan", retryLimit: 2, expireInSeconds: 300 },
   { name: "recurring.run", retryLimit: 5, expireInSeconds: 300 },
   { name: "maintenance.purge", retryLimit: 2, expireInSeconds: 900 },
+  { name: "org.export", retryLimit: 3, expireInSeconds: 900 },
 ];
 
 const g = globalThis as typeof globalThis & { __ptiBoss?: Promise<PgBoss> };
