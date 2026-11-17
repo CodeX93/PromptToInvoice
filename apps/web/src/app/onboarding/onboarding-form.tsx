@@ -1,14 +1,25 @@
 "use client";
 
-import { useActionState, useEffect, useMemo, useState } from "react";
-import { COUNTRY_CODES, CURRENCY_CODES, countryName, isEuCountry, parseEuVatId, type CurrencyCode } from "@pti/core";
+import { useActionState, useEffect, useState } from "react";
+import { CURRENCY_CODES, isEuCountry, parseEuVatId, type CurrencyCode } from "@pti/core";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
 import { defaultCurrencyFor } from "@/lib/locale-defaults";
 import { initialActionState } from "@/lib/action-state";
 import { completeOnboarding } from "./actions";
 
-export function OnboardingForm({ defaultName, defaultCountry, next }: { defaultName: string; defaultCountry: string; next: string }) {
+export function OnboardingForm({
+  defaultName,
+  defaultCountry,
+  next,
+  countries,
+}: {
+  defaultName: string;
+  defaultCountry: string;
+  next: string;
+  /** Localised on the server so SSR and hydration agree (ICU data differs between Node and browsers). */
+  countries: { code: string; name: string }[];
+}) {
   const [state, action, pending] = useActionState(completeOnboarding, initialActionState);
   const [country, setCountry] = useState(defaultCountry);
   const [currency, setCurrency] = useState<CurrencyCode>(defaultCurrencyFor(defaultCountry));
@@ -16,10 +27,6 @@ export function OnboardingForm({ defaultName, defaultCountry, next }: { defaultN
   const [timeZone, setTimeZone] = useState("UTC");
   useEffect(() => setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone), []);
   const eu = isEuCountry(country);
-  const countries = useMemo(
-    () => COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) => a.name.localeCompare(b.name)),
-    [],
-  );
   const fe = state.ok ? {} : (state.fieldErrors ?? {});
   const vatLooksWrong = eu && vatId.length > 4 && parseEuVatId(vatId) === null;
 
