@@ -7,5 +7,5 @@
       "server-only": ["./test/server-only.ts"]
     }
   },
-  "include": ["./**/*.ts", "../src/**/*.ts", "../src/**/*.tsx"]
+  "include": ["./**/*.ts", "../worker/**/*.ts", "../src/**/*.ts", "../src/**/*.tsx"]
 }
