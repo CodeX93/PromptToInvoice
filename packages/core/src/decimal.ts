@@ -56,7 +56,8 @@ function numberToPlainString(n: number): string {
 
 export function isDecimalString(value: string, maxScale = 12): boolean {
   const m = DECIMAL_RE.exec(value.trim());
-  return m !== null && (m[3]?.length ?? 0) <= maxScale;
+  // Same rule as parseDecimal: insignificant trailing zeros don't count toward the scale.
+  return m !== null && (m[3]?.replace(/0+$/, "").length ?? 0) <= maxScale;
 }
 
 /** Divide with explicit rounding. `divisor` must be positive. */
