@@ -28,7 +28,8 @@ interface Transport {
 const logTransport: Transport = {
   name: "log",
   send(msg) {
-    logger.info({ to: msg.to, subject: msg.subject, tag: msg.tag }, "email (log transport)");
+    // Dev only (prod rejects the log provider): print the text body so links are clickable.
+    logger.info({ to: msg.to, subject: msg.subject, tag: msg.tag, text: msg.text }, "email (log transport)");
     return Promise.resolve({ provider: "log", providerMessageId: null });
   },
 };

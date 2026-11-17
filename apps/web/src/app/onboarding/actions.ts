@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import { auth } from "@/server/auth";
 import { getSession } from "@/server/session";
 import { parseOrThrow, run, type ActionResult } from "@/server/action";
@@ -34,5 +35,5 @@ export async function completeOnboarding(_prev: ActionResult, formData: FormData
     await auth.api.setActiveOrganization({ headers: await headers(), body: { organizationId: orgId } });
   });
   if (!result.ok) return result;
-  redirect(safeNext(String(formData.get("next") ?? ""), "/app?welcome=1"));
+  redirect(safeNext(String(formData.get("next") ?? ""), "/app?welcome=1") as Route);
 }
