@@ -162,7 +162,7 @@
   }
   /* Small-caps labels used above fields and table headers. */
   .label-caps {
-    @apply text-2xs text-ink-3 font-medium tracking-[0.08em] uppercase;
+    @apply text-2xs text-ink-3 font-sans font-medium tracking-[0.08em] uppercase;
   }
   /* Highlighter mark for AI-filled values: a hand-drawn-ish band behind text. */
   .ai-mark {
