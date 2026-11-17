@@ -47,7 +47,10 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
     logger.info({ orgId: d.orgId, bytes: r.bytes }, "export built");
   },
   "maintenance.purge": async () => {
-    logger.info({ ...(await purge()), retentionPurgedOrgs: await purgeExpiredRetention() }, "maintenance purge");
+    logger.info(
+      { ...(await purge()), retentionPurgedOrgs: await purgeExpiredRetention() },
+      "maintenance purge",
+    );
   },
 };
 

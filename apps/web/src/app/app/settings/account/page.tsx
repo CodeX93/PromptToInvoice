@@ -73,7 +73,10 @@ export default async function AccountPage() {
             }))}
         />
       </Section>
-      <Section title="Delete account" description="Removes your login and personal data. If you're the only owner of an organisation, transfer ownership or delete the organisation first.">
+      <Section
+        title="Delete account"
+        description="Removes your login and personal data. If you're the only owner of an organisation, transfer ownership or delete the organisation first."
+      >
         <DeleteAccount />
       </Section>
     </>

@@ -1,6 +1,13 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
-import { formatDate, formatMoney, hasFeature, TAX_CATEGORY_LABEL, todayIn, type TaxCategory } from "@pti/core";
+import {
+  formatDate,
+  formatMoney,
+  hasFeature,
+  TAX_CATEGORY_LABEL,
+  todayIn,
+  type TaxCategory,
+} from "@pti/core";
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -23,12 +30,17 @@ export default async function ReportsPage(props: PageProps<"/app/reports">) {
   const tab = TABS.find((t) => t.key === str("tab"))?.key ?? "tax";
   const period = resolvePeriod(todayIn(ctx.org.timeZone), str("period"), str("from"), str("to"));
   const advanced = hasFeature(ctx.org.plan, "advanced_reports");
-  const q = (over: Record<string, string>) => `/app/reports?${new URLSearchParams({ tab, period: period.key === "custom" ? "this-month" : period.key, ...over }).toString()}` as Route;
-  const exportHref = (report: string) => `/app/reports/export?${new URLSearchParams({ report, from: period.from, to: period.to }).toString()}`;
+  const q = (over: Record<string, string>) =>
+    `/app/reports?${new URLSearchParams({ tab, period: period.key === "custom" ? "this-month" : period.key, ...over }).toString()}` as Route;
+  const exportHref = (report: string) =>
+    `/app/reports/export?${new URLSearchParams({ report, from: period.from, to: period.to }).toString()}`;
 
   return (
     <div className="pb-16">
-      <PageHeader title="Reports" description={`${formatDate(period.from, "en-GB", "long")} – ${formatDate(period.to, "en-GB", "long")}`}>
+      <PageHeader
+        title="Reports"
+        description={`${formatDate(period.from, "en-GB", "long")} – ${formatDate(period.to, "en-GB", "long")}`}
+      >
         {can(ctx, "export:run") ? (
           <>
             <Button asChild variant="secondary" size="sm">
@@ -44,14 +56,32 @@ export default async function ReportsPage(props: PageProps<"/app/reports">) {
       <div className="border-rule flex flex-wrap items-center justify-between gap-4 border-b px-6 lg:px-10">
         <nav aria-label="Report" className="-mb-px flex gap-5">
           {TABS.map((t) => (
-            <Link key={t.key} href={q({ tab: t.key })} aria-current={tab === t.key ? "page" : undefined} className={cn("border-b py-2.5 text-[13px]", tab === t.key ? "border-ink text-ink" : "text-ink-3 hover:text-ink border-transparent")}>
+            <Link
+              key={t.key}
+              href={q({ tab: t.key })}
+              aria-current={tab === t.key ? "page" : undefined}
+              className={cn(
+                "border-b py-2.5 text-[13px]",
+                tab === t.key
+                  ? "border-ink text-ink"
+                  : "text-ink-3 hover:text-ink border-transparent",
+              )}
+            >
               {t.label}
             </Link>
           ))}
         </nav>
         <nav aria-label="Period" className="flex flex-wrap gap-3 py-2 text-[13px]">
           {PERIODS.map((p) => (
-            <Link key={p} href={q({ period: p })} className={cn(period.key === p ? "text-ink underline underline-offset-4" : "text-ink-3 hover:text-ink")}>
+            <Link
+              key={p}
+              href={q({ period: p })}
+              className={cn(
+                period.key === p
+                  ? "text-ink underline underline-offset-4"
+                  : "text-ink-3 hover:text-ink",
+              )}
+            >
               {PERIOD_LABEL[p]}
             </Link>
           ))}
@@ -60,8 +90,20 @@ export default async function ReportsPage(props: PageProps<"/app/reports">) {
 
       <div className="px-6 pt-6 lg:px-10">
         {tab === "tax" ? <TaxTable rows={await taxReport(ctx, period.from, period.to)} /> : null}
-        {tab === "revenue" ? (advanced ? <RevenueTable rows={await revenueByMonth(ctx, period.from, period.to)} /> : <Upsell />) : null}
-        {tab === "clients" ? (advanced ? <ClientTable rows={await revenueByClient(ctx, period.from, period.to)} /> : <Upsell />) : null}
+        {tab === "revenue" ? (
+          advanced ? (
+            <RevenueTable rows={await revenueByMonth(ctx, period.from, period.to)} />
+          ) : (
+            <Upsell />
+          )
+        ) : null}
+        {tab === "clients" ? (
+          advanced ? (
+            <ClientTable rows={await revenueByClient(ctx, period.from, period.to)} />
+          ) : (
+            <Upsell />
+          )
+        ) : null}
       </div>
     </div>
   );
@@ -83,7 +125,8 @@ function Th({ children, right }: { children: React.ReactNode; right?: boolean })
 }
 
 function TaxTable({ rows }: { rows: Awaited<ReturnType<typeof taxReport>> }) {
-  if (!rows.length) return <p className="text-ink-3 py-10 text-sm">No issued documents in this period.</p>;
+  if (!rows.length)
+    return <p className="text-ink-3 py-10 text-sm">No issued documents in this period.</p>;
   return (
     <>
       <table className="w-full text-sm">
@@ -112,8 +155,9 @@ function TaxTable({ rows }: { rows: Awaited<ReturnType<typeof taxReport>> }) {
         </tbody>
       </table>
       <p className="text-ink-3 mt-4 max-w-2xl text-xs leading-relaxed">
-        From the frozen tax breakdown of each issued document; credit notes are netted. Reverse-charge (AE) and intra-community (K) amounts are what
-        typically goes on an EC Sales List. Confirm figures with your accountant before filing.
+        From the frozen tax breakdown of each issued document; credit notes are netted.
+        Reverse-charge (AE) and intra-community (K) amounts are what typically goes on an EC Sales
+        List. Confirm figures with your accountant before filing.
       </p>
     </>
   );
@@ -138,7 +182,9 @@ function RevenueTable({ rows }: { rows: Awaited<ReturnType<typeof revenueByMonth
             <td className="figures py-2.5">{r.month}</td>
             <td className="text-ink-3 py-2.5">{r.currency}</td>
             <td className="figures py-2.5 text-right">{formatMoney(r.invoiced, r.currency)}</td>
-            <td className="figures text-ink-3 py-2.5 text-right">{r.credited ? formatMoney(-r.credited, r.currency) : "—"}</td>
+            <td className="figures text-ink-3 py-2.5 text-right">
+              {r.credited ? formatMoney(-r.credited, r.currency) : "—"}
+            </td>
             <td className="figures py-2.5 text-right">{formatMoney(r.collected, r.currency)}</td>
           </tr>
         ))}
@@ -170,7 +216,9 @@ function ClientTable({ rows }: { rows: Awaited<ReturnType<typeof revenueByClient
             </td>
             <td className="figures py-2.5 text-right">{formatMoney(r.invoiced, r.currency)}</td>
             <td className="figures py-2.5 text-right">{formatMoney(r.collected, r.currency)}</td>
-            <td className={cn("figures py-2.5 text-right", r.outstanding > 0 ? "" : "text-ink-4")}>{formatMoney(r.outstanding, r.currency)}</td>
+            <td className={cn("figures py-2.5 text-right", r.outstanding > 0 ? "" : "text-ink-4")}>
+              {formatMoney(r.outstanding, r.currency)}
+            </td>
             <td className="figures text-ink-2 py-2.5 text-right">{r.avgDaysToPay ?? "—"}</td>
           </tr>
         ))}

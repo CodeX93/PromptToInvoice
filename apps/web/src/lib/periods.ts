@@ -1,6 +1,13 @@
 import { addDays, addMonths, isIsoDate } from "@pti/core";
 
-export const PERIODS = ["this-month", "last-month", "this-quarter", "last-quarter", "this-year", "last-year"] as const;
+export const PERIODS = [
+  "this-month",
+  "last-month",
+  "this-quarter",
+  "last-quarter",
+  "this-year",
+  "last-year",
+] as const;
 export type PeriodKey = (typeof PERIODS)[number];
 
 export const PERIOD_LABEL: Record<PeriodKey, string> = {
@@ -13,9 +20,17 @@ export const PERIOD_LABEL: Record<PeriodKey, string> = {
 };
 
 /** Resolve a named period (or explicit from/to) to an inclusive ISO date range. */
-export function resolvePeriod(today: string, key?: string, from?: string, to?: string): { from: string; to: string; key: PeriodKey | "custom" } {
-  if (from && to && isIsoDate(from) && isIsoDate(to) && from <= to) return { from, to, key: "custom" };
-  const k: PeriodKey = (PERIODS as readonly string[]).includes(key ?? "") ? (key as PeriodKey) : "this-month";
+export function resolvePeriod(
+  today: string,
+  key?: string,
+  from?: string,
+  to?: string,
+): { from: string; to: string; key: PeriodKey | "custom" } {
+  if (from && to && isIsoDate(from) && isIsoDate(to) && from <= to)
+    return { from, to, key: "custom" };
+  const k: PeriodKey = (PERIODS as readonly string[]).includes(key ?? "")
+    ? (key as PeriodKey)
+    : "this-month";
   const y = Number(today.slice(0, 4));
   const m = Number(today.slice(5, 7));
   const monthStart = `${today.slice(0, 7)}-01`;

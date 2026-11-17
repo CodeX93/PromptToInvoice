@@ -72,7 +72,13 @@ async function loadMembership(userId: string, preferredOrgId: string | null) {
       },
     })
     .from(schema.members)
-    .innerJoin(schema.organizations, and(eq(schema.organizations.id, schema.members.organizationId), isNull(schema.organizations.deletedAt)));
+    .innerJoin(
+      schema.organizations,
+      and(
+        eq(schema.organizations.id, schema.members.organizationId),
+        isNull(schema.organizations.deletedAt),
+      ),
+    );
 
   if (preferredOrgId) {
     const [m] = await base
