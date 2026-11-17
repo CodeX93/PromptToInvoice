@@ -14,3 +14,19 @@ describe("safeNext", () => {
     expect(safeNext(input as string)).toBe(out);
   });
 });
+
+describe("safeNext normalisation bypasses", () => {
+  it.each([
+    "/.//evil.com/login",
+    "/%2e//evil.com",
+    "/a/..//evil.com",
+    "/./\\evil.com",
+    "/%2E%2E//evil.com",
+    "/\\/evil.com",
+  ])("rejects %s", (v) => {
+    expect(safeNext(v, "/app")).toBe("/app");
+  });
+  it("keeps legitimate paths with dot segments", () => {
+    expect(safeNext("/app/./invoices/../clients?q=1", "/x")).toBe("/app/clients?q=1");
+  });
+});
