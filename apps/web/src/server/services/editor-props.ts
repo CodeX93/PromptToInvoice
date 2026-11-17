@@ -41,7 +41,7 @@ export async function editorProps(
     initial = {
       businessProfileId: i.businessProfileId,
       client: detail.client ? toOption(detail.client) : null,
-      currency: defaults.currency && i.currency ? (i.currency as EditorState["currency"]) : defaults.currency,
+      currency: i.currency as EditorState["currency"],
       issueDate: i.issueDate,
       supplyDate: i.supplyDate ?? "",
       dueDate: i.dueDate ?? "",
