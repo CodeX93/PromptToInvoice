@@ -19,6 +19,10 @@ docs/
   PRODUCTION_PLAN.md   Product review and plan
   adr/                 Architecture decision records
   runbooks/            Operational procedures
+  api.md               Public REST API and webhooks
+  deploy.md            Images, release order, configuration, probes
+  security.md          Threat model and security review log
+  performance.md       Performance budget and load-testing plan
 ```
 
 ## Getting started
@@ -45,14 +49,23 @@ pnpm db:migrate
 pnpm dev
 ```
 
+```bash
+pnpm dev:worker
+```
+
+`pnpm seed` (in `apps/web`) creates a demo workspace: `demo@prompttoinvoice.test` /
+`demo-password-123`. With `AI_PROVIDER=stub` the prompt bar works offline.
+
 ## Quality gates
 
-| Command             | What it does                                        |
-| ------------------- | --------------------------------------------------- |
-| `pnpm lint`         | ESLint (strict, type-aware)                         |
-| `pnpm typecheck`    | TypeScript, `strict` + `noUncheckedIndexedAccess`   |
-| `pnpm test`         | Unit, property-based and Postgres integration tests |
-| `pnpm format:check` | Prettier                                            |
+| Command                       | What it does                                          |
+| ----------------------------- | ----------------------------------------------------- |
+| `pnpm lint`                   | ESLint (strict, type-aware)                           |
+| `pnpm typecheck`              | TypeScript, `strict` + `noUncheckedIndexedAccess`     |
+| `pnpm test`                   | Unit, property-based and Postgres integration tests   |
+| `pnpm format:check`           | Prettier                                              |
+| `pnpm --filter @pti/web e2e`  | Playwright end-to-end suite (app + worker + Postgres) |
+| `docker build --target web .` | Production image; CI also builds `--target worker`    |
 
 ## Key design decisions
 
