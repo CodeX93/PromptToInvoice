@@ -53,9 +53,12 @@ export function toActionError(err: unknown, context: string): ActionResult<never
 }
 
 /** Wrap an action body: returns ActionResult, never throws (except navigation). */
-export async function run<T>(context: string, fn: () => Promise<T>): Promise<ActionResult<T>> {
+export async function run<T>(
+  context: string,
+  fn: () => Promise<T>,
+): Promise<ActionResult<T extends void ? undefined : T>> {
   try {
-    return { ok: true, data: await fn() };
+    return { ok: true, data: (await fn()) as T extends void ? undefined : T };
   } catch (err) {
     return toActionError(err, context);
   }
