@@ -57,3 +57,22 @@ export async function checkClientVat(id: string): Promise<ActionResult<ViesResul
     return r;
   });
 }
+
+export interface ClientOption {
+  id: string;
+  name: string;
+  email: string | null;
+  country: string | null;
+  vatId: string | null;
+  isBusiness: boolean;
+  vatIdValid: boolean;
+  currency: string | null;
+  paymentTermsDays: number | null;
+}
+
+/** Typeahead for the invoice editor: fuzzy match when there's a query, recent clients otherwise. */
+export async function searchClientsAction(q: string): Promise<ClientOption[]> {
+  const ctx = await orgContextOrThrow();
+  const { getClientOptions } = await import("@/server/services/client-options");
+  return getClientOptions(ctx, q.slice(0, 100));
+}
