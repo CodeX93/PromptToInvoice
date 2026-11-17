@@ -27,32 +27,35 @@ export function useHotkeys(bindings: Record<string, Handler>): void {
     const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
 
     function onKey(e: KeyboardEvent) {
+      const map = ref.current;
       const key = e.key.toLowerCase();
       const mod = isMac ? e.metaKey : e.ctrlKey;
-      if (mod && ref.current[`mod+${key}`]) {
+      const chord = mod ? map[`mod+${key}`] : undefined;
+      if (chord) {
         e.preventDefault();
-        ref.current[`mod+${key}`](e);
+        chord(e);
         return;
       }
       if (e.metaKey || e.ctrlKey || e.altKey || isTyping(e.target)) return;
       if (pending) {
-        const combo = `${pending} ${key}`;
+        const seq = map[`${pending} ${key}`];
         pending = null;
         clearTimeout(timer);
-        if (ref.current[combo]) {
+        if (seq) {
           e.preventDefault();
-          ref.current[combo](e);
+          seq(e);
         }
         return;
       }
-      if (Object.keys(ref.current).some((k) => k.startsWith(`${key} `))) {
+      if (Object.keys(map).some((k) => k.startsWith(`${key} `))) {
         pending = key;
         timer = setTimeout(() => (pending = null), 900);
         return;
       }
-      if (ref.current[key]) {
+      const single = map[key];
+      if (single) {
         e.preventDefault();
-        ref.current[key](e);
+        single(e);
       }
     }
     window.addEventListener("keydown", onKey);
