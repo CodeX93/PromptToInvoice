@@ -9,10 +9,10 @@
     "worker",
     "scripts",
     "test",
+    "e2e",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "*.ts",
-    "*.mjs"
+    "*.ts"
   ],
   "exclude": ["node_modules"]
 }

@@ -3,7 +3,6 @@ import {
   BASE_CURRENCIES,
   currencyAllowed,
   addDays,
-  hasFeature,
   assertCan,
   calculate,
   euCountry,
