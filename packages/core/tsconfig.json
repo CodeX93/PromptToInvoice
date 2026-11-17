@@ -1,0 +1,4 @@
+{
+  "extends": "@pti/tsconfig/library.json",
+  "include": ["src", "vitest.config.ts"]
+}
