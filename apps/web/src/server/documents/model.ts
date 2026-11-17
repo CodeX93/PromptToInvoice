@@ -269,7 +269,8 @@ export function buildDocModel(
           : inv.status === "void"
             ? "void"
             : null,
-    accent: opts.customBranding === false ? "#16140f" : (liveProfile.branding.accentColor ?? "#16140f"),
+    accent:
+      opts.customBranding === false ? "#16140f" : (liveProfile.branding.accentColor ?? "#16140f"),
     logoFileId: seller.logoFileId,
     seller: {
       name: seller.tradingName ?? seller.legalName,

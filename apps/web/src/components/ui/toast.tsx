@@ -23,7 +23,12 @@ function emit() {
   for (const l of listeners) l();
 }
 
-export function toast(message: string, tone: Tone = "neutral", ms = 4200, action?: Toast["action"]): void {
+export function toast(
+  message: string,
+  tone: Tone = "neutral",
+  ms = 4200,
+  action?: Toast["action"],
+): void {
   const id = ++seq;
   toasts = [...toasts.slice(-3), { id, message, tone, action }];
   emit();
