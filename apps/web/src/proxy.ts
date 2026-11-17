@@ -24,7 +24,7 @@ function buildCsp(nonce: string, dev: boolean): string {
     `frame-src https://js.stripe.com https://hooks.stripe.com`,
     `object-src 'none'`,
     `base-uri 'self'`,
-    `form-action 'self'`,
+    `form-action 'self' https://checkout.stripe.com`,
     `frame-ancestors 'none'`,
     dev ? "" : "upgrade-insecure-requests",
   ]
