@@ -14,6 +14,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           { href: "/app/settings/payments", label: "Payments" },
           { href: "/app/settings/ai", label: "AI" },
           { href: "/app/settings/team", label: "Team" },
+          { href: "/app/settings/billing", label: "Plan & billing" },
           { href: "/app/settings/account", label: "Account & security" },
         ]}
       />
