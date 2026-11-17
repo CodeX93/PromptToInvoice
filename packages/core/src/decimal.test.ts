@@ -24,6 +24,11 @@ describe("parseDecimal", () => {
     expect(() => parseDecimal(input)).toThrow();
   });
 
+  it("accepts insignificant trailing zeros beyond the scale", () => {
+    expect(parseDecimal("5.000000", 4)).toEqual({ coef: 5n, scale: 0 });
+    expect(parseDecimal("1.250000", 4)).toEqual({ coef: 125n, scale: 2 });
+  });
+
   it("rejects excessive precision", () => {
     expect(() => parseDecimal("1.123", 2)).toThrow(/Too many/);
   });
