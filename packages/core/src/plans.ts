@@ -133,3 +133,20 @@ export function checkQuota(plan: PlanId, key: QuotaKey, used: number, increment 
 export function minimumPlanFor(feature: Feature): PlanId {
   return PLAN_IDS.find((p) => hasFeature(p, feature)) ?? "enterprise";
 }
+
+/**
+ * Display prices (major units, same figure in EUR and USD). Charging uses
+ * Stripe Prices; keep these in sync with the Stripe catalogue.
+ */
+export const PLAN_PRICES: Readonly<Record<"pro" | "business", { month: number; year: number }>> = {
+  pro: { month: 15, year: 150 },
+  business: { month: 39, year: 390 },
+};
+export const SEAT_PRICE = { month: 8, year: 80 } as const;
+
+export const PLAN_BLURB: Readonly<Record<PlanId, string>> = {
+  starter: "For your first clients.",
+  pro: "For freelancers billing every week.",
+  business: "For studios with several people or brands.",
+  enterprise: "API, SSO and a contract.",
+};
