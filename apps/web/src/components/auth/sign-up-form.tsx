@@ -10,6 +10,7 @@ import { Divider, OAuthButtons, type OAuthProvider } from "./oauth-buttons";
 import { PasswordMeter } from "./password-meter";
 
 export function SignUpForm({ next, providers }: { next: string; providers: OAuthProvider[] }) {
+  /** Mirrors the field for the strength meter only; submit reads the form. */
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,6 +20,11 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
     const email = str(fd, "email").trim();
+    const password = str(fd, "password");
+    if (password.length < 10) {
+      setError("Use at least 10 characters for your password.");
+      return;
+    }
     setPending(true);
     setError(null);
     const { error: err } = await authClient.signUp.email({
@@ -75,11 +81,15 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
                 id={f.id}
                 type="password"
                 autoComplete="new-password"
+                name="password"
                 required
                 minLength={10}
                 maxLength={128}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                // Uncontrolled: anything typed or autofilled before hydration still counts.
+                ref={(el) => {
+                  if (el && el.value !== password) setPassword(el.value);
+                }}
+                onInput={(e) => setPassword(e.currentTarget.value)}
               />
               <PasswordMeter value={password} />
             </div>
@@ -93,7 +103,7 @@ export function SignUpForm({ next, providers }: { next: string; providers: OAuth
             {error}
           </p>
         ) : null}
-        <Button type="submit" size="lg" pending={pending} disabled={password.length < 10}>
+        <Button type="submit" size="lg" pending={pending}>
           Create account
         </Button>
         <p className="text-ink-3 text-xs leading-relaxed">
