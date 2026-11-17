@@ -201,15 +201,31 @@ async function recordStripePayment(args: {
   amount: number;
   currency: string;
   feeAmount: number | null;
+  /** The connected account the event came from (direct charges). */
+  account: string | null;
 }): Promise<boolean> {
   const ctx = await systemContext(args.orgId);
   const recorded = await withOrg(db, args.orgId, async (tx) => {
-    const [inv] = await tx
-      .select()
+    const [row] = await tx
+      .select({ inv: schema.invoices, acct: schema.businessProfiles.stripeAccountId })
       .from(schema.invoices)
+      .innerJoin(
+        schema.businessProfiles,
+        eq(schema.businessProfiles.id, schema.invoices.businessProfileId),
+      )
       .where(eq(schema.invoices.id, args.invoiceId))
-      .for("update");
-    if (!inv) return false;
+      .for("update", { of: schema.invoices });
+    // Metadata names the invoice; the *sending account* must own it, or a
+    // payment on someone else's Stripe account could mark this invoice paid.
+    if (!row || !row.acct || row.acct !== args.account) {
+      if (row)
+        logger.warn(
+          { invoiceId: args.invoiceId, account: args.account },
+          "payment from foreign account ignored",
+        );
+      return false;
+    }
+    const inv = row.inv;
     const inserted = await tx
       .insert(schema.payments)
       .values({
@@ -350,12 +366,16 @@ export async function handleStripeEvent(event: Stripe.Event): Promise<boolean> {
           amount: session.amount_total,
           currency: session.currency ?? "eur",
           feeAmount: null,
+          account: event.account ?? null,
         });
         break;
       }
       case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
+        // Our own subscriptions live on the platform account; a connected
+        // account's subscription events must never change anyone's plan.
+        if (event.account) break;
         const { applySubscription } = await import("./billing");
         await applySubscription(event.data.object);
         break;

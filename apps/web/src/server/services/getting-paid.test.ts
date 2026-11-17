@@ -106,12 +106,13 @@ describe("stripe webhooks", () => {
     orgId: string,
     amount: number,
     pi: string,
+    account: string,
   ): Stripe.Event {
     return {
       id,
       object: "event",
       type: "checkout.session.completed",
-      account: "acct_123",
+      account,
       api_version: "2025-01-01",
       created: 1,
       livemode: false,
@@ -130,6 +131,16 @@ describe("stripe webhooks", () => {
         },
       },
     } as unknown as Stripe.Event;
+  }
+
+  /** Give the org's profile its own connected account, as onboarding with Stripe would. */
+  async function connect(o: Awaited<ReturnType<typeof orgContext>>): Promise<string> {
+    const acct = `acct_${o.ctx.org.id.replace(/-/g, "").slice(-16)}`;
+    await dbs.system
+      .update(schema.businessProfiles)
+      .set({ stripeAccountId: acct })
+      .where(eq(schema.businessProfiles.id, o.seed.profile.id));
+    return acct;
   }
 
   it("verifies signatures", () => {
@@ -152,6 +163,7 @@ describe("stripe webhooks", () => {
 
   it("records a checkout payment once and marks the invoice paid", async () => {
     const o = await orgContext();
+    const acct = await connect(o);
     const id = await issued(o);
     const total = (await getInvoice(o.ctx, id)).invoice.total;
     const ev = checkoutEvent(
@@ -160,6 +172,7 @@ describe("stripe webhooks", () => {
       o.ctx.org.id,
       total,
       `pi_${id.slice(0, 8)}`,
+      acct,
     );
     expect(await handleStripeEvent(ev)).toBe(true);
     expect(await handleStripeEvent(ev)).toBe(false); // same event replayed
@@ -175,17 +188,40 @@ describe("stripe webhooks", () => {
     expect(d.payments[0]?.method).toBe("stripe");
   });
 
+  it("ignores a payment event sent by a different connected account", async () => {
+    const o = await orgContext();
+    await connect(o);
+    const id = await issued(o);
+    const total = (await getInvoice(o.ctx, id)).invoice.total;
+    // Metadata names this invoice, but the event comes from someone else's account.
+    const ev = checkoutEvent(
+      `evt_x_${id.slice(0, 8)}`,
+      id,
+      o.ctx.org.id,
+      total,
+      `pi_x_${id.slice(0, 8)}`,
+      "acct_attacker",
+    );
+    await handleStripeEvent(ev);
+    const d = await getInvoice(o.ctx, id);
+    expect(d.status).not.toBe("paid");
+    expect(d.payments).toHaveLength(0);
+  });
+
   it("reopens the invoice on a refund", async () => {
     const o = await orgContext();
+    const acct = await connect(o);
     const id = await issued(o);
     const total = (await getInvoice(o.ctx, id)).invoice.total;
     const pi = `pi_r_${id.slice(0, 8)}`;
-    await handleStripeEvent(checkoutEvent(`evt_r_${id.slice(0, 8)}`, id, o.ctx.org.id, total, pi));
+    await handleStripeEvent(
+      checkoutEvent(`evt_r_${id.slice(0, 8)}`, id, o.ctx.org.id, total, pi, acct),
+    );
     await handleStripeEvent({
       id: `evt_rf_${id.slice(0, 8)}`,
       object: "event",
       type: "charge.refunded",
-      account: "acct_123",
+      account: acct,
       data: { object: { object: "charge", payment_intent: pi, amount_refunded: 50000 } },
     } as unknown as Stripe.Event);
     const d = await getInvoice(o.ctx, id);
