@@ -1,0 +1,28 @@
+{
+  "name": "@pti/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "eval": "tsx evals/run.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.10.0",
+    "@pti/core": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@pti/eslint-config": "workspace:*",
+    "@pti/tsconfig": "workspace:*",
+    "eslint": "^10.15.0",
+    "tsx": "^4.23.15",
+    "vitest": "^5.1.0"
+  }
+}
