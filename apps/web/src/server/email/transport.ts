@@ -35,7 +35,7 @@ const logTransport: Transport = {
 
 async function smtpTransport(): Promise<Transport> {
   const nodemailer = await import("nodemailer");
-  const t = nodemailer.createTransport(env.SMTP_URL ?? "smtp://localhost:1025", { pool: true, maxConnections: 5 });
+  const t = nodemailer.createTransport(env.SMTP_URL ?? "smtp://localhost:1025");
   return {
     name: "smtp",
     async send(msg) {
