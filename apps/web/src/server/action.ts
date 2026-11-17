@@ -14,7 +14,7 @@ export type ActionResult<T = undefined> =
   | { ok: true; data: T }
   | { ok: false; error: string; code: string; fieldErrors?: Record<string, string[]>; ref?: string };
 
-export const initialActionState = { ok: true, data: undefined } as ActionResult<undefined>;
+
 
 export function fieldErrorsFromZod(error: z.ZodError): Record<string, string[]> {
   const out: Record<string, string[]> = {};
