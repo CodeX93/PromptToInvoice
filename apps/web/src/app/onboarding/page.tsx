@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Route } from "next";
 import { Wordmark } from "@/components/brand/wordmark";
 import { requireUser } from "@/server/session";
 import { sysDb } from "@/server/db";
@@ -14,9 +15,12 @@ export const metadata: Metadata = { title: "Set up your business" };
 
 export default async function OnboardingPage(props: PageProps<"/onboarding">) {
   const { user } = await requireUser();
+  const { next: nextParam } = await props.searchParams;
+  // Invited users join an existing organisation instead of creating one.
+  const dest = safeNext(nextParam, "");
+  if (dest.startsWith("/invite/")) redirect(dest as Route);
   const [membership] = await sysDb.select({ id: schema.members.id }).from(schema.members).where(eq(schema.members.userId, user.id)).limit(1);
   if (membership) redirect("/app");
-  const { next } = await props.searchParams;
   const country = guessCountry((await headers()).get("accept-language")?.split(",")[0]);
 
   return (
@@ -32,7 +36,7 @@ export default async function OnboardingPage(props: PageProps<"/onboarding">) {
         <OnboardingForm
           defaultName={user.name}
           defaultCountry={country}
-          next={safeNext(next, "/app?welcome=1")}
+          next={safeNext(nextParam, "/app?welcome=1")}
           countries={COUNTRY_CODES.map((c) => ({ code: c, name: countryName(c) })).sort((a, b) => a.name.localeCompare(b.name))}
         />
       </div>
