@@ -114,8 +114,27 @@ const schema = z
 
 export type Env = z.infer<typeof schema>;
 
+/**
+ * `next build` evaluates route modules to collect their config, and image
+ * builds deliberately have no secrets. During that phase only, missing values
+ * are filled with inert placeholders. Every page is dynamic (per-request CSP
+ * nonce), so none of these can be baked into output; CI greps the build for
+ * the marker to prove it. At runtime validation is strict, always.
+ */
+const BUILD_MARKER = "__pti_build_placeholder__";
+const BUILD_PLACEHOLDERS: Record<string, string> = {
+  DATABASE_URL: `postgres://${BUILD_MARKER}@localhost/x`,
+  SYSTEM_DATABASE_URL: `postgres://${BUILD_MARKER}@localhost/x`,
+  BETTER_AUTH_SECRET: BUILD_MARKER.repeat(2),
+  ENCRYPTION_KEY: Buffer.alloc(32).toString("base64"),
+  NODE_ENV: "test",
+};
+
 function load(): Env {
-  const parsed = schema.safeParse(process.env);
+  const building = process.env.NEXT_PHASE === "phase-production-build";
+  const parsed = schema.safeParse(
+    building ? { ...process.env, ...BUILD_PLACEHOLDERS } : process.env,
+  );
   if (!parsed.success) {
     const lines = parsed.error.issues
       .map((i) => `  • ${i.path.join(".")}: ${i.message}`)
