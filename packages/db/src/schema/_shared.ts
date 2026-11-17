@@ -9,6 +9,8 @@ import { uuidv7 } from "uuidv7";
 export const id = () =>
   uuid("id")
     .primaryKey()
+    // App-generated v7 for locality; DB default covers raw SQL inserts.
+    .default(sql`gen_random_uuid()`)
     .$defaultFn(() => uuidv7());
 
 export const newId = (): string => uuidv7();
