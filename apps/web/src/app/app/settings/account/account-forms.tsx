@@ -164,3 +164,26 @@ export function Sessions({ sessions }: { sessions: SessionRow[] }) {
     </ul>
   );
 }
+
+export function DeleteAccount() {
+  const router = useRouter();
+  const [pending, setPending] = useState(false);
+  async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const password = new FormData(e.currentTarget).get("password");
+    if (typeof password !== "string" || !confirm("Delete your account permanently?")) return;
+    setPending(true);
+    const { error } = await authClient.deleteUser({ password, callbackURL: "/" });
+    setPending(false);
+    if (error) return toast.error(authErrorMessage(error));
+    router.replace("/");
+  }
+  return (
+    <form onSubmit={onSubmit} className="flex flex-wrap items-end gap-4">
+      <Field label="Confirm your password" className="w-64">{(f) => <Input id={f.id} name="password" type="password" autoComplete="current-password" required />}</Field>
+      <Button type="submit" variant="danger" pending={pending}>
+        Delete my account
+      </Button>
+    </form>
+  );
+}

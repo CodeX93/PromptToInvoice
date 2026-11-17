@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import { Section } from "@/components/ui/section";
 import { auth } from "@/server/auth";
 import { requireOrg } from "@/server/session";
-import { ChangePassword, ProfileBasics, Sessions } from "./account-forms";
+import { ChangePassword, DeleteAccount, ProfileBasics, Sessions } from "./account-forms";
 import { TwoFactor } from "./two-factor";
 
 export const metadata: Metadata = { title: "Account & security" };
@@ -72,6 +72,9 @@ export default async function AccountPage() {
               current: s.id === ctx.sessionId,
             }))}
         />
+      </Section>
+      <Section title="Delete account" description="Removes your login and personal data. If you're the only owner of an organisation, transfer ownership or delete the organisation first.">
+        <DeleteAccount />
       </Section>
     </>
   );
