@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition, type SubmitEvent } from "react";
 import type { Route } from "next";
 import { useHotkeys } from "@/hooks/use-hotkeys";
+import { useDictation } from "@/hooks/use-dictation";
 import { cn } from "@/lib/cn";
 import { toast } from "@/components/ui/toast";
 import { draftFromPrompt } from "@/app/app/invoices/ai-actions";
@@ -30,6 +31,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
   const [drafting, startDraft] = useTransition();
+  const dictation = useDictation((text) => setValue(text));
 
   useHotkeys({
     "mod+k": () => input.current?.focus(),
@@ -96,6 +98,21 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
           autoComplete="off"
           spellCheck={false}
         />
+        {aiEnabled && dictation.supported && !drafting ? (
+          <button
+            type="button"
+            onClick={dictation.listening ? dictation.stop : dictation.start}
+            aria-pressed={dictation.listening}
+            aria-label={dictation.listening ? "Stop dictation" : "Dictate (your browser's speech service transcribes the audio)"}
+            title="Dictate — transcribed by your browser's speech service"
+            className={cn("grid size-6 place-items-center rounded-full text-ink-3 hover:text-ink", dictation.listening && "bg-danger-soft text-danger animate-pulse")}
+          >
+            <svg width="12" height="14" viewBox="0 0 12 14" aria-hidden fill="none" stroke="currentColor" strokeWidth="1.3">
+              <rect x="3.5" y="0.75" width="5" height="8" rx="2.5" />
+              <path d="M1 6.5a5 5 0 0 0 10 0M6 11.5v2" />
+            </svg>
+          </button>
+        ) : null}
         {drafting ? (
           <span role="status" className="figures text-ink-3 text-2xs">drafting…</span>
         ) : value ? (
