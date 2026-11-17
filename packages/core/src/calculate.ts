@@ -166,10 +166,14 @@ export function calculate(input: CalculationInput): CalculationResult {
       });
   });
 
-  const discountTotal = documentDiscount(input.discount, lineNetTotal, exp, mode);
-  if (discountTotal < 0n || (lineNetTotal >= 0n && discountTotal > lineNetTotal)) {
+  // Discounts follow the sign of the subtotal: on a credit note (negative
+  // subtotal) a discount reduces the magnitude of the credit.
+  const negative = lineNetTotal < 0n;
+  const rawDiscount = documentDiscount(input.discount, negative ? -lineNetTotal : lineNetTotal, exp, mode);
+  if (rawDiscount < 0n || rawDiscount > (negative ? -lineNetTotal : lineNetTotal)) {
     throw new CalculationError("Discount cannot exceed the subtotal", ["discount"]);
   }
+  const discountTotal = negative ? -rawDiscount : rawDiscount;
 
   const groupList = [...groups.values()];
   const shares = allocate(
