@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type SubmitEvent } from "react";
+import { useEffect, useRef, useState, useTransition, type SubmitEvent } from "react";
 import type { Route } from "next";
 import { useHotkeys } from "@/hooks/use-hotkeys";
 import { cn } from "@/lib/cn";
+import { toast } from "@/components/ui/toast";
+import { draftFromPrompt } from "@/app/app/invoices/ai-actions";
 
 const EXAMPLES = [
   "10h consulting for Acme Corp at $120/h, due in 30 days",
@@ -27,6 +29,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
   }, []);
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);
+  const [drafting, startDraft] = useTransition();
 
   useHotkeys({
     "mod+k": () => input.current?.focus(),
@@ -42,9 +45,21 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
     e.preventDefault();
     const text = value.trim();
     if (!text) return;
-    router.push((aiEnabled ? `/app/invoices/new?prompt=${encodeURIComponent(text)}` : `/app/invoices?q=${encodeURIComponent(text)}`) as Route);
-    setValue("");
-    input.current?.blur();
+    if (!aiEnabled) {
+      router.push(`/app/invoices?q=${encodeURIComponent(text)}` as Route);
+      setValue("");
+      return;
+    }
+    startDraft(async () => {
+      const r = await draftFromPrompt(text);
+      if (!r.ok) {
+        toast.error(r.error);
+        return;
+      }
+      setValue("");
+      input.current?.blur();
+      router.push(`/app/invoices/${r.data.invoiceId}` as Route);
+    });
   }
 
   return (
@@ -75,16 +90,22 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
           }}
           placeholder={aiEnabled ? EXAMPLES[0] : "Search invoices by number, client or reference"}
           maxLength={2000}
-          className="figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none"
+          readOnly={drafting}
+          aria-busy={drafting}
+          className={cn("figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none", drafting && "text-ink-3")}
           autoComplete="off"
           spellCheck={false}
         />
-        {value ? (
+        {drafting ? (
+          <span role="status" className="figures text-ink-3 text-2xs">drafting…</span>
+        ) : value ? (
           <kbd className="figures text-ink-3 text-2xs">↵ {aiEnabled ? "draft" : "search"}</kbd>
         ) : (
           <kbd className="figures text-ink-4 text-2xs">⌘K</kbd>
         )}
       </label>
+      {/* Ruled progress line: an indeterminate pen stroke along the bar's bottom edge. */}
+      {drafting ? <span aria-hidden className="bg-ink absolute bottom-0 left-0 h-px w-1/3 animate-[draft-stroke_1.1s_ease-in-out_infinite]" /> : null}
     </form>
   );
 }
