@@ -11,6 +11,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const SESSION_COOKIES = ["pti.session_token", "__Secure-pti.session_token"];
 const APP_PREFIXES = ["/app"];
 const AUTH_PAGES = ["/sign-in", "/sign-up"];
+// /invite/* is reachable with or without a session.
 
 function buildCsp(nonce: string, dev: boolean): string {
   return [
