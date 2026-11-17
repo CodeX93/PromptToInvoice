@@ -4,7 +4,10 @@
  * Returns null for anything that isn't a number.
  */
 export function normalizeNumberInput(raw: string): string | null {
-  let s = raw.trim().replace(/[\s  '’]/g, "").replace(/^[^\d+-]+|[^\d.,]+$/g, "");
+  let s = raw
+    .trim()
+    .replace(/[\s\u00a0\u202f'\u2019]/g, "")
+    .replace(/^[^\d+-]+|[^\d.,]+$/g, "");
   if (!s) return null;
   const neg = s.startsWith("-");
   s = s.replace(/^[+-]/, "");

@@ -3,7 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { orgContextOrThrow } from "@/server/session";
 import { parseOrThrow, run, type ActionResult } from "@/server/action";
-import { clientSchema, createClient, setClientArchived, updateClient, verifyClientVat } from "@/server/services/clients";
+import {
+  clientSchema,
+  createClient,
+  setClientArchived,
+  updateClient,
+  verifyClientVat,
+} from "@/server/services/clients";
 import type { ViesResult } from "@/server/vies";
 import { str } from "@/lib/form-data";
 
@@ -18,7 +24,14 @@ function parseClientForm(fd: FormData) {
       .filter(Boolean),
     phone: str(fd, "phone"),
     address: country
-      ? { line1: str(fd, "line1"), line2: str(fd, "line2"), city: str(fd, "city"), region: str(fd, "region"), postalCode: str(fd, "postalCode"), country }
+      ? {
+          line1: str(fd, "line1"),
+          line2: str(fd, "line2"),
+          city: str(fd, "city"),
+          region: str(fd, "region"),
+          postalCode: str(fd, "postalCode"),
+          country,
+        }
       : null,
     isBusiness: fd.get("isBusiness") === "on",
     vatId: str(fd, "vatId"),
@@ -31,7 +44,10 @@ function parseClientForm(fd: FormData) {
   });
 }
 
-export async function saveClient(_prev: ActionResult<{ id: string }>, fd: FormData): Promise<ActionResult<{ id: string }>> {
+export async function saveClient(
+  _prev: ActionResult<{ id: string }>,
+  fd: FormData,
+): Promise<ActionResult<{ id: string }>> {
   return run("clients.save", async () => {
     const ctx = await orgContextOrThrow();
     const input = parseClientForm(fd);

@@ -1,6 +1,12 @@
 import "server-only";
 import { z } from "zod";
-import { addressSchema, currencySchema, emailSchema, normalizeVatId, parseEuVatId } from "@pti/core";
+import {
+  addressSchema,
+  currencySchema,
+  emailSchema,
+  normalizeVatId,
+  parseEuVatId,
+} from "@pti/core";
 import { and, asc, eq, ne, one, schema, sql, withOrg, type SQL } from "@pti/db";
 import { db } from "../db";
 import { audit } from "../audit";
@@ -66,7 +72,12 @@ function decodeCursor(c: string | undefined): [string, string] | null {
   if (!c) return null;
   try {
     const v = JSON.parse(Buffer.from(c, "base64url").toString()) as unknown;
-    return Array.isArray(v) && v.length === 2 && typeof v[0] === "string" && typeof v[1] === "string" ? [v[0], v[1]] : null;
+    return Array.isArray(v) &&
+      v.length === 2 &&
+      typeof v[0] === "string" &&
+      typeof v[1] === "string"
+      ? [v[0], v[1]]
+      : null;
   } catch {
     return null;
   }
@@ -81,7 +92,10 @@ export async function listClients(ctx: OrgContext, args: ListClientsArgs = {}) {
   const c = schema.clients;
   const where: SQL[] = [eq(c.status, args.status ?? "active")];
   const q = args.q?.trim();
-  if (q) where.push(sql`(${c.name} ilike ${"%" + q.replace(/[%_\\]/g, "\\$&") + "%"} or ${c.vatId} ilike ${q + "%"} or ${q} = any(${c.emails}))`);
+  if (q)
+    where.push(
+      sql`(${c.name} ilike ${"%" + q.replace(/[%_\\]/g, "\\$&") + "%"} or ${c.vatId} ilike ${q + "%"} or ${q} = any(${c.emails}))`,
+    );
   const cur = decodeCursor(args.cursor);
   if (cur) where.push(sql`(${c.name}, ${c.id}) > (${cur[0]}, ${cur[1]}::uuid)`);
 
@@ -95,7 +109,11 @@ export async function listClients(ctx: OrgContext, args: ListClientsArgs = {}) {
         vatId: c.vatId,
         vatIdVerifiedAt: c.vatIdVerifiedAt,
         status: c.status,
-        stats: sql<{ outstanding: { currency: string; amount: number }[] | null; count: number; last: string | null }>`(
+        stats: sql<{
+          outstanding: { currency: string; amount: number }[] | null;
+          count: number;
+          last: string | null;
+        }>`(
           select json_build_object(
             'outstanding', (select json_agg(json_build_object('currency', o.currency, 'amount', o.amt)) from (
               select currency, sum(total - amount_paid)::bigint as amt from invoices
@@ -114,35 +132,56 @@ export async function listClients(ctx: OrgContext, args: ListClientsArgs = {}) {
   const page = rows.slice(0, limit);
   const last = page.at(-1);
   return {
-    items: page.map(
-      (r): ClientListItem => ({
-        id: r.id,
-        name: r.name,
-        email: r.emails[0] ?? null,
-        country: r.address?.country ?? null,
-        vatId: r.vatId,
-        vatVerified: Boolean(r.vatIdVerifiedAt),
-        status: r.status,
-        outstanding: (r.stats.outstanding ?? []).map((o) => ({ currency: o.currency, amount: Number(o.amount) })),
-        invoiceCount: Number(r.stats.count),
-        lastInvoiceDate: r.stats.last,
-      }),
-    ),
-    nextCursor: rows.length > limit && last ? Buffer.from(JSON.stringify([last.name, last.id])).toString("base64url") : null,
+    items: page.map((r): ClientListItem => ({
+      id: r.id,
+      name: r.name,
+      email: r.emails[0] ?? null,
+      country: r.address?.country ?? null,
+      vatId: r.vatId,
+      vatVerified: Boolean(r.vatIdVerifiedAt),
+      status: r.status,
+      outstanding: (r.stats.outstanding ?? []).map((o) => ({
+        currency: o.currency,
+        amount: o.amount,
+      })),
+      invoiceCount: r.stats.count,
+      lastInvoiceDate: r.stats.last,
+    })),
+    nextCursor:
+      rows.length > limit && last
+        ? Buffer.from(JSON.stringify([last.name, last.id])).toString("base64url")
+        : null,
   };
 }
 
 export async function getClient(ctx: OrgContext, id: string): Promise<ClientRow> {
-  const [row] = await withOrg(db, ctx.org.id, (tx) => tx.select().from(schema.clients).where(eq(schema.clients.id, id)).limit(1));
+  const [row] = await withOrg(db, ctx.org.id, (tx) =>
+    tx.select().from(schema.clients).where(eq(schema.clients.id, id)).limit(1),
+  );
   if (!row) throw new NotFound("Client");
   return row;
 }
 
-export async function createClient(ctx: OrgContext, input: ClientInput, status: "active" | "pending" = "active"): Promise<ClientRow> {
+export async function createClient(
+  ctx: OrgContext,
+  input: ClientInput,
+  status: "active" | "pending" = "active",
+): Promise<ClientRow> {
   authorize(ctx, "client:write");
   return withOrg(db, ctx.org.id, async (tx) => {
-    const row = one(await tx.insert(schema.clients).values({ orgId: ctx.org.id, ...input, status }).returning());
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "client.created", entityType: "client", entityId: row.id });
+    const row = one(
+      await tx
+        .insert(schema.clients)
+        .values({ orgId: ctx.org.id, ...input, status })
+        .returning(),
+    );
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: "client.created",
+      entityType: "client",
+      entityId: row.id,
+    });
     return row;
   });
 }
@@ -150,21 +189,47 @@ export async function createClient(ctx: OrgContext, input: ClientInput, status: 
 export async function updateClient(ctx: OrgContext, id: string, input: ClientInput): Promise<void> {
   authorize(ctx, "client:write");
   await withOrg(db, ctx.org.id, async (tx) => {
-    const before = one(await tx.select().from(schema.clients).where(eq(schema.clients.id, id)), "Client");
+    const before = one(
+      await tx.select().from(schema.clients).where(eq(schema.clients.id, id)),
+      "Client",
+    );
     const vatChanged = (before.vatId ?? null) !== (input.vatId ?? null);
     await tx
       .update(schema.clients)
-      .set({ ...input, status: before.status === "pending" ? "active" : before.status, ...(vatChanged && { vatIdVerifiedAt: null, vatIdVerifiedName: null }) })
+      .set({
+        ...input,
+        status: before.status === "pending" ? "active" : before.status,
+        ...(vatChanged && { vatIdVerifiedAt: null, vatIdVerifiedName: null }),
+      })
       .where(eq(schema.clients.id, id));
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "client.updated", entityType: "client", entityId: id });
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: "client.updated",
+      entityType: "client",
+      entityId: id,
+    });
   });
 }
 
-export async function setClientArchived(ctx: OrgContext, id: string, archived: boolean): Promise<void> {
+export async function setClientArchived(
+  ctx: OrgContext,
+  id: string,
+  archived: boolean,
+): Promise<void> {
   authorize(ctx, "client:write");
   await withOrg(db, ctx.org.id, async (tx) => {
-    await tx.update(schema.clients).set({ status: archived ? "archived" : "active" }).where(eq(schema.clients.id, id));
-    await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: archived ? "client.archived" : "client.restored", entityType: "client", entityId: id });
+    await tx
+      .update(schema.clients)
+      .set({ status: archived ? "archived" : "active" })
+      .where(eq(schema.clients.id, id));
+    await audit(tx, {
+      orgId: ctx.org.id,
+      actorId: ctx.user.id,
+      action: archived ? "client.archived" : "client.restored",
+      entityType: "client",
+      entityId: id,
+    });
   });
 }
 
@@ -178,9 +243,20 @@ export async function verifyClientVat(ctx: OrgContext, id: string): Promise<Vies
     await withOrg(db, ctx.org.id, async (tx) => {
       await tx
         .update(schema.clients)
-        .set(result.status === "valid" ? { vatIdVerifiedAt: result.checkedAt, vatIdVerifiedName: result.name } : { vatIdVerifiedAt: null, vatIdVerifiedName: null })
+        .set(
+          result.status === "valid"
+            ? { vatIdVerifiedAt: result.checkedAt, vatIdVerifiedName: result.name }
+            : { vatIdVerifiedAt: null, vatIdVerifiedName: null },
+        )
         .where(eq(schema.clients.id, id));
-      await audit(tx, { orgId: ctx.org.id, actorId: ctx.user.id, action: "client.vat_checked", entityType: "client", entityId: id, diff: { result: result.status } });
+      await audit(tx, {
+        orgId: ctx.org.id,
+        actorId: ctx.user.id,
+        action: "client.vat_checked",
+        entityType: "client",
+        entityId: id,
+        diff: { result: result.status },
+      });
     });
   }
   return result;
@@ -196,27 +272,44 @@ export interface ClientMatch {
  * Fuzzy name match using pg_trgm similarity (GIN-indexed). Used by the AI
  * draft resolver and the client picker; returns the best few candidates.
  */
-export async function matchClients(ctx: OrgContext, name: string, limit = 5): Promise<ClientMatch[]> {
+export async function matchClients(
+  ctx: OrgContext,
+  name: string,
+  limit = 5,
+): Promise<ClientMatch[]> {
   const n = name.trim();
   if (!n) return [];
   const c = schema.clients;
   const rows = await withOrg(db, ctx.org.id, (tx) =>
     tx
-      .select({ id: c.id, name: c.name, score: sql<number>`greatest(similarity(${c.name}, ${n}), word_similarity(${n}, ${c.name}))` })
+      .select({
+        id: c.id,
+        name: c.name,
+        score: sql<number>`greatest(similarity(${c.name}, ${n}), word_similarity(${n}, ${c.name}))`,
+      })
       .from(c)
-      .where(and(ne(c.status, "archived"), sql`(${c.name} % ${n} or ${c.name} ilike ${"%" + n.replace(/[%_\\]/g, "\\$&") + "%"})`))
+      .where(
+        and(
+          ne(c.status, "archived"),
+          sql`(${c.name} % ${n} or ${c.name} ilike ${"%" + n.replace(/[%_\\]/g, "\\$&") + "%"})`,
+        ),
+      )
       .orderBy(sql`3 desc`)
       .limit(limit),
   );
-  return rows.map((r) => ({ ...r, score: Number(r.score) }));
+  return rows.map((r) => ({ ...r, score: r.score }));
 }
 
 /** Is reverse charge applicable for this client (EU B2B, other member state, verified VAT ID)? */
-export function clientTaxContext(client: Pick<ClientRow, "isBusiness" | "vatId" | "vatIdVerifiedAt" | "address">) {
+export function clientTaxContext(
+  client: Pick<ClientRow, "isBusiness" | "vatId" | "vatIdVerifiedAt" | "address">,
+) {
   return {
     buyerCountry: client.address?.country ?? null,
     buyerIsBusiness: client.isBusiness,
     // An unverified-but-well-formed EU VAT ID still counts; VIES outages shouldn't block invoicing.
-    buyerVatIdValid: Boolean(client.vatId && (client.vatIdVerifiedAt || parseEuVatId(client.vatId))),
+    buyerVatIdValid: Boolean(
+      client.vatId && (client.vatIdVerifiedAt || parseEuVatId(client.vatId)),
+    ),
   };
 }

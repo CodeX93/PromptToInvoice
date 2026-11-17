@@ -13,10 +13,29 @@ import {
 
 afterAll(() => dbs.close());
 
-const line = { description: "Consulting", quantity: "10", unit: "h", unitPrice: "120", taxCategory: "S", taxRate: "19" };
+const line = {
+  description: "Consulting",
+  quantity: "10",
+  unit: "h",
+  unitPrice: "120",
+  taxCategory: "S",
+  taxRate: "19",
+};
 
-function draftInput(profileId: string, clientId: string | null, over: Record<string, unknown> = {}) {
-  return { businessProfileId: profileId, clientId, currency: "EUR", issueDate: "2026-11-17", dueDate: "2026-12-01", lines: [line], ...over };
+function draftInput(
+  profileId: string,
+  clientId: string | null,
+  over: Record<string, unknown> = {},
+) {
+  return {
+    businessProfileId: profileId,
+    clientId,
+    currency: "EUR",
+    issueDate: "2026-11-17",
+    dueDate: "2026-12-01",
+    lines: [line],
+    ...over,
+  };
 }
 
 describe("invoice lifecycle", () => {
@@ -45,7 +64,9 @@ describe("invoice lifecycle", () => {
     await expect(issueInvoice(ctx, id)).rejects.toThrow(/Choose who/);
     await saveDraft(ctx, id, draftInput(seed.profile.id, clientId));
     await issueInvoice(ctx, id);
-    await expect(saveDraft(ctx, id, draftInput(seed.profile.id, clientId))).rejects.toThrow(/Cannot edit/);
+    await expect(saveDraft(ctx, id, draftInput(seed.profile.id, clientId))).rejects.toThrow(
+      /Cannot edit/,
+    );
     await expect(deleteDraft(ctx, id)).rejects.toThrow(/Cannot delete/);
   });
 
@@ -53,7 +74,9 @@ describe("invoice lifecycle", () => {
     const { ctx, seed, clientId } = await orgContext();
     const { id, version } = await saveDraft(ctx, null, draftInput(seed.profile.id, clientId));
     await saveDraft(ctx, id, draftInput(seed.profile.id, clientId), { expectedVersion: version });
-    await expect(saveDraft(ctx, id, draftInput(seed.profile.id, clientId), { expectedVersion: version })).rejects.toThrow(/another tab/);
+    await expect(
+      saveDraft(ctx, id, draftInput(seed.profile.id, clientId), { expectedVersion: version }),
+    ).rejects.toThrow(/another tab/);
   });
 
   it("enforces the starter plan's monthly issue quota", async () => {
@@ -72,10 +95,30 @@ describe("invoice lifecycle", () => {
     const { ctx, seed, clientId } = await orgContext();
     const { id } = await saveDraft(ctx, null, draftInput(seed.profile.id, clientId));
     await issueInvoice(ctx, id);
-    await recordPayment(ctx, id, { amount: 40000, receivedOn: "2026-11-20", method: "bank_transfer", reference: "", notes: "" });
+    await recordPayment(ctx, id, {
+      amount: 40000,
+      receivedOn: "2026-11-20",
+      method: "bank_transfer",
+      reference: "",
+      notes: "",
+    });
     expect((await getInvoice(ctx, id)).status).toBe("partially_paid");
-    await expect(recordPayment(ctx, id, { amount: 999999, receivedOn: "2026-11-21", method: "cash", reference: "", notes: "" })).rejects.toThrow(/more than/);
-    await recordPayment(ctx, id, { amount: 102800, receivedOn: "2026-11-21", method: "bank_transfer", reference: "", notes: "" });
+    await expect(
+      recordPayment(ctx, id, {
+        amount: 999999,
+        receivedOn: "2026-11-21",
+        method: "cash",
+        reference: "",
+        notes: "",
+      }),
+    ).rejects.toThrow(/more than/);
+    await recordPayment(ctx, id, {
+      amount: 102800,
+      receivedOn: "2026-11-21",
+      method: "bank_transfer",
+      reference: "",
+      notes: "",
+    });
     const paid = await getInvoice(ctx, id);
     expect(paid.status).toBe("paid");
     expect(paid.payments).toHaveLength(2);
@@ -101,7 +144,12 @@ describe("invoice lifecycle", () => {
     const { id } = await saveDraft(ctx, null, draftInput(seed.profile.id, clientId));
     await issueInvoice(ctx, id);
     const cnId = await draftCreditNote(ctx, id);
-    await saveDraft(ctx, cnId, draftInput(seed.profile.id, clientId, { lines: [{ ...line, quantity: "-2" }] }), { docType: "credit_note" });
+    await saveDraft(
+      ctx,
+      cnId,
+      draftInput(seed.profile.id, clientId, { lines: [{ ...line, quantity: "-2" }] }),
+      { docType: "credit_note" },
+    );
     await issueInvoice(ctx, cnId);
     const orig = await getInvoice(ctx, id);
     expect(orig.invoice.creditedAmount).toBe(28560);
@@ -122,7 +170,12 @@ describe("invoice lifecycle", () => {
 
   it("filters and paginates the list", async () => {
     const { ctx, seed, clientId } = await orgContext();
-    for (let i = 0; i < 3; i++) await saveDraft(ctx, null, draftInput(seed.profile.id, clientId, { issueDate: `2026-11-0${i + 1}`, dueDate: null }));
+    for (let i = 0; i < 3; i++)
+      await saveDraft(
+        ctx,
+        null,
+        draftInput(seed.profile.id, clientId, { issueDate: `2026-11-0${i + 1}`, dueDate: null }),
+      );
     const p1 = await listInvoices(ctx, { limit: 2 });
     expect(p1.items).toHaveLength(2);
     expect(p1.items[0]?.issueDate).toBe("2026-11-03");
@@ -134,6 +187,8 @@ describe("invoice lifecycle", () => {
 
   it("denies read-only roles from writing", async () => {
     const { ctx, seed, clientId } = await orgContext({ role: "accountant" });
-    await expect(saveDraft(ctx, null, draftInput(seed.profile.id, clientId))).rejects.toThrow(/permission/);
+    await expect(saveDraft(ctx, null, draftInput(seed.profile.id, clientId))).rejects.toThrow(
+      /permission/,
+    );
   });
 });

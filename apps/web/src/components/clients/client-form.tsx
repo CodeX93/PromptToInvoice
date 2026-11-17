@@ -74,14 +74,41 @@ export function ClientForm({
     <form action={action} className="grid gap-5 sm:grid-cols-6">
       {values.id ? <input type="hidden" name="id" value={values.id} /> : null}
       <Field label="Client name" className="sm:col-span-4" error={fe.name}>
-        {(f) => <Input id={f.id} name="name" defaultValue={values.name} required aria-invalid={f.invalid} autoFocus={!values.id} />}
+        {(f) => (
+          <Input
+            id={f.id}
+            name="name"
+            defaultValue={values.name}
+            required
+            aria-invalid={f.invalid}
+            autoFocus={!values.id}
+          />
+        )}
       </Field>
       <label className="text-ink-2 flex items-center gap-2 self-end pb-2 text-sm sm:col-span-2">
-        <input type="checkbox" name="isBusiness" checked={isBusiness} onChange={(e) => setIsBusiness(e.target.checked)} className="accent-ink size-3.5" />
+        <input
+          type="checkbox"
+          name="isBusiness"
+          checked={isBusiness}
+          onChange={(e) => setIsBusiness(e.target.checked)}
+          className="accent-ink size-3.5"
+        />
         Business client
       </label>
-      <Field label="Billing email" hint="Separate several with commas." className="sm:col-span-4" error={fe.emails ?? fe["emails.0"]}>
-        {(f) => <Input id={f.id} name="emails" defaultValue={values.emails.join(", ")} inputMode="email" />}
+      <Field
+        label="Billing email"
+        hint="Separate several with commas."
+        className="sm:col-span-4"
+        error={fe.emails ?? fe["emails.0"]}
+      >
+        {(f) => (
+          <Input
+            id={f.id}
+            name="emails"
+            defaultValue={values.emails.join(", ")}
+            inputMode="email"
+          />
+        )}
       </Field>
       <Field label="Contact person" optional className="sm:col-span-2">
         {(f) => <Input id={f.id} name="contactName" defaultValue={values.contactName ?? ""} />}
@@ -89,7 +116,12 @@ export function ClientForm({
 
       <Field label="Country" className="sm:col-span-2">
         {(f) => (
-          <Select id={f.id} name="country" value={country} onChange={(e) => setCountry(e.target.value)}>
+          <Select
+            id={f.id}
+            name="country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+          >
             <option value="">—</option>
             {countries.map((c) => (
               <option key={c.code} value={c.code}>
@@ -99,14 +131,38 @@ export function ClientForm({
           </Select>
         )}
       </Field>
-      <Field label="Street" className="sm:col-span-4">{(f) => <Input id={f.id} name="line1" defaultValue={values.address?.line1 ?? ""} />}</Field>
-      <Field label="Postcode" className="sm:col-span-2">{(f) => <Input id={f.id} name="postalCode" defaultValue={values.address?.postalCode ?? ""} />}</Field>
-      <Field label="City" className="sm:col-span-2">{(f) => <Input id={f.id} name="city" defaultValue={values.address?.city ?? ""} />}</Field>
-      <Field label="Region" optional className="sm:col-span-2">{(f) => <Input id={f.id} name="region" defaultValue={values.address?.region ?? ""} />}</Field>
+      <Field label="Street" className="sm:col-span-4">
+        {(f) => <Input id={f.id} name="line1" defaultValue={values.address?.line1 ?? ""} />}
+      </Field>
+      <Field label="Postcode" className="sm:col-span-2">
+        {(f) => (
+          <Input id={f.id} name="postalCode" defaultValue={values.address?.postalCode ?? ""} />
+        )}
+      </Field>
+      <Field label="City" className="sm:col-span-2">
+        {(f) => <Input id={f.id} name="city" defaultValue={values.address?.city ?? ""} />}
+      </Field>
+      <Field label="Region" optional className="sm:col-span-2">
+        {(f) => <Input id={f.id} name="region" defaultValue={values.address?.region ?? ""} />}
+      </Field>
 
       {isBusiness ? (
-        <Field label={isEuCountry(country) ? "VAT number" : "Tax ID"} optional hint={vatHint} className="sm:col-span-3" error={fe.vatId}>
-          {(f) => <Input id={f.id} name="vatId" value={vat} onChange={(e) => setVat(e.target.value)} className="figures" />}
+        <Field
+          label={isEuCountry(country) ? "VAT number" : "Tax ID"}
+          optional
+          hint={vatHint}
+          className="sm:col-span-3"
+          error={fe.vatId}
+        >
+          {(f) => (
+            <Input
+              id={f.id}
+              name="vatId"
+              value={vat}
+              onChange={(e) => setVat(e.target.value)}
+              className="figures"
+            />
+          )}
         </Field>
       ) : null}
 
@@ -122,14 +178,40 @@ export function ClientForm({
               </Select>
             )}
           </Field>
-          <Field label="Terms (days)" optional className="sm:col-span-2" error={fe.paymentTermsDays}>
-            {(f) => <Input id={f.id} name="paymentTermsDays" type="number" min={0} max={365} defaultValue={values.paymentTermsDays ?? ""} className="figures" />}
+          <Field
+            label="Terms (days)"
+            optional
+            className="sm:col-span-2"
+            error={fe.paymentTermsDays}
+          >
+            {(f) => (
+              <Input
+                id={f.id}
+                name="paymentTermsDays"
+                type="number"
+                min={0}
+                max={365}
+                defaultValue={values.paymentTermsDays ?? ""}
+                className="figures"
+              />
+            )}
           </Field>
-          <Field label="Buyer reference" optional hint="PO number or Leitweg-ID (XRechnung)." className="sm:col-span-3">
-            {(f) => <Input id={f.id} name="buyerReference" defaultValue={values.buyerReference ?? ""} />}
+          <Field
+            label="Buyer reference"
+            optional
+            hint="PO number or Leitweg-ID (XRechnung)."
+            className="sm:col-span-3"
+          >
+            {(f) => (
+              <Input id={f.id} name="buyerReference" defaultValue={values.buyerReference ?? ""} />
+            )}
           </Field>
-          <Field label="Phone" optional className="sm:col-span-3">{(f) => <Input id={f.id} name="phone" type="tel" defaultValue={values.phone ?? ""} />}</Field>
-          <Field label="Internal notes" optional className="sm:col-span-6">{(f) => <Textarea id={f.id} name="notes" defaultValue={values.notes} rows={2} />}</Field>
+          <Field label="Phone" optional className="sm:col-span-3">
+            {(f) => <Input id={f.id} name="phone" type="tel" defaultValue={values.phone ?? ""} />}
+          </Field>
+          <Field label="Internal notes" optional className="sm:col-span-6">
+            {(f) => <Textarea id={f.id} name="notes" defaultValue={values.notes} rows={2} />}
+          </Field>
         </>
       ) : null}
 

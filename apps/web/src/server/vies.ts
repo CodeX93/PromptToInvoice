@@ -18,15 +18,28 @@ export async function checkVies(raw: string, timeoutMs = 6000): Promise<ViesResu
   if (!parsed) return { status: "malformed" };
   const url = `https://ec.europa.eu/taxation_customs/vies/rest-api/ms/${parsed.country.vatPrefix}/vat/${parsed.number}`;
   try {
-    const res = await fetch(url, { headers: { Accept: "application/json" }, signal: AbortSignal.timeout(timeoutMs) });
+    const res = await fetch(url, {
+      headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(timeoutMs),
+    });
     if (!res.ok) return { status: "unavailable", reason: `HTTP ${res.status}` };
-    const body = (await res.json()) as { isValid?: boolean; name?: string; address?: string; userError?: string };
+    const body = (await res.json()) as {
+      isValid?: boolean;
+      name?: string;
+      address?: string;
+      userError?: string;
+    };
     if (body.userError && body.userError !== "VALID" && body.userError !== "INVALID") {
       return { status: "unavailable", reason: body.userError };
     }
     const clean = (s?: string) => (s && s !== "---" ? s.replace(/\s+/g, " ").trim() : null);
     return body.isValid
-      ? { status: "valid", name: clean(body.name), address: clean(body.address), checkedAt: new Date() }
+      ? {
+          status: "valid",
+          name: clean(body.name),
+          address: clean(body.address),
+          checkedAt: new Date(),
+        }
       : { status: "invalid", checkedAt: new Date() };
   } catch (err) {
     logger.warn({ err, country: parsed.country.code }, "VIES lookup failed");

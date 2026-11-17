@@ -63,7 +63,11 @@ export function assertCan(
 }
 
 /** Status after a payment (or refund) changes the paid amount. */
-export function statusAfterPayment(total: number, amountPaid: number, creditedAmount = 0): "open" | "paid" {
+export function statusAfterPayment(
+  total: number,
+  amountPaid: number,
+  creditedAmount = 0,
+): "open" | "paid" {
   return total > 0 && amountPaid + creditedAmount >= total ? "paid" : "open";
 }
 

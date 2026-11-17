@@ -17,7 +17,13 @@ export function currentPeriod(now = new Date()): string {
  * exceeded, so concurrent requests can't overshoot. Runs inside the caller's
  * transaction so a rolled-back action doesn't consume quota.
  */
-export async function consume(tx: Tx, orgId: string, plan: PlanId, metric: UsageMetric, by = 1): Promise<void> {
+export async function consume(
+  tx: Tx,
+  orgId: string,
+  plan: PlanId,
+  metric: UsageMetric,
+  by = 1,
+): Promise<void> {
   const quotaKey = metric === "emails_sent" ? null : QUOTA_KEY[metric];
   const limit = quotaKey ? PLANS[plan].limits[quotaKey] : null;
   const col = sql.identifier(metric);
@@ -38,9 +44,16 @@ export async function consume(tx: Tx, orgId: string, plan: PlanId, metric: Usage
   }
 }
 
-export async function usageFor(tx: Tx, orgId: string): Promise<{ invoicesIssued: number; aiDrafts: number; emailsSent: number }> {
+export async function usageFor(
+  tx: Tx,
+  orgId: string,
+): Promise<{ invoicesIssued: number; aiDrafts: number; emailsSent: number }> {
   const [r] = await tx.execute<{ invoices_issued: number; ai_drafts: number; emails_sent: number }>(
     sql`select invoices_issued, ai_drafts, emails_sent from usage_counters where org_id = ${orgId} and period = ${currentPeriod()}`,
   );
-  return { invoicesIssued: r?.invoices_issued ?? 0, aiDrafts: r?.ai_drafts ?? 0, emailsSent: r?.emails_sent ?? 0 };
+  return {
+    invoicesIssued: r?.invoices_issued ?? 0,
+    aiDrafts: r?.ai_drafts ?? 0,
+    emailsSent: r?.emails_sent ?? 0,
+  };
 }

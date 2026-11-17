@@ -23,17 +23,35 @@ function toOption(c: NonNullable<InvoiceDetail["client"]>): ClientOption {
   };
 }
 
-const strip = (n: string | null) => (n === null ? "" : String(Number(n)) === "NaN" ? n : n.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, ""));
+const strip = (n: string | null) =>
+  n === null
+    ? ""
+    : String(Number(n)) === "NaN"
+      ? n
+      : n.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "");
 
 /** Everything the editor needs, for a new draft (detail = null) or an existing one. */
 export async function editorProps(
   ctx: OrgContext,
   detail: InvoiceDetail | null,
-  opts: { clientId?: string | null; overrides?: Partial<EditorState>; aiFields?: string[]; aiNotes?: string[] } = {},
+  opts: {
+    clientId?: string | null;
+    overrides?: Partial<EditorState>;
+    aiFields?: string[];
+    aiNotes?: string[];
+  } = {},
 ): Promise<InvoiceEditorProps> {
-  const [defaults, rates] = await Promise.all([draftDefaults(ctx, detail?.invoice.clientId ?? opts.clientId), listTaxRates(ctx)]);
+  const [defaults, rates] = await Promise.all([
+    draftDefaults(ctx, detail?.invoice.clientId ?? opts.clientId),
+    listTaxRates(ctx),
+  ]);
   const p = defaults.profile;
-  const taxRates = rates.map((r) => ({ id: r.id, name: r.name, category: r.category as TaxCategory, rate: String(Number(r.rate)) }));
+  const taxRates = rates.map((r) => ({
+    id: r.id,
+    name: r.name,
+    category: r.category as TaxCategory,
+    rate: String(Number(r.rate)),
+  }));
 
   let initial: EditorState;
   if (detail) {
@@ -57,7 +75,10 @@ export async function editorProps(
         taxCategory: l.taxCategory as TaxCategory,
         taxRate: strip(l.taxRate),
       })),
-      discount: i.discountType && i.discountValue ? { type: i.discountType, value: strip(i.discountValue) } : null,
+      discount:
+        i.discountType && i.discountValue
+          ? { type: i.discountType, value: strip(i.discountValue) }
+          : null,
       notes: i.notes,
       terms: i.terms,
       taxNote: i.taxNote,
@@ -87,7 +108,12 @@ export async function editorProps(
     version: detail?.invoice.version ?? 0,
     docType: detail?.invoice.docType ?? "invoice",
     initial,
-    seller: { name: p.tradingName ?? p.legalName, country: p.address.country, vatExempt: p.vatExempt, defaultTermsDays: p.defaultPaymentTermsDays },
+    seller: {
+      name: p.tradingName ?? p.legalName,
+      country: p.address.country,
+      vatExempt: p.vatExempt,
+      defaultTermsDays: p.defaultPaymentTermsDays,
+    },
     taxRates,
     countries: countryOptions(),
     aiFields: opts.aiFields,

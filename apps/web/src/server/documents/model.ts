@@ -15,7 +15,6 @@ import {
   formatDecimal,
   type Address,
   type CurrencyCode,
-  type TaxCategory,
 } from "@pti/core";
 import type { IssuedSnapshot } from "@pti/db";
 import type { InvoiceDetail } from "../services/invoices";
@@ -44,7 +43,13 @@ export interface InvoiceDocModel {
   seller: { name: string; lines: string[]; ids: DocRow[]; contact: string[] };
   buyer: { name: string; lines: string[]; ids: DocRow[] };
   meta: DocRow[];
-  lines: { description: string; quantity: string; unitPrice: string; tax: string; amount: string }[];
+  lines: {
+    description: string;
+    quantity: string;
+    unitPrice: string;
+    tax: string;
+    amount: string;
+  }[];
   totals: { label: string; value: string; strong?: boolean }[];
   taxSummary: { label: string; taxable: string; tax: string }[];
   taxNotes: string[];
@@ -82,8 +87,16 @@ type Profile = Parameters<typeof readBank>[0] & {
 
 function addressLines(a: Address | null | undefined, locale: string): string[] {
   if (!a) return [];
-  const cityLine = a.country === "US" || a.country === "CA" ? [a.city, [a.region, a.postalCode].filter(Boolean).join(" ")].filter(Boolean).join(", ") : [a.postalCode, a.city].filter(Boolean).join(" ");
-  return [a.line1, a.line2, cityLine, a.country ? countryName(a.country, locale.slice(0, 2)) : ""].filter((x) => x.trim().length > 0);
+  const cityLine =
+    a.country === "US" || a.country === "CA"
+      ? [a.city, [a.region, a.postalCode].filter(Boolean).join(" ")].filter(Boolean).join(", ")
+      : [a.postalCode, a.city].filter(Boolean).join(" ");
+  return [
+    a.line1,
+    a.line2,
+    cityLine,
+    a.country ? countryName(a.country, locale.slice(0, 2)) : "",
+  ].filter((x) => x.trim().length > 0);
 }
 
 /** "10.0000" -> "10", "1.5000" -> "1.5", formatted with locale grouping. */
@@ -103,7 +116,13 @@ function unitPrice(v: string, currency: CurrencyCode, locale: string): string {
   let f = unitPriceFmt.get(key);
   if (!f) {
     const digits = minorUnitExponent(currency);
-    f = new Intl.NumberFormat(locale, { style: "currency", currency, currencyDisplay: "narrowSymbol", minimumFractionDigits: digits, maximumFractionDigits: 6 });
+    f = new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: digits,
+      maximumFractionDigits: 6,
+    });
     unitPriceFmt.set(key, f);
   }
   return f.format(formatDecimal(normalizeDecimal(parseDecimal(v))) as unknown as number);
@@ -113,7 +132,11 @@ function rate(r: string, locale: string): string {
   return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 4 }).format(Number(r))}%`;
 }
 
-export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { payUrl?: string | null } = {}): InvoiceDocModel {
+export function buildDocModel(
+  d: InvoiceDetail,
+  liveProfile: Profile,
+  opts: { payUrl?: string | null } = {},
+): InvoiceDocModel {
   const inv = d.invoice;
   const snap: IssuedSnapshot["seller"] | null = inv.issuedSnapshot?.seller ?? null;
   const bank = snap ? snap.bank : readBank(liveProfile);
@@ -153,42 +176,61 @@ export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { pa
   const kind = inv.docType;
   const meta: DocRow[] = [];
   meta.push({ label: L.issueDate, value: date(inv.issueDate) });
-  if (inv.supplyDate && inv.supplyDate !== inv.issueDate) meta.push({ label: L.supplyDate, value: date(inv.supplyDate) });
-  if (kind === "invoice") meta.push({ label: L.dueDate, value: inv.dueDate ? date(inv.dueDate) : L.dueOnReceipt });
+  if (inv.supplyDate && inv.supplyDate !== inv.issueDate)
+    meta.push({ label: L.supplyDate, value: date(inv.supplyDate) });
+  if (kind === "invoice")
+    meta.push({ label: L.dueDate, value: inv.dueDate ? date(inv.dueDate) : L.dueOnReceipt });
   if (d.corrects?.number) meta.push({ label: L.correctsInvoice, value: d.corrects.number });
-  if (inv.reference && !(kind === "credit_note" && inv.reference === d.corrects?.number)) meta.push({ label: L.reference, value: inv.reference });
+  if (inv.reference && !(kind === "credit_note" && inv.reference === d.corrects?.number))
+    meta.push({ label: L.reference, value: inv.reference });
   if (buyer?.buyerReference) meta.push({ label: L.reference, value: buyer.buyerReference });
 
   const totals: InvoiceDocModel["totals"] = [];
   if (inv.discountTotal !== 0) {
     totals.push({ label: L.subtotal, value: m(inv.lineNetTotal) });
-    totals.push({ label: inv.discountType === "percent" && inv.discountValue ? `${L.discount} ${rate(inv.discountValue, locale)}` : L.discount, value: m(-inv.discountTotal) });
+    totals.push({
+      label:
+        inv.discountType === "percent" && inv.discountValue
+          ? `${L.discount} ${rate(inv.discountValue, locale)}`
+          : L.discount,
+      value: m(-inv.discountTotal),
+    });
   }
   const groups = inv.taxBreakdown;
   const hasTax = groups.some((g) => g.tax !== 0);
-  if (hasTax || inv.discountTotal !== 0) totals.push({ label: L.totalExclTax, value: m(inv.taxExclusive) });
-  for (const g of groups) if (g.tax !== 0) totals.push({ label: `${L.vat} ${rate(g.rate, locale)}`, value: m(g.tax) });
+  if (hasTax || inv.discountTotal !== 0)
+    totals.push({ label: L.totalExclTax, value: m(inv.taxExclusive) });
+  for (const g of groups)
+    if (g.tax !== 0) totals.push({ label: `${L.vat} ${rate(g.rate, locale)}`, value: m(g.tax) });
   totals.push({ label: L.total, value: m(inv.total), strong: true });
   const due = amountDue(inv);
-  if (inv.status !== "draft" && kind === "invoice" && (inv.amountPaid > 0 || inv.creditedAmount > 0)) {
+  if (
+    inv.status !== "draft" &&
+    kind === "invoice" &&
+    (inv.amountPaid > 0 || inv.creditedAmount > 0)
+  ) {
     if (inv.amountPaid > 0) totals.push({ label: L.amountPaid, value: m(-inv.amountPaid) });
     if (inv.creditedAmount > 0) totals.push({ label: L.creditNote, value: m(-inv.creditedAmount) });
     totals.push({ label: L.amountDue, value: m(due), strong: true });
   }
 
-  const categories = new Set(groups.map((g) => g.category as TaxCategory));
+  const categories = new Set(groups.map((g) => g.category));
   const taxNotes: string[] = [];
   if (inv.taxNote) taxNotes.push(inv.taxNote);
   else {
     for (const c of categories) {
-      const note = c === "E" && liveProfile.vatExemptNote ? liveProfile.vatExemptNote : DEFAULT_EXEMPTION_NOTES[c];
+      const note =
+        c === "E" && liveProfile.vatExemptNote
+          ? liveProfile.vatExemptNote
+          : DEFAULT_EXEMPTION_NOTES[c];
       if (c !== "S" && c !== "Z" && note) taxNotes.push(note);
     }
   }
 
   const remittance = inv.number ?? "";
   const iban = bank?.iban && isValidIban(bank.iban) ? bank.iban : null;
-  const showPayment = kind === "invoice" && inv.status !== "paid" && inv.status !== "void" && (iban || opts.payUrl);
+  const showPayment =
+    kind === "invoice" && inv.status !== "paid" && inv.status !== "void" && (iban || opts.payUrl);
   const payment: InvoiceDocModel["payment"] = showPayment
     ? {
         holder: bank?.accountHolder ?? seller.legalName,
@@ -197,7 +239,13 @@ export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { pa
         bankName: bank?.bankName ?? null,
         epcPayload:
           iban && currency === "EUR" && (inv.status === "draft" ? inv.total : due) > 0
-            ? epcQrPayload({ name: bank?.accountHolder ?? seller.legalName, iban, bic: bank?.bic, amountCents: inv.status === "draft" ? inv.total : due, remittance: remittance || "Invoice" })
+            ? epcQrPayload({
+                name: bank?.accountHolder ?? seller.legalName,
+                iban,
+                bic: bank?.bic,
+                amountCents: inv.status === "draft" ? inv.total : due,
+                remittance: remittance || "Invoice",
+              })
             : null,
         remittance,
         payUrl: inv.status === "draft" ? null : (opts.payUrl ?? null),
@@ -213,23 +261,41 @@ export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { pa
     kind,
     title: kind === "credit_note" ? L.creditNote : L.invoice,
     number: inv.number ?? L.draft,
-    stamp: inv.status === "draft" ? "draft" : inv.status === "paid" ? "paid" : inv.status === "void" ? "void" : null,
+    stamp:
+      inv.status === "draft"
+        ? "draft"
+        : inv.status === "paid"
+          ? "paid"
+          : inv.status === "void"
+            ? "void"
+            : null,
     accent: liveProfile.branding.accentColor ?? "#16140f",
     logoFileId: seller.logoFileId,
     seller: {
       name: seller.tradingName ?? seller.legalName,
-      lines: [...(seller.tradingName ? [seller.legalName] : []), ...addressLines(sellerAddr, locale)],
+      lines: [
+        ...(seller.tradingName ? [seller.legalName] : []),
+        ...addressLines(sellerAddr, locale),
+      ],
       ids: [
         ...(seller.vatId ? [{ label: L.vatId, value: seller.vatId }] : []),
         ...(seller.taxId ? [{ label: L.taxId, value: seller.taxId }] : []),
-        ...(seller.registrationNumber ? [{ label: L.registration, value: seller.registrationNumber }] : []),
+        ...(seller.registrationNumber
+          ? [{ label: L.registration, value: seller.registrationNumber }]
+          : []),
       ],
       contact: [seller.email, seller.phone, seller.website].filter((x): x is string => Boolean(x)),
     },
     buyer: {
       name: buyer?.name ?? "—",
-      lines: [...(buyer?.contactName ? [buyer.contactName] : []), ...addressLines(buyer?.address, locale)],
-      ids: [...(buyer?.vatId ? [{ label: L.vatId, value: buyer.vatId }] : []), ...(buyer?.taxId ? [{ label: L.taxId, value: buyer.taxId }] : [])],
+      lines: [
+        ...(buyer?.contactName ? [buyer.contactName] : []),
+        ...addressLines(buyer?.address, locale),
+      ],
+      ids: [
+        ...(buyer?.vatId ? [{ label: L.vatId, value: buyer.vatId }] : []),
+        ...(buyer?.taxId ? [{ label: L.taxId, value: buyer.taxId }] : []),
+      ],
     },
     meta,
     lines: d.lines.map((l) => ({
@@ -242,7 +308,11 @@ export function buildDocModel(d: InvoiceDetail, liveProfile: Profile, opts: { pa
     totals,
     taxSummary:
       groups.length > 1 || [...categories].some((c) => c !== "S")
-        ? groups.map((g) => ({ label: `${g.category} · ${rate(g.rate, locale)}`, taxable: m(g.taxable), tax: m(g.tax) }))
+        ? groups.map((g) => ({
+            label: `${g.category} · ${rate(g.rate, locale)}`,
+            taxable: m(g.taxable),
+            tax: m(g.tax),
+          }))
         : [],
     taxNotes,
     notes: inv.notes,

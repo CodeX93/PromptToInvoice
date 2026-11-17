@@ -80,7 +80,9 @@ export function ClientPicker({
         >
           <span className={cn("font-medium", highlight && "ai-mark")}>{value.name}</span>
           <span className="text-ink-3 block text-xs">
-            {[value.email, value.country ? countryName(value.country) : null, value.vatId].filter(Boolean).join(" · ")}
+            {[value.email, value.country ? countryName(value.country) : null, value.vatId]
+              .filter(Boolean)
+              .join(" · ")}
           </span>
           <span className="text-ink-4 group-hover:text-ink-2 text-2xs">Change</span>
         </button>
@@ -128,12 +130,17 @@ export function ClientPicker({
         )}
       />
       {open && total > 0 ? (
-        <ul id={listId} role="listbox" className="border-rule-strong bg-paper-raised shadow-pop absolute z-20 mt-1 w-full min-w-64 rounded-sm border py-1">
+        <div
+          id={listId}
+          role="listbox"
+          className="border-rule-strong bg-paper-raised shadow-pop absolute z-20 mt-1 w-full min-w-64 rounded-sm border py-1"
+        >
           {options.map((o, i) => (
-            <li
+            <div
               key={o.id}
               id={`${listId}-${i}`}
               role="option"
+              tabIndex={-1}
               aria-selected={i === active}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -143,25 +150,31 @@ export function ClientPicker({
               className={cn("cursor-default px-3 py-1.5", i === active && "bg-paper-sunk")}
             >
               <span className="text-sm">{o.name}</span>
-              <span className="text-ink-3 block text-xs">{[o.email, o.country].filter(Boolean).join(" · ")}</span>
-            </li>
+              <span className="text-ink-3 block text-xs">
+                {[o.email, o.country].filter(Boolean).join(" · ")}
+              </span>
+            </div>
           ))}
           {q.trim() ? (
-            <li
+            <div
               id={`${listId}-${options.length}`}
               role="option"
+              tabIndex={-1}
               aria-selected={active === options.length}
               onMouseDown={(e) => {
                 e.preventDefault();
                 pick(options.length);
               }}
               onMouseEnter={() => setActive(options.length)}
-              className={cn("border-rule text-ink-2 cursor-default border-t px-3 py-1.5 text-sm", active === options.length && "bg-paper-sunk")}
+              className={cn(
+                "border-rule text-ink-2 cursor-default border-t px-3 py-1.5 text-sm",
+                active === options.length && "bg-paper-sunk",
+              )}
             >
               + Add “{q.trim()}” as a new client
-            </li>
+            </div>
           ) : null}
-        </ul>
+        </div>
       ) : null}
 
       <Dialog open={creating !== null} onOpenChange={(o) => !o && setCreating(null)}>

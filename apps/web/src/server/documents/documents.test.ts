@@ -18,9 +18,31 @@ describe("invoice documents", () => {
       dueDate: "2026-12-01",
       language: "en",
       lines: [
-        { description: "Brand strategy workshop (2 days, on-site in Berlin incl. preparation and follow-up notes)", quantity: "2", unit: "days", unitPrice: "1200", taxCategory: "S", taxRate: "19" },
-        { description: "Implementation", quantity: "16", unit: "h", unitPrice: "120", taxCategory: "S", taxRate: "19" },
-        { description: "Hosting, November", quantity: "1", unit: "", unitPrice: "120", taxCategory: "S", taxRate: "19" },
+        {
+          description:
+            "Brand strategy workshop (2 days, on-site in Berlin incl. preparation and follow-up notes)",
+          quantity: "2",
+          unit: "days",
+          unitPrice: "1200",
+          taxCategory: "S",
+          taxRate: "19",
+        },
+        {
+          description: "Implementation",
+          quantity: "16",
+          unit: "h",
+          unitPrice: "120",
+          taxCategory: "S",
+          taxRate: "19",
+        },
+        {
+          description: "Hosting, November",
+          quantity: "1",
+          unit: "",
+          unitPrice: "120",
+          taxCategory: "S",
+          taxRate: "19",
+        },
       ],
       discount: { type: "percent", value: "5" },
       notes: "Thank you for the collaboration.",
@@ -41,7 +63,13 @@ describe("invoice documents", () => {
 
     // Archiving twice is a no-op (the hash can only be set once).
     await archivePdf(ctx, id);
-    await recordPayment(ctx, id, { amount: d.invoice.total, receivedOn: "2026-11-20", method: "bank_transfer", reference: "", notes: "" });
+    await recordPayment(ctx, id, {
+      amount: d.invoice.total,
+      receivedOn: "2026-11-20",
+      method: "bank_transfer",
+      reference: "",
+      notes: "",
+    });
   });
 
   it("builds a German model with localized labels and formats", async () => {
@@ -52,7 +80,16 @@ describe("invoice documents", () => {
       currency: "EUR",
       issueDate: "2026-11-17",
       language: "de",
-      lines: [{ description: "Beratung", quantity: "1.5", unit: "Std.", unitPrice: "0.0125", taxCategory: "S", taxRate: "19" }],
+      lines: [
+        {
+          description: "Beratung",
+          quantity: "1.5",
+          unit: "Std.",
+          unitPrice: "0.0125",
+          taxCategory: "S",
+          taxRate: "19",
+        },
+      ],
     });
     const d = await getInvoice(ctx, id);
     const m = buildDocModel(d, { ...seed.profile, bankDetailsEncrypted: null });
