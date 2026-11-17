@@ -20,6 +20,20 @@ const schema = z
     LEGAL_ENTITY: z.string().trim().min(1).default("PromptToInvoice"),
     LEGAL_ADDRESS: optional,
     LEGAL_EMAIL: z.email().default("legal@prompttoinvoice.com"),
+    /**
+     * Comma-separated IPs/CIDRs of your reverse proxies / load balancer. Used
+     * to find the real client in X-Forwarded-For; without it only a
+     * single-entry header is trusted.
+     */
+    TRUSTED_PROXIES: z
+      .string()
+      .default("")
+      .transform((v) =>
+        v
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+      ),
 
     DATABASE_URL: z.string().min(1),
     SYSTEM_DATABASE_URL: z.string().min(1),
@@ -64,6 +78,8 @@ const schema = z
     EMAIL_PROVIDER: z.enum(["log", "smtp", "postmark"]).default("log"),
     EMAIL_FROM: z.string().default("PromptToInvoice <invoices@localhost>"),
     SMTP_URL: optional,
+    /** Dev/E2E: with EMAIL_PROVIDER=log, also write each email as JSON here. */
+    EMAIL_OUTBOX_DIR: optional,
     POSTMARK_SERVER_TOKEN: optional,
     POSTMARK_WEBHOOK_SECRET: optional,
 

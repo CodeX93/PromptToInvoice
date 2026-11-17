@@ -1,3 +1,4 @@
+import { clientIp } from "@/server/client-ip";
 import { NextResponse } from "next/server";
 import { isAppError } from "@/server/errors";
 import { hit, RULES } from "@/server/rate-limit";
@@ -7,7 +8,7 @@ import { checkoutForToken } from "@/server/services/stripe";
 export async function POST(req: Request, ctx: RouteContext<"/i/[token]/pay">) {
   const { token } = await ctx.params;
   if (!/^[\w-]{20,40}$/.test(token)) return new Response("Not found", { status: 404 });
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIp(req.headers);
   if (!(await hit(`pay:${ip}`, RULES.publicInvoice)).allowed)
     return new Response("Too many requests", { status: 429 });
   try {

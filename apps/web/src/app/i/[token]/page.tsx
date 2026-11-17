@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { amountDue, formatDate, formatMoney, hasFeature, type CurrencyCode } from "@pti/core";
 import { DocumentView } from "@/components/invoices/document-view";
 import { Wordmark } from "@/components/brand/wordmark";
+import { clientIp } from "@/server/client-ip";
 import { features } from "@/server/env";
 import { hit, RULES } from "@/server/rate-limit";
 import { getSession } from "@/server/session";
@@ -27,7 +28,7 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
   const { token } = await props.params;
   const sp = await props.searchParams;
   const h = await headers();
-  const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIp(h);
   if (!(await hit(`pub:${ip}`, RULES.publicInvoice)).allowed) notFound();
   const found = await loadPublicInvoice(token);
   if (!found) notFound();

@@ -53,7 +53,7 @@ export const auth = betterAuth({
     cookiePrefix: "pti",
     useSecureCookies: env.NODE_ENV === "production",
     database: { generateId: () => newId() },
-    ipAddress: { ipAddressHeaders: ["x-forwarded-for"] },
+    ipAddress: { ipAddressHeaders: ["x-forwarded-for"], trustedProxies: env.TRUSTED_PROXIES },
   },
   user: {
     additionalFields: {

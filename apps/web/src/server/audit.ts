@@ -1,4 +1,5 @@
 import "server-only";
+import { clientIpOrNull } from "./client-ip";
 import { headers } from "next/headers";
 import { schema, type DbOrTx } from "@pti/db";
 
@@ -15,7 +16,7 @@ export interface AuditEntry {
 async function requestMeta(): Promise<{ ip: string | null; userAgent: string | null }> {
   try {
     const h = await headers();
-    const ip = h.get("x-forwarded-for")?.split(",")[0]?.trim() ?? null;
+    const ip = clientIpOrNull(h);
     return {
       ip: ip && /^[\d.:a-fA-F]+$/.test(ip) ? ip : null,
       userAgent: h.get("user-agent")?.slice(0, 300) ?? null,
