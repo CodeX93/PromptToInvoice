@@ -9,7 +9,10 @@ import { createDb } from "./client";
 export async function runMigrations(url: string): Promise<void> {
   const { db, client } = createDb({ url, max: 1, applicationName: "pti-migrate" });
   try {
-    await migrate(db, { migrationsFolder: fileURLToPath(new URL("../drizzle", import.meta.url)) });
+    // MIGRATIONS_DIR lets a bundled copy of this script find the SQL files.
+    const migrationsFolder =
+      process.env.MIGRATIONS_DIR ?? fileURLToPath(new URL("../drizzle", import.meta.url));
+    await migrate(db, { migrationsFolder });
   } finally {
     await client.end({ timeout: 5 });
   }
