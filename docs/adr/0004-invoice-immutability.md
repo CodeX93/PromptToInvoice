@@ -4,10 +4,12 @@
 - Date: 2026-11-17
 
 ## Context
+
 EU VAT rules and national bookkeeping law (e.g. GoBD in Germany) require issued invoices to stay unchanged,
 numbered sequentially without gaps, and retained for 6–10 years.
 
 ## Decision
+
 - `status ∈ {draft, open, paid, void}`; delivery and payment facts are separate columns and the display
   status is derived (`@pti/core/lifecycle`).
 - Numbers are allocated only when issuing, inside the issuing transaction, from a locked counter row.
@@ -16,4 +18,5 @@ numbered sequentially without gaps, and retained for 6–10 years.
 - Corrections create a credit note referencing the original.
 
 ## Consequences
+
 Application bugs cannot silently alter issued documents. "Edit" on an issued invoice is offered as "credit & re-issue".
