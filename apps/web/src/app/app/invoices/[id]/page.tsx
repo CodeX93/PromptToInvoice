@@ -1,8 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Route } from "next";
-import { amountDue, can as canDo, formatMoney, fromMinor, todayIn, type CurrencyCode } from "@pti/core";
+import { amountDue, can as canDo, formatMoney, fromMinor, todayIn } from "@pti/core";
 import { DocumentView } from "@/components/invoices/document-view";
 import { InvoiceActions } from "@/components/invoices/invoice-actions";
 import { InvoiceEditor } from "@/components/invoices/invoice-editor";
@@ -48,9 +47,13 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
 
   const inv = detail.invoice;
   const model = await modelFor(ctx, detail);
-  const currency = model.currency as CurrencyCode;
+  const currency = model.currency;
   const due = amountDue(inv);
-  const fmtTime = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: ctx.user.timeZone });
+  const fmtTime = new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: ctx.user.timeZone,
+  });
 
   return (
     <div className="pb-20">
@@ -77,15 +80,25 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
       </div>
 
       <div className="mx-auto grid max-w-[1180px] gap-8 px-4 pt-8 sm:px-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <DocumentView m={model} logoUrl={model.logoFileId ? `/api/files/${model.logoFileId}` : null} />
+        <DocumentView
+          m={model}
+          logoUrl={model.logoFileId ? `/api/files/${model.logoFileId}` : null}
+        />
 
         <aside className="flex flex-col gap-8 text-[13px] xl:sticky xl:top-20 xl:self-start">
           <section>
             <p className="label-caps">{inv.docType === "invoice" ? "Amount due" : "Credit"}</p>
-            <p className="figures mt-1 text-2xl">{formatMoney(inv.docType === "invoice" ? due : inv.total, currency)}</p>
-            {inv.docType === "invoice" && due !== inv.total && inv.status !== "void" ? <p className="figures text-ink-3 text-xs">of {formatMoney(inv.total, currency)}</p> : null}
+            <p className="figures mt-1 text-2xl">
+              {formatMoney(inv.docType === "invoice" ? due : inv.total, currency)}
+            </p>
+            {inv.docType === "invoice" && due !== inv.total && inv.status !== "void" ? (
+              <p className="figures text-ink-3 text-xs">of {formatMoney(inv.total, currency)}</p>
+            ) : null}
             {detail.client ? (
-              <Link href={`/app/clients/${detail.client.id}` as Route} className="text-ink-2 hover:text-ink mt-3 block underline-offset-4 hover:underline">
+              <Link
+                href={`/app/clients/${detail.client.id}` as Route}
+                className="text-ink-2 hover:text-ink mt-3 block underline-offset-4 hover:underline"
+              >
                 {detail.client.name} →
               </Link>
             ) : null}
@@ -94,7 +107,10 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
           {detail.corrects ? (
             <section>
               <p className="label-caps mb-1">Corrects</p>
-              <Link href={`/app/invoices/${detail.corrects.id}` as Route} className="figures underline underline-offset-4">
+              <Link
+                href={`/app/invoices/${detail.corrects.id}` as Route}
+                className="figures underline underline-offset-4"
+              >
                 {detail.corrects.number}
               </Link>
             </section>
@@ -104,7 +120,11 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
             <section>
               <p className="label-caps mb-1">Credit notes</p>
               {detail.credits.map((c) => (
-                <Link key={c.id} href={`/app/invoices/${c.id}` as Route} className="figures flex justify-between py-0.5 hover:underline">
+                <Link
+                  key={c.id}
+                  href={`/app/invoices/${c.id}` as Route}
+                  className="figures flex justify-between py-0.5 hover:underline"
+                >
                   <span>{c.number ?? "Draft"}</span>
                   <span>{formatMoney(c.total, currency)}</span>
                 </Link>

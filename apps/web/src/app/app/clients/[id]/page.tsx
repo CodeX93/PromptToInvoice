@@ -1,7 +1,6 @@
-import type { Metadata } from "next";
+import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Route } from "next";
 import { countryName, formatDate, formatMoney, isCurrencyCode } from "@pti/core";
 import { PageHeader } from "@/components/shell/page-header";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,9 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
   });
   const { items } = await listInvoices(ctx, { clientId: id, limit: 100 });
   const outstanding = new Map<string, number>();
-  for (const i of items) if (i.amountDue > 0) outstanding.set(i.currency, (outstanding.get(i.currency) ?? 0) + i.amountDue);
+  for (const i of items)
+    if (i.amountDue > 0)
+      outstanding.set(i.currency, (outstanding.get(i.currency) ?? 0) + i.amountDue);
   const a = client.address;
 
   return (
@@ -37,7 +38,21 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
             countries={countryOptions()}
             archived={client.status === "archived"}
             hasVat={Boolean(client.vatId)}
-            values={{ id: client.id, name: client.name, contactName: client.contactName, emails: client.emails, phone: client.phone, address: client.address, isBusiness: client.isBusiness, vatId: client.vatId, taxId: client.taxId, currency: client.currency, paymentTermsDays: client.paymentTermsDays, buyerReference: client.buyerReference, notes: client.notes }}
+            values={{
+              id: client.id,
+              name: client.name,
+              contactName: client.contactName,
+              emails: client.emails,
+              phone: client.phone,
+              address: client.address,
+              isBusiness: client.isBusiness,
+              vatId: client.vatId,
+              taxId: client.taxId,
+              currency: client.currency,
+              paymentTermsDays: client.paymentTermsDays,
+              buyerReference: client.buyerReference,
+              notes: client.notes,
+            }}
           />
         ) : null}
         {can(ctx, "invoice:write") ? (
@@ -54,7 +69,13 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
             {outstanding.size === 0 ? (
               <p className="figures mt-1 text-xl">—</p>
             ) : (
-              [...outstanding].map(([c, v]) => (isCurrencyCode(c) ? <p key={c} className="figures mt-1 text-xl">{formatMoney(v, c)}</p> : null))
+              [...outstanding].map(([c, v]) =>
+                isCurrencyCode(c) ? (
+                  <p key={c} className="figures mt-1 text-xl">
+                    {formatMoney(v, c)}
+                  </p>
+                ) : null,
+              )
             )}
           </div>
           <dl className="grid gap-3">
@@ -62,7 +83,15 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
             {client.contactName ? <Fact label="Contact">{client.contactName}</Fact> : null}
             {a ? (
               <Fact label="Address">
-                {[a.line1, a.line2, [a.postalCode, a.city].filter(Boolean).join(" "), a.region, countryName(a.country)].filter(Boolean).join("\n")}
+                {[
+                  a.line1,
+                  a.line2,
+                  [a.postalCode, a.city].filter(Boolean).join(" "),
+                  a.region,
+                  countryName(a.country),
+                ]
+                  .filter(Boolean)
+                  .join("\n")}
               </Fact>
             ) : null}
             {client.vatId ? (
@@ -70,7 +99,8 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
                 <span className="figures">{client.vatId}</span>
                 {client.vatIdVerifiedAt ? (
                   <span className="text-positive block text-xs">
-                    ✓ Verified {formatDate(client.vatIdVerifiedAt.toISOString().slice(0, 10), "en-GB")}
+                    ✓ Verified{" "}
+                    {formatDate(client.vatIdVerifiedAt.toISOString().slice(0, 10), "en-GB")}
                     {client.vatIdVerifiedName ? ` · ${client.vatIdVerifiedName}` : ""}
                   </span>
                 ) : (
@@ -78,7 +108,11 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
                 )}
               </Fact>
             ) : null}
-            <Fact label="Terms">{client.paymentTermsDays !== null ? `${client.paymentTermsDays} days` : "Business default"}</Fact>
+            <Fact label="Terms">
+              {client.paymentTermsDays !== null
+                ? `${client.paymentTermsDays} days`
+                : "Business default"}
+            </Fact>
             {client.currency ? <Fact label="Currency">{client.currency}</Fact> : null}
             {client.notes ? <Fact label="Notes">{client.notes}</Fact> : null}
           </dl>
@@ -94,11 +128,16 @@ export default async function ClientPage(props: PageProps<"/app/clients/[id]">) 
                 {items.map((i) => (
                   <tr key={i.id} className="border-rule hover:bg-paper-sunk/60 relative border-b">
                     <td className="figures py-2.5 text-[13px]">
-                      <Link href={`/app/invoices/${i.id}` as Route} className="after:absolute after:inset-0">
+                      <Link
+                        href={`/app/invoices/${i.id}` as Route}
+                        className="after:absolute after:inset-0"
+                      >
                         {i.number ?? "Draft"}
                       </Link>
                     </td>
-                    <td className="figures text-ink-3 py-2.5 text-xs">{formatDate(i.issueDate, "en-GB")}</td>
+                    <td className="figures text-ink-3 py-2.5 text-xs">
+                      {formatDate(i.issueDate, "en-GB")}
+                    </td>
                     <td className="py-2.5">
                       <StatusMark status={i.status} />
                     </td>

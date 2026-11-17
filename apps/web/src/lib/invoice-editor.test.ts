@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { applyTaxTreatment, blankLine, computeTotals, moveLine, taxSuggestion, toPayload, withClient, type EditorState } from "./invoice-editor";
+import {
+  applyTaxTreatment,
+  blankLine,
+  computeTotals,
+  moveLine,
+  taxSuggestion,
+  toPayload,
+  withClient,
+  type EditorState,
+} from "./invoice-editor";
 
 const base = (): EditorState => ({
   businessProfileId: "00000000-0000-4000-8000-000000000000",
@@ -10,14 +19,27 @@ const base = (): EditorState => ({
   dueDate: "2026-12-01",
   language: "en",
   reference: "",
-  lines: [{ ...blankLine("S", "19"), description: "Design", quantity: "2", unitPrice: "1.200,50" }, blankLine("S", "19")],
+  lines: [
+    { ...blankLine("S", "19"), description: "Design", quantity: "2", unitPrice: "1.200,50" },
+    blankLine("S", "19"),
+  ],
   discount: null,
   notes: "",
   terms: "",
   taxNote: "",
 });
 
-const client = { id: "c1", name: "Acme SAS", email: null, country: "FR", vatId: "FRAB123456789", isBusiness: true, vatIdValid: true, currency: null, paymentTermsDays: 30 };
+const client = {
+  id: "c1",
+  name: "Acme SAS",
+  email: null,
+  country: "FR",
+  vatId: "FRAB123456789",
+  isBusiness: true,
+  vatIdValid: true,
+  currency: null,
+  paymentTermsDays: 30,
+};
 
 describe("invoice editor state", () => {
   it("normalises numbers and drops blank lines in the payload", () => {

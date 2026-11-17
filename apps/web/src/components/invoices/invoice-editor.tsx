@@ -2,7 +2,15 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import type { Route } from "next";
 import {
   CURRENCY_CODES,
@@ -29,7 +37,7 @@ import {
   type EditorState,
   type SellerContext,
 } from "@/lib/invoice-editor";
-import { issueInvoiceAction, saveInvoice } from "@/app/app/invoices/actions";
+import { deleteDraftAction, issueInvoiceAction, saveInvoice } from "@/app/app/invoices/actions";
 import { ClientPicker } from "./client-picker";
 
 export interface TaxRateOption {
@@ -85,17 +93,34 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
   const fmt = (minor: number) => formatMoney(minor, state.currency);
   const isCredit = props.docType === "credit_note";
 
-  const update = useCallback((patch: Partial<EditorState> | ((s: EditorState) => EditorState), touched?: string) => {
-    setState((s) => (typeof patch === "function" ? patch(s) : { ...s, ...patch }));
-    setSave("dirty");
-    if (touched) setAi((a) => (a.has(touched) ? new Set([...a].filter((x) => x !== touched)) : a));
-  }, []);
+  const update = useCallback(
+    (patch: Partial<EditorState> | ((s: EditorState) => EditorState), touched?: string) => {
+      setState((s) => (typeof patch === "function" ? patch(s) : { ...s, ...patch }));
+      setSave("dirty");
+      if (touched)
+        setAi((a) => (a.has(touched) ? new Set([...a].filter((x) => x !== touched)) : a));
+    },
+    [],
+  );
 
   const setLine = (i: number, patch: Partial<EditorLine>, field: string) =>
-    update((s) => ({ ...s, lines: s.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) }), `lines.${i}.${field}`);
+    update(
+      (s) => ({ ...s, lines: s.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) }),
+      `lines.${i}.${field}`,
+    );
 
   const defaultRate = props.taxRates[0];
-  const addLine = () => update((s) => ({ ...s, lines: [...s.lines, blankLine(s.lines.at(-1)?.taxCategory ?? defaultRate?.category ?? "O", s.lines.at(-1)?.taxRate ?? defaultRate?.rate ?? "0")] }));
+  const addLine = () =>
+    update((s) => ({
+      ...s,
+      lines: [
+        ...s.lines,
+        blankLine(
+          s.lines.at(-1)?.taxCategory ?? defaultRate?.category ?? "O",
+          s.lines.at(-1)?.taxRate ?? defaultRate?.rate ?? "0",
+        ),
+      ],
+    }));
 
   const doSave = useCallback(async (): Promise<string | null> => {
     setSave("saving");
@@ -170,13 +195,37 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
         <SaveIndicator state={save} at={savedAt} />
         <div className="ml-auto flex items-center gap-2">
           {id ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hover:text-danger"
+              onClick={() => {
+                if (!confirm("Delete this draft? This can't be undone.")) return;
+                void deleteDraftAction(id).then((r) => {
+                  if (!r.ok) return toast.error(r.error);
+                  toast.success("Draft deleted.");
+                  setSave("clean");
+                  router.push("/app/invoices");
+                });
+              }}
+            >
+              Delete
+            </Button>
+          ) : null}
+          {id ? (
             <Button asChild variant="ghost" size="sm">
               <a href={`/app/invoices/${id}/pdf`} target="_blank" rel="noopener">
                 Preview PDF
               </a>
             </Button>
           ) : null}
-          <Button variant="secondary" size="sm" onClick={() => void doSave()} pending={save === "saving" && !issuing} title="⌘S">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => void doSave()}
+            pending={save === "saving" && !issuing}
+            title="⌘S"
+          >
             Save draft
           </Button>
           {props.canIssue ? (
@@ -189,7 +238,10 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
 
       <div className="mx-auto grid max-w-[1180px] gap-8 px-4 pt-8 sm:px-6 xl:grid-cols-[minmax(0,1fr)_260px]">
         {/* ── The paper ────────────────────────────────────────────── */}
-        <article aria-label="Invoice" className="border-rule-strong bg-paper-raised shadow-pop rounded-xs border px-6 py-8 sm:px-12 sm:py-12">
+        <article
+          aria-label="Invoice"
+          className="border-rule-strong bg-paper-raised shadow-pop rounded-xs border px-6 py-8 sm:px-12 sm:py-12"
+        >
           <header className="flex flex-wrap items-start justify-between gap-6">
             <p className="font-serif text-xl">{props.seller.name}</p>
             <div className="text-right">
@@ -204,28 +256,64 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
               <p className="label-caps mb-1.5">Bill to</p>
               <ClientPicker
                 value={state.client}
-                onChange={(c) => update((s) => withClient(s, c, props.seller.defaultTermsDays), "client")}
+                onChange={(c) =>
+                  update((s) => withClient(s, c, props.seller.defaultTermsDays), "client")
+                }
                 countries={props.countries}
                 invalid={Boolean(err("clientId"))}
                 highlight={ai.has("client")}
               />
-              {err("clientId") ? <p className="text-danger mt-1 text-xs">{err("clientId")}</p> : null}
+              {err("clientId") ? (
+                <p className="text-danger mt-1 text-xs">{err("clientId")}</p>
+              ) : null}
             </div>
             <dl className="grid grid-cols-[auto_150px] items-center gap-x-6 gap-y-1.5 text-[13px]">
-              <MetaInput label="Issue date" type="date" value={state.issueDate} onChange={(v) => update({ issueDate: v }, "issueDate")} error={err("issueDate")} ai={ai.has("issueDate")} />
-              {!isCredit ? <MetaInput label="Due date" type="date" value={state.dueDate} onChange={(v) => update({ dueDate: v }, "dueDate")} error={err("dueDate")} ai={ai.has("dueDate")} /> : null}
-              <MetaInput label="Reference" value={state.reference} placeholder="PO / project" onChange={(v) => update({ reference: v }, "reference")} ai={ai.has("reference")} />
+              <MetaInput
+                label="Issue date"
+                type="date"
+                value={state.issueDate}
+                onChange={(v) => update({ issueDate: v }, "issueDate")}
+                error={err("issueDate")}
+                ai={ai.has("issueDate")}
+              />
+              {!isCredit ? (
+                <MetaInput
+                  label="Due date"
+                  type="date"
+                  value={state.dueDate}
+                  onChange={(v) => update({ dueDate: v }, "dueDate")}
+                  error={err("dueDate")}
+                  ai={ai.has("dueDate")}
+                />
+              ) : null}
+              <MetaInput
+                label="Reference"
+                value={state.reference}
+                placeholder="PO / project"
+                onChange={(v) => update({ reference: v }, "reference")}
+                ai={ai.has("reference")}
+              />
             </dl>
           </section>
 
           {suggestion ? (
-            <div role="note" className="border-accent bg-accent-soft mt-8 flex flex-wrap items-center gap-3 border-l-2 px-4 py-3 text-[13px]">
+            <div
+              role="note"
+              className="border-accent bg-accent-soft mt-8 flex flex-wrap items-center gap-3 border-l-2 px-4 py-3 text-[13px]"
+            >
               <span className="flex-1">
-                <strong className="font-medium">{TAX_CATEGORY_LABEL[suggestion.category]}</strong> likely applies to {state.client?.name}
+                <strong className="font-medium">{TAX_CATEGORY_LABEL[suggestion.category]}</strong>{" "}
+                likely applies to {state.client?.name}
                 {suggestion.category === "S" ? ` (${suggestion.rate}%)` : ""}.{" "}
-                <span className="text-ink-3">Suggestion only; you're responsible for the tax you charge.</span>
+                <span className="text-ink-3">
+                  Suggestion only; you're responsible for the tax you charge.
+                </span>
               </span>
-              <Button size="sm" variant="secondary" onClick={() => update((s) => applyTaxTreatment(s, suggestion))}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => update((s) => applyTaxTreatment(s, suggestion))}
+              >
                 Apply to all lines
               </Button>
             </div>
@@ -246,7 +334,13 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
             </thead>
             <tbody>
               {state.lines.map((l, i) => (
-                <tr key={l.key} className={cn("border-rule group border-b align-top", lineError === i && "bg-danger-soft/50")}>
+                <tr
+                  key={l.key}
+                  className={cn(
+                    "border-rule group border-b align-top",
+                    lineError === i && "bg-danger-soft/50",
+                  )}
+                >
                   <td className="py-1.5 pr-3">
                     <textarea
                       aria-label={`Line ${i + 1} description`}
@@ -258,20 +352,50 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                         if (e.key === "Enter" && !e.shiftKey && i === state.lines.length - 1) {
                           e.preventDefault();
                           addLine();
-                          requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>(`[aria-label="Line ${i + 2} description"]`)?.focus());
+                          requestAnimationFrame(() =>
+                            document
+                              .querySelector<HTMLTextAreaElement>(
+                                `[aria-label="Line ${i + 2} description"]`,
+                              )
+                              ?.focus(),
+                          );
                         }
                       }}
-                      className={cn("placeholder:text-ink-4 block w-full resize-none bg-transparent py-1 leading-snug outline-none [field-sizing:content]", ai.has(`lines.${i}.description`) && "ai-mark")}
+                      className={cn(
+                        "placeholder:text-ink-4 block [field-sizing:content] w-full resize-none bg-transparent py-1 leading-snug outline-none",
+                        ai.has(`lines.${i}.description`) && "ai-mark",
+                      )}
                     />
                   </td>
                   <td className="py-1.5">
-                    <CellInput label={`Line ${i + 1} quantity`} value={l.quantity} onChange={(v) => setLine(i, { quantity: v }, "quantity")} ai={ai.has(`lines.${i}.quantity`)} />
+                    <CellInput
+                      label={`Line ${i + 1} quantity`}
+                      value={l.quantity}
+                      onChange={(v) => setLine(i, { quantity: v }, "quantity")}
+                      ai={ai.has(`lines.${i}.quantity`)}
+                    />
                   </td>
                   <td className="hidden py-1.5 pl-2 sm:table-cell">
-                    <input aria-label={`Line ${i + 1} unit`} value={l.unit} placeholder="—" maxLength={20} onChange={(e) => setLine(i, { unit: e.target.value }, "unit")} className={cn("placeholder:text-ink-4 w-full bg-transparent py-1 outline-none", ai.has(`lines.${i}.unit`) && "ai-mark")} />
+                    <input
+                      aria-label={`Line ${i + 1} unit`}
+                      value={l.unit}
+                      placeholder="—"
+                      maxLength={20}
+                      onChange={(e) => setLine(i, { unit: e.target.value }, "unit")}
+                      className={cn(
+                        "placeholder:text-ink-4 w-full bg-transparent py-1 outline-none",
+                        ai.has(`lines.${i}.unit`) && "ai-mark",
+                      )}
+                    />
                   </td>
                   <td className="py-1.5">
-                    <CellInput label={`Line ${i + 1} unit price`} value={l.unitPrice} placeholder="0.00" onChange={(v) => setLine(i, { unitPrice: v }, "unitPrice")} ai={ai.has(`lines.${i}.unitPrice`)} />
+                    <CellInput
+                      label={`Line ${i + 1} unit price`}
+                      value={l.unitPrice}
+                      placeholder="0.00"
+                      onChange={(v) => setLine(i, { unitPrice: v }, "unitPrice")}
+                      ai={ai.has(`lines.${i}.unitPrice`)}
+                    />
                   </td>
                   <td className="hidden py-1.5 pl-3 md:table-cell">
                     <select
@@ -290,13 +414,37 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                       ))}
                     </select>
                   </td>
-                  <td className="figures py-2 text-right">{totals.ok && totals.result.lines.length ? fmt(lineAmount(totals.result, state.lines, i)) : "—"}</td>
+                  <td className="figures py-2 text-right">
+                    {totals.ok && totals.result.lines.length
+                      ? fmt(lineAmount(totals.result, state.lines, i))
+                      : "—"}
+                  </td>
                   <td className="py-1.5 text-right">
                     <span className="invisible inline-flex flex-col group-focus-within:visible group-hover:visible">
-                      <button type="button" aria-label={`Move line ${i + 1} up`} onClick={() => update((s) => ({ ...s, lines: moveLine(s.lines, i, i - 1) }))} className="text-ink-4 hover:text-ink text-[10px] leading-3">
+                      <button
+                        type="button"
+                        aria-label={`Move line ${i + 1} up`}
+                        onClick={() =>
+                          update((s) => ({ ...s, lines: moveLine(s.lines, i, i - 1) }))
+                        }
+                        className="text-ink-4 hover:text-ink text-[10px] leading-3"
+                      >
                         ▲
                       </button>
-                      <button type="button" aria-label={`Remove line ${i + 1}`} onClick={() => update((s) => ({ ...s, lines: s.lines.length > 1 ? s.lines.filter((_, j) => j !== i) : [blankLine(l.taxCategory, l.taxRate)] }))} className="text-ink-4 hover:text-danger text-xs leading-4">
+                      <button
+                        type="button"
+                        aria-label={`Remove line ${i + 1}`}
+                        onClick={() =>
+                          update((s) => ({
+                            ...s,
+                            lines:
+                              s.lines.length > 1
+                                ? s.lines.filter((_, j) => j !== i)
+                                : [blankLine(l.taxCategory, l.taxRate)],
+                          }))
+                        }
+                        className="text-ink-4 hover:text-danger text-xs leading-4"
+                      >
                         ×
                       </button>
                     </span>
@@ -305,7 +453,11 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
               ))}
             </tbody>
           </table>
-          <button type="button" onClick={addLine} className="text-ink-3 hover:text-ink mt-3 text-[13px]">
+          <button
+            type="button"
+            onClick={addLine}
+            className="text-ink-3 hover:text-ink mt-3 text-[13px]"
+          >
             + Add line <span className="text-ink-4 text-2xs">(Enter on the last line)</span>
           </button>
           {!totals.ok ? <p className="text-danger mt-2 text-xs">{totals.message}</p> : null}
@@ -313,9 +465,15 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
           {/* ── Totals ────────────────────────────────────────────── */}
           {totals.ok ? (
             <dl className="mt-8 ml-auto w-full max-w-xs text-[13px]">
-              {totals.result.discountTotal !== 0 || state.discount ? <Row label="Subtotal" value={fmt(totals.result.lineNetTotal)} /> : null}
-              {state.discount ? <Row label="Discount" value={fmt(-totals.result.discountTotal)} /> : null}
-              {totals.result.taxTotal !== 0 ? <Row label="Total excl. tax" value={fmt(totals.result.taxExclusive)} /> : null}
+              {totals.result.discountTotal !== 0 || state.discount ? (
+                <Row label="Subtotal" value={fmt(totals.result.lineNetTotal)} />
+              ) : null}
+              {state.discount ? (
+                <Row label="Discount" value={fmt(-totals.result.discountTotal)} />
+              ) : null}
+              {totals.result.taxTotal !== 0 ? (
+                <Row label="Total excl. tax" value={fmt(totals.result.taxExclusive)} />
+              ) : null}
               {totals.result.breakdown
                 .filter((b) => b.tax !== 0)
                 .map((b) => (
@@ -328,11 +486,24 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
             </dl>
           ) : null}
 
-          {state.taxNote ? <p className="text-ink-2 mt-6 max-w-lg text-xs">{state.taxNote}</p> : null}
+          {state.taxNote ? (
+            <p className="text-ink-2 mt-6 max-w-lg text-xs">{state.taxNote}</p>
+          ) : null}
 
           <section className="mt-10 grid gap-6 sm:grid-cols-2">
-            <NoteArea label="Notes" value={state.notes} onChange={(v) => update({ notes: v }, "notes")} ai={ai.has("notes")} placeholder="Thank you for your business." />
-            <NoteArea label="Terms" value={state.terms} onChange={(v) => update({ terms: v }, "terms")} placeholder="Payment terms, late fees…" />
+            <NoteArea
+              label="Notes"
+              value={state.notes}
+              onChange={(v) => update({ notes: v }, "notes")}
+              ai={ai.has("notes")}
+              placeholder="Thank you for your business."
+            />
+            <NoteArea
+              label="Terms"
+              value={state.terms}
+              onChange={(v) => update({ terms: v }, "terms")}
+              placeholder="Payment terms, late fees…"
+            />
           </section>
         </article>
 
@@ -346,20 +517,30 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                   <li key={n}>{n}</li>
                 ))}
               </ul>
-              <p className="text-ink-3 mt-2 text-2xs">
-                <span className="ai-mark">Marked</span> values were filled in for you. Check them before issuing.
+              <p className="text-ink-3 text-2xs mt-2">
+                <span className="ai-mark">Marked</span> values were filled in for you. Check them
+                before issuing.
               </p>
             </div>
           ) : null}
           <RailField label="Currency">
-            <Select value={state.currency} onChange={(e) => update({ currency: e.target.value as CurrencyCode }, "currency")} aria-label="Currency" className={cn(ai.has("currency") && "ai-mark")}>
+            <Select
+              value={state.currency}
+              onChange={(e) => update({ currency: e.target.value as CurrencyCode }, "currency")}
+              aria-label="Currency"
+              className={cn(ai.has("currency") && "ai-mark")}
+            >
               {CURRENCY_CODES.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </Select>
           </RailField>
           <RailField label="Document language">
-            <Select value={state.language} onChange={(e) => update({ language: e.target.value })} aria-label="Document language">
+            <Select
+              value={state.language}
+              onChange={(e) => update({ language: e.target.value })}
+              aria-label="Document language"
+            >
               {LANGS.map(([v, n]) => (
                 <option key={v} value={v}>
                   {n}
@@ -368,14 +549,30 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
             </Select>
           </RailField>
           <RailField label="Date of supply" hint="If different from the issue date.">
-            <input type="date" value={state.supplyDate} onChange={(e) => update({ supplyDate: e.target.value })} aria-label="Date of supply" className="figures border-rule-strong focus:border-ink w-full border-b bg-transparent py-1.5 outline-none" />
+            <input
+              type="date"
+              value={state.supplyDate}
+              onChange={(e) => update({ supplyDate: e.target.value })}
+              aria-label="Date of supply"
+              className="figures border-rule-strong focus:border-ink w-full border-b bg-transparent py-1.5 outline-none"
+            />
           </RailField>
           <RailField label="Discount">
             <div className="flex gap-2">
               <Select
                 aria-label="Discount type"
                 value={state.discount?.type ?? "none"}
-                onChange={(e) => update({ discount: e.target.value === "none" ? null : { type: e.target.value as "percent" | "amount", value: state.discount?.value ?? "" } })}
+                onChange={(e) =>
+                  update({
+                    discount:
+                      e.target.value === "none"
+                        ? null
+                        : {
+                            type: e.target.value as "percent" | "amount",
+                            value: state.discount?.value ?? "",
+                          },
+                  })
+                }
                 className="w-24"
               >
                 <option value="none">None</option>
@@ -383,12 +580,23 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
                 <option value="amount">Amount</option>
               </Select>
               {state.discount ? (
-                <input aria-label="Discount value" value={state.discount.value} inputMode="decimal" onChange={(e) => update({ discount: { type: state.discount?.type ?? "percent", value: e.target.value } })} className="figures border-rule-strong focus:border-ink w-full border-b bg-transparent py-1.5 text-right outline-none" />
+                <input
+                  aria-label="Discount value"
+                  value={state.discount.value}
+                  inputMode="decimal"
+                  onChange={(e) =>
+                    update({
+                      discount: { type: state.discount?.type ?? "percent", value: e.target.value },
+                    })
+                  }
+                  className="figures border-rule-strong focus:border-ink w-full border-b bg-transparent py-1.5 text-right outline-none"
+                />
               ) : null}
             </div>
           </RailField>
-          <div className="text-ink-4 border-rule border-t pt-4 text-2xs leading-relaxed">
-            <kbd className="figures">⌘S</kbd> save · <kbd className="figures">⌘↵</kbd> issue · <kbd className="figures">Enter</kbd> new line
+          <div className="text-ink-4 border-rule text-2xs border-t pt-4 leading-relaxed">
+            <kbd className="figures">⌘S</kbd> save · <kbd className="figures">⌘↵</kbd> issue ·{" "}
+            <kbd className="figures">Enter</kbd> new line
           </div>
         </aside>
       </div>
@@ -405,27 +613,58 @@ function lineAmount(r: { lines: { net: number }[] }, lines: EditorLine[], i: num
 }
 
 function taxOptions(rates: TaxRateOption[], l: EditorLine) {
-  const opts = rates.map((r) => ({ value: `${r.category}|${Number(r.rate)}`, label: r.category === "S" ? `${Number(r.rate)}%` : `${r.category} 0%` }));
+  const opts = rates.map((r) => ({
+    value: `${r.category}|${Number(r.rate)}`,
+    label: r.category === "S" ? `${Number(r.rate)}%` : `${r.category} 0%`,
+  }));
   const cur = `${l.taxCategory}|${Number(l.taxRate)}`;
-  if (!opts.some((o) => o.value === cur)) opts.unshift({ value: cur, label: l.taxCategory === "S" ? `${Number(l.taxRate)}%` : `${l.taxCategory} 0%` });
+  if (!opts.some((o) => o.value === cur))
+    opts.unshift({
+      value: cur,
+      label: l.taxCategory === "S" ? `${Number(l.taxRate)}%` : `${l.taxCategory} 0%`,
+    });
   for (const c of TAX_CATEGORIES) {
     const v = `${c}|0`;
-    if (c !== "S" && !opts.some((o) => o.value === v)) opts.push({ value: v, label: `${c} 0% · ${TAX_CATEGORY_LABEL[c]}` });
+    if (c !== "S" && !opts.some((o) => o.value === v))
+      opts.push({ value: v, label: `${c} 0% · ${TAX_CATEGORY_LABEL[c]}` });
   }
   return opts;
 }
 
 function SaveIndicator({ state, at }: { state: SaveState; at: Date | null }) {
   const text =
-    state === "saving" ? "Saving…" : state === "error" ? "Not saved" : state === "dirty" ? "Unsaved changes" : at ? `Saved ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "Saved";
+    state === "saving"
+      ? "Saving…"
+      : state === "error"
+        ? "Not saved"
+        : state === "dirty"
+          ? "Unsaved changes"
+          : at
+            ? `Saved ${at.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+            : "Saved";
   return (
-    <span aria-live="polite" className={cn("text-2xs ml-2", state === "error" ? "text-danger" : "text-ink-4")}>
+    <span
+      aria-live="polite"
+      className={cn("text-2xs ml-2", state === "error" ? "text-danger" : "text-ink-4")}
+    >
       {text}
     </span>
   );
 }
 
-function CellInput({ label, value, onChange, placeholder, ai }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; ai?: boolean }) {
+function CellInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  ai,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  ai?: boolean;
+}) {
   return (
     <input
       aria-label={label}
@@ -433,12 +672,31 @@ function CellInput({ label, value, onChange, placeholder, ai }: { label: string;
       inputMode="decimal"
       placeholder={placeholder}
       onChange={(e) => onChange(e.target.value)}
-      className={cn("figures placeholder:text-ink-4 w-full bg-transparent py-1 text-right outline-none", ai && "ai-mark")}
+      className={cn(
+        "figures placeholder:text-ink-4 w-full bg-transparent py-1 text-right outline-none",
+        ai && "ai-mark",
+      )}
     />
   );
 }
 
-function MetaInput({ label, value, onChange, type = "text", placeholder, error, ai }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string; error?: string; ai?: boolean }) {
+function MetaInput({
+  label,
+  value,
+  onChange,
+  type = "text",
+  placeholder,
+  error,
+  ai,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
+  placeholder?: string;
+  error?: string;
+  ai?: boolean;
+}) {
   return (
     <>
       <dt className="text-ink-3">{label}</dt>
@@ -451,7 +709,11 @@ function MetaInput({ label, value, onChange, type = "text", placeholder, error, 
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={Boolean(error)}
           title={error}
-          className={cn("figures placeholder:text-ink-4 w-full border-b border-transparent bg-transparent py-0.5 text-right outline-none hover:border-rule focus:border-ink", error && "border-danger", ai && "ai-mark")}
+          className={cn(
+            "figures placeholder:text-ink-4 hover:border-rule focus:border-ink w-full border-b border-transparent bg-transparent py-0.5 text-right outline-none",
+            error && "border-danger",
+            ai && "ai-mark",
+          )}
         />
       </dd>
     </>
@@ -467,16 +729,45 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function NoteArea({ label, value, onChange, placeholder, ai }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; ai?: boolean }) {
+function NoteArea({
+  label,
+  value,
+  onChange,
+  placeholder,
+  ai,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  ai?: boolean;
+}) {
   return (
     <label className="flex flex-col gap-1">
       <span className="label-caps">{label}</span>
-      <textarea value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} rows={2} className={cn("placeholder:text-ink-4 text-ink-2 resize-none bg-transparent text-[13px] leading-relaxed outline-none [field-sizing:content]", ai && "ai-mark")} />
+      <textarea
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+        rows={2}
+        className={cn(
+          "placeholder:text-ink-4 text-ink-2 [field-sizing:content] resize-none bg-transparent text-[13px] leading-relaxed outline-none",
+          ai && "ai-mark",
+        )}
+      />
     </label>
   );
 }
 
-function RailField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+function RailField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col gap-1">
       <span className="label-caps">{label}</span>

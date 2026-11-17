@@ -26,7 +26,10 @@ export default tseslint.config(
         "error",
         { considerDefaultExhaustiveForUnions: true },
       ],
-      "@typescript-eslint/no-confusing-void-expression": ["error", { ignoreArrowShorthand: true }],
+      "@typescript-eslint/no-confusing-void-expression": [
+        "error",
+        { ignoreArrowShorthand: true, ignoreVoidReturningFunctions: true },
+      ],
       "@typescript-eslint/no-invalid-void-type": ["error", { allowInGenericTypeArguments: true }],
       // Deliberate API shape for typed helpers like decryptJson<T>().
       "@typescript-eslint/no-unnecessary-type-parameters": "off",

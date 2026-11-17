@@ -27,7 +27,10 @@ export function InvoiceActions(p: InvoiceActionsProps) {
   const [pending, start] = useTransition();
   const [payOpen, setPayOpen] = useState(false);
 
-  const go = (fn: () => Promise<{ ok: true; data: { id: string } } | { ok: false; error: string }>, msg: string) =>
+  const go = (
+    fn: () => Promise<{ ok: true; data: { id: string } } | { ok: false; error: string }>,
+    msg: string,
+  ) =>
     start(async () => {
       const r = await fn();
       if (!r.ok) return toast.error(r.error);
@@ -53,15 +56,34 @@ export function InvoiceActions(p: InvoiceActionsProps) {
         </MenuTrigger>
         <MenuContent>
           {p.publicUrl ? (
-            <MenuItem onSelect={() => void navigator.clipboard.writeText(p.publicUrl ?? "").then(() => toast.success("Link copied."))}>Copy client link</MenuItem>
+            <MenuItem
+              onSelect={() =>
+                void navigator.clipboard
+                  .writeText(p.publicUrl ?? "")
+                  .then(() => toast.success("Link copied."))
+              }
+            >
+              Copy client link
+            </MenuItem>
           ) : null}
-          <MenuItem onSelect={() => window.open(`/app/invoices/${p.id}/pdf`, "_blank", "noopener")}>Open PDF</MenuItem>
+          <MenuItem onSelect={() => window.open(`/app/invoices/${p.id}/pdf`, "_blank", "noopener")}>
+            Open PDF
+          </MenuItem>
           {p.canWrite ? (
             <>
               <MenuSeparator />
-              <MenuItem onSelect={() => go(() => duplicateAction(p.id), "Draft created from this invoice.")}>Duplicate as new draft</MenuItem>
+              <MenuItem
+                onSelect={() => go(() => duplicateAction(p.id), "Draft created from this invoice.")}
+              >
+                Duplicate as new draft
+              </MenuItem>
               {p.canCredit ? (
-                <MenuItem danger onSelect={() => go(() => creditNoteAction(p.id), "Credit note drafted. Review and issue it.")}>
+                <MenuItem
+                  danger
+                  onSelect={() =>
+                    go(() => creditNoteAction(p.id), "Credit note drafted. Review and issue it.")
+                  }
+                >
                   Correct with credit note…
                 </MenuItem>
               ) : null}
@@ -74,7 +96,14 @@ export function InvoiceActions(p: InvoiceActionsProps) {
   );
 }
 
-function PaymentDialog({ open, onOpenChange, id, amountDue, amountDueRaw, today }: InvoiceActionsProps & { open: boolean; onOpenChange: (o: boolean) => void }) {
+function PaymentDialog({
+  open,
+  onOpenChange,
+  id,
+  amountDue,
+  amountDueRaw,
+  today,
+}: InvoiceActionsProps & { open: boolean; onOpenChange: (o: boolean) => void }) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
@@ -108,8 +137,31 @@ function PaymentDialog({ open, onOpenChange, id, amountDue, amountDueRaw, today 
             });
           }}
         >
-          <Field label="Amount" error={errors.amount}>{(f) => <Input id={f.id} name="amount" defaultValue={amountDueRaw} inputMode="decimal" className="figures" required />}</Field>
-          <Field label="Received on" error={errors.receivedOn}>{(f) => <Input id={f.id} name="receivedOn" type="date" defaultValue={today} max={today} className="figures" required />}</Field>
+          <Field label="Amount" error={errors.amount}>
+            {(f) => (
+              <Input
+                id={f.id}
+                name="amount"
+                defaultValue={amountDueRaw}
+                inputMode="decimal"
+                className="figures"
+                required
+              />
+            )}
+          </Field>
+          <Field label="Received on" error={errors.receivedOn}>
+            {(f) => (
+              <Input
+                id={f.id}
+                name="receivedOn"
+                type="date"
+                defaultValue={today}
+                max={today}
+                className="figures"
+                required
+              />
+            )}
+          </Field>
           <Field label="Method">
             {(f) => (
               <Select id={f.id} name="method" defaultValue="bank_transfer">
@@ -120,7 +172,9 @@ function PaymentDialog({ open, onOpenChange, id, amountDue, amountDueRaw, today 
               </Select>
             )}
           </Field>
-          <Field label="Reference" optional>{(f) => <Input id={f.id} name="reference" placeholder="Bank reference" />}</Field>
+          <Field label="Reference" optional>
+            {(f) => <Input id={f.id} name="reference" placeholder="Bank reference" />}
+          </Field>
           <div className="sm:col-span-2">
             <Button type="submit" pending={pending}>
               Record payment

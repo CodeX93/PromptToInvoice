@@ -22,7 +22,8 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
   const input = useRef<HTMLInputElement>(null);
   // Rotate the example after hydration (server and browser may disagree on the date).
   useEffect(() => {
-    if (input.current) input.current.placeholder = EXAMPLES[new Date().getDate() % EXAMPLES.length] ?? "";
+    if (input.current)
+      input.current.placeholder = EXAMPLES[new Date().getDate() % EXAMPLES.length] ?? "";
   }, []);
   const [value, setValue] = useState("");
   const [focused, setFocused] = useState(false);

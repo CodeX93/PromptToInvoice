@@ -17,14 +17,21 @@ export function fileNameFor(m: Pick<InvoiceDocModel, "title" | "number">): strin
 }
 
 async function loadProfile(orgId: string, profileId: string) {
-  const [p] = await withOrg(db, orgId, (tx) => tx.select().from(schema.businessProfiles).where(eq(schema.businessProfiles.id, profileId)));
+  const [p] = await withOrg(db, orgId, (tx) =>
+    tx.select().from(schema.businessProfiles).where(eq(schema.businessProfiles.id, profileId)),
+  );
   if (!p) throw new Error("profile missing");
   return p;
 }
 
 async function loadLogo(orgId: string, fileId: string | null): Promise<Buffer | null> {
   if (!fileId) return null;
-  const [f] = await withOrg(db, orgId, (tx) => tx.select({ key: schema.files.storageKey }).from(schema.files).where(eq(schema.files.id, fileId)));
+  const [f] = await withOrg(db, orgId, (tx) =>
+    tx
+      .select({ key: schema.files.storageKey })
+      .from(schema.files)
+      .where(eq(schema.files.id, fileId)),
+  );
   return f ? readBlob(f.key).catch(() => null) : null;
 }
 
@@ -38,15 +45,22 @@ export async function modelFor(ctx: OrgContext, detail: InvoiceDetail): Promise<
 }
 
 /** Hook for the e-invoice module to add XML + XMP to the archived PDF (set in M8). */
-export type EinvoiceDecorator = (detail: InvoiceDetail, model: InvoiceDocModel) => Promise<{ attachments: PdfAttachment[]; xmpExtension?: string } | null>;
+export type EinvoiceDecorator = (
+  detail: InvoiceDetail,
+  model: InvoiceDocModel,
+) => Promise<{ attachments: PdfAttachment[]; xmpExtension?: string } | null>;
 let decorate: EinvoiceDecorator | null = null;
 export function registerEinvoiceDecorator(fn: EinvoiceDecorator): void {
   decorate = fn;
 }
 
-export async function renderFor(ctx: OrgContext, detail: InvoiceDetail): Promise<{ pdf: Buffer; model: InvoiceDocModel }> {
+export async function renderFor(
+  ctx: OrgContext,
+  detail: InvoiceDetail,
+): Promise<{ pdf: Buffer; model: InvoiceDocModel }> {
   const model = await modelFor(ctx, detail);
-  const extra = detail.invoice.status !== "draft" && decorate ? await decorate(detail, model) : null;
+  const extra =
+    detail.invoice.status !== "draft" && decorate ? await decorate(detail, model) : null;
   const pdf = await renderInvoicePdf(model, {
     logo: await loadLogo(ctx.org.id, model.logoFileId),
     paper: detail.invoice.issuedSnapshot?.seller.address.country === "US" ? "LETTER" : "A4",
@@ -67,12 +81,26 @@ export async function archivePdf(ctx: OrgContext, invoiceId: string): Promise<vo
   const retainUntil = new Date();
   retainUntil.setFullYear(retainUntil.getFullYear() + RETENTION_YEARS);
   await withOrg(db, ctx.org.id, async (tx) => {
-    const stored = await storeFile(tx, { orgId: ctx.org.id, kind: "invoice_pdf", body: pdf, contentType: "application/pdf", fileName: fileNameFor(model), retainUntil });
+    const stored = await storeFile(tx, {
+      orgId: ctx.org.id,
+      kind: "invoice_pdf",
+      body: pdf,
+      contentType: "application/pdf",
+      fileName: fileNameFor(model),
+      retainUntil,
+    });
     await tx
       .update(schema.invoices)
       .set({ pdfFileId: stored.id, pdfSha256: stored.sha256 })
       .where(eq(schema.invoices.id, invoiceId));
-    await tx.insert(schema.invoiceEvents).values({ orgId: ctx.org.id, invoiceId, type: "pdf_rendered", data: { sha256: stored.sha256, bytes: stored.size } });
+    await tx
+      .insert(schema.invoiceEvents)
+      .values({
+        orgId: ctx.org.id,
+        invoiceId,
+        type: "pdf_rendered",
+        data: { sha256: stored.sha256, bytes: stored.size },
+      });
   });
   logger.info({ invoiceId, bytes: pdf.length }, "invoice PDF archived");
 }
@@ -81,14 +109,22 @@ export async function archivePdf(ctx: OrgContext, invoiceId: string): Promise<vo
  * The PDF for download/attachment. Issued documents always serve the
  * archived bytes (what the client received); drafts render on demand.
  */
-export async function pdfFor(ctx: OrgContext, invoiceId: string): Promise<{ pdf: Buffer; fileName: string }> {
+export async function pdfFor(
+  ctx: OrgContext,
+  invoiceId: string,
+): Promise<{ pdf: Buffer; fileName: string }> {
   let detail = await getInvoice(ctx, invoiceId);
   if (detail.invoice.status !== "draft" && !detail.invoice.pdfFileId) {
     await archivePdf(ctx, invoiceId);
     detail = await getInvoice(ctx, invoiceId);
   }
   if (detail.invoice.pdfFileId) {
-    const [f] = await withOrg(db, ctx.org.id, (tx) => tx.select().from(schema.files).where(eq(schema.files.id, detail.invoice.pdfFileId ?? "")));
+    const [f] = await withOrg(db, ctx.org.id, (tx) =>
+      tx
+        .select()
+        .from(schema.files)
+        .where(eq(schema.files.id, detail.invoice.pdfFileId ?? "")),
+    );
     if (f) return { pdf: await readBlob(f.storageKey), fileName: f.fileName };
   }
   const { pdf, model } = await renderFor(ctx, detail);

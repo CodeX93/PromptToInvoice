@@ -53,7 +53,16 @@ let seq = 0;
 export const newKey = (): string => `l${Date.now().toString(36)}${(seq++).toString(36)}`;
 
 export function blankLine(taxCategory: TaxCategory, taxRate: string): EditorLine {
-  return { key: newKey(), description: "", quantity: "1", unit: "", unitPrice: "", discountPercent: "", taxCategory, taxRate };
+  return {
+    key: newKey(),
+    description: "",
+    quantity: "1",
+    unit: "",
+    unitPrice: "",
+    discountPercent: "",
+    taxCategory,
+    taxRate,
+  };
 }
 
 const isBlank = (l: EditorLine) => !l.description.trim() && !l.unitPrice.trim();
@@ -73,32 +82,53 @@ export function toPayload(s: EditorState) {
     dueDate: s.dueDate || null,
     language: s.language,
     reference: s.reference,
-    lines: s.lines.filter((l) => !isBlank(l)).map((l) => ({
-      description: l.description,
-      quantity: num(l.quantity),
-      unit: l.unit,
-      unitPrice: num(l.unitPrice || "0"),
-      discountPercent: l.discountPercent.trim() ? num(l.discountPercent) : null,
-      taxCategory: l.taxCategory,
-      taxRate: num(l.taxRate),
-    })),
-    discount: s.discount?.value.trim() ? { type: s.discount.type, value: num(s.discount.value) } : null,
+    lines: s.lines
+      .filter((l) => !isBlank(l))
+      .map((l) => ({
+        description: l.description,
+        quantity: num(l.quantity),
+        unit: l.unit,
+        unitPrice: num(l.unitPrice || "0"),
+        discountPercent: l.discountPercent.trim() ? num(l.discountPercent) : null,
+        taxCategory: l.taxCategory,
+        taxRate: num(l.taxRate),
+      })),
+    discount: s.discount?.value.trim()
+      ? { type: s.discount.type, value: num(s.discount.value) }
+      : null,
     notes: s.notes,
     terms: s.terms,
     taxNote: s.taxNote,
   };
 }
 
-export type Totals = { ok: true; result: CalculationResult } | { ok: false; message: string; lineIndex: number | null };
+export type Totals =
+  | { ok: true; result: CalculationResult }
+  | { ok: false; message: string; lineIndex: number | null };
 
 /** Live totals with the exact engine the server uses. */
 export function computeTotals(s: EditorState): Totals {
   const p = toPayload(s);
   if (p.lines.length === 0) {
-    return { ok: true, result: { currency: s.currency, lines: [], breakdown: [], lineNetTotal: 0, discountTotal: 0, taxExclusive: 0, taxTotal: 0, taxInclusive: 0 } };
+    return {
+      ok: true,
+      result: {
+        currency: s.currency,
+        lines: [],
+        breakdown: [],
+        lineNetTotal: 0,
+        discountTotal: 0,
+        taxExclusive: 0,
+        taxTotal: 0,
+        taxInclusive: 0,
+      },
+    };
   }
   try {
-    return { ok: true, result: calculate({ currency: s.currency, lines: p.lines, discount: p.discount }) };
+    return {
+      ok: true,
+      result: calculate({ currency: s.currency, lines: p.lines, discount: p.discount }),
+    };
   } catch (e) {
     if (e instanceof CalculationError) {
       const idx = e.path[0] === "lines" && typeof e.path[1] === "number" ? e.path[1] : null;
@@ -120,7 +150,13 @@ export function taxSuggestion(s: EditorState, seller: SellerContext): TaxTreatme
     supply: "services",
   });
   const lines = s.lines.filter((l) => !isBlank(l));
-  const matches = lines.length > 0 && lines.every((l) => l.taxCategory === t.category && (t.category !== "S" || Number(l.taxRate) === Number(t.rate)));
+  const matches =
+    lines.length > 0 &&
+    lines.every(
+      (l) =>
+        l.taxCategory === t.category &&
+        (t.category !== "S" || Number(l.taxRate) === Number(t.rate)),
+    );
   if (matches || t.reason === "non-eu-seller") return null;
   return t;
 }
@@ -128,15 +164,24 @@ export function taxSuggestion(s: EditorState, seller: SellerContext): TaxTreatme
 export function applyTaxTreatment(s: EditorState, t: TaxTreatment): EditorState {
   return {
     ...s,
-    lines: s.lines.map((l) => ({ ...l, taxCategory: t.category, taxRate: t.category === "S" ? t.rate : "0" })),
+    lines: s.lines.map((l) => ({
+      ...l,
+      taxCategory: t.category,
+      taxRate: t.category === "S" ? t.rate : "0",
+    })),
     taxNote: t.note ?? "",
   };
 }
 
 /** Choosing a client adopts their currency and payment terms (keeping the same term length if they have none). */
-export function withClient(s: EditorState, c: ClientOption | null, defaultTermsDays: number): EditorState {
+export function withClient(
+  s: EditorState,
+  c: ClientOption | null,
+  defaultTermsDays: number,
+): EditorState {
   if (!c) return { ...s, client: null };
-  const terms = c.paymentTermsDays ?? (s.dueDate ? diffDays(s.dueDate, s.issueDate) : defaultTermsDays);
+  const terms =
+    c.paymentTermsDays ?? (s.dueDate ? diffDays(s.dueDate, s.issueDate) : defaultTermsDays);
   return {
     ...s,
     client: c,

@@ -29,7 +29,10 @@ export async function saveInvoice(
   return run("invoices.save", async () => {
     const ctx = await orgContextOrThrow();
     const docType = id ? undefined : "invoice";
-    const r = await saveDraft(ctx, id ? idSchema.parse(id) : null, payload, { expectedVersion, docType });
+    const r = await saveDraft(ctx, id ? idSchema.parse(id) : null, payload, {
+      expectedVersion,
+      docType,
+    });
     revalidatePath("/app/invoices");
     return r;
   });
@@ -62,11 +65,15 @@ export async function deleteDraftAction(id: string): Promise<ActionResult> {
 }
 
 export async function duplicateAction(id: string): Promise<ActionResult<{ id: string }>> {
-  return run("invoices.duplicate", async () => ({ id: await duplicateInvoice(await orgContextOrThrow(), idSchema.parse(id)) }));
+  return run("invoices.duplicate", async () => ({
+    id: await duplicateInvoice(await orgContextOrThrow(), idSchema.parse(id)),
+  }));
 }
 
 export async function creditNoteAction(id: string): Promise<ActionResult<{ id: string }>> {
-  return run("invoices.credit", async () => ({ id: await draftCreditNote(await orgContextOrThrow(), idSchema.parse(id)) }));
+  return run("invoices.credit", async () => ({
+    id: await draftCreditNote(await orgContextOrThrow(), idSchema.parse(id)),
+  }));
 }
 
 const paymentSchema = z.object({
@@ -77,18 +84,27 @@ const paymentSchema = z.object({
   notes: z.string().trim().max(500).default(""),
 });
 
-export async function recordPaymentAction(id: string, input: z.input<typeof paymentSchema>): Promise<ActionResult> {
+export async function recordPaymentAction(
+  id: string,
+  input: z.input<typeof paymentSchema>,
+): Promise<ActionResult> {
   return run("invoices.payment", async () => {
     const ctx = await orgContextOrThrow();
     const p = paymentSchema.safeParse(input);
-    if (!p.success) throw new ValidationError("Check the payment details.", Object.fromEntries(p.error.issues.map((i) => [i.path.join("."), [i.message]])));
+    if (!p.success)
+      throw new ValidationError(
+        "Check the payment details.",
+        Object.fromEntries(p.error.issues.map((i) => [i.path.join("."), [i.message]])),
+      );
     const inv = await getInvoice(ctx, idSchema.parse(id));
     if (!isCurrencyCode(inv.invoice.currency)) throw new ValidationError("Unsupported currency.");
     let amount: number;
     try {
       amount = toMinor(p.data.amount.replace(/[\s,](?=\d{3}\b)/g, ""), inv.invoice.currency);
     } catch {
-      throw new ValidationError("Enter a valid amount.", { amount: ["Use digits and a decimal point, e.g. 1200.50"] });
+      throw new ValidationError("Enter a valid amount.", {
+        amount: ["Use digits and a decimal point, e.g. 1200.50"],
+      });
     }
     await recordPayment(ctx, id, { ...p.data, amount });
     revalidatePath(`/app/invoices/${id}`);

@@ -8,7 +8,17 @@ import { toast } from "@/components/ui/toast";
 import { ClientForm, type ClientFormValues } from "@/components/clients/client-form";
 import { archiveClient, checkClientVat } from "../actions";
 
-export function ClientHeaderActions({ values, countries, archived, hasVat }: { values: ClientFormValues & { id: string }; countries: { code: string; name: string }[]; archived: boolean; hasVat: boolean }) {
+export function ClientHeaderActions({
+  values,
+  countries,
+  archived,
+  hasVat,
+}: {
+  values: ClientFormValues & { id: string };
+  countries: { code: string; name: string }[];
+  archived: boolean;
+  hasVat: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [pending, start] = useTransition();
@@ -23,7 +33,8 @@ export function ClientHeaderActions({ values, countries, archived, hasVat }: { v
               const r = await checkClientVat(values.id);
               if (!r.ok) return toast.error(r.error);
               const s = r.data.status;
-              if (s === "valid") toast.success(`VAT number valid${r.data.name ? `: ${r.data.name}` : ""}.`);
+              if (s === "valid")
+                toast.success(`VAT number valid${r.data.name ? `: ${r.data.name}` : ""}.`);
               else if (s === "invalid") toast.error("VIES says this VAT number is not valid.");
               else if (s === "malformed") toast.error("That isn't a valid EU VAT number format.");
               else toast("VIES is unavailable right now. Try again later.");

@@ -189,16 +189,14 @@ export async function createProfile(ctx: OrgContext, input: z.infer<typeof profi
       branding: { accentColor, footer },
       isDefault: n === 0,
     });
-    await tx
-      .insert(schema.numberSeries)
-      .values(
-        (["invoice", "credit_note", "quote"] as const).map((docType) => ({
-          orgId: ctx.org.id,
-          businessProfileId: id,
-          docType,
-          pattern: DEFAULT_PATTERNS[docType],
-        })),
-      );
+    await tx.insert(schema.numberSeries).values(
+      (["invoice", "credit_note", "quote"] as const).map((docType) => ({
+        orgId: ctx.org.id,
+        businessProfileId: id,
+        docType,
+        pattern: DEFAULT_PATTERNS[docType],
+      })),
+    );
     await audit(tx, {
       orgId: ctx.org.id,
       actorId: ctx.user.id,
