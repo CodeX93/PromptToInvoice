@@ -810,6 +810,7 @@ export async function draftDefaults(ctx: OrgContext, clientId?: string | null) {
       issueDate: today,
       dueDate: addDays(today, terms),
       currency: cur(client?.currency ?? profile.defaultCurrency),
+      language: client?.language ?? "en",
       notes: profile.defaultNotes,
       terms: profile.defaultTerms,
       taxCategory: (rate?.category ?? "O") as TaxCategory,
