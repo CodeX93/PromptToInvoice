@@ -208,3 +208,12 @@
     transform: translateY(4px);
   }
 }
+
+@keyframes draft-stroke {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(300%);
+  }
+}
