@@ -10,6 +10,7 @@ import { logger } from "../logger";
 import { authorize, type OrgContext } from "../session";
 import { systemContext } from "../jobs/system-context";
 import { deliverReceipt } from "./emails";
+import { emitEvent } from "./webhooks";
 
 let stripe: Stripe | null = null;
 export function stripeClient(): Stripe {
@@ -259,10 +260,16 @@ async function recordStripePayment(args: {
     });
     return true;
   });
-  if (recorded)
+  if (recorded) {
     await deliverReceipt(ctx, args.invoiceId, args.amount).catch((err: unknown) =>
       logger.warn({ err }, "receipt not sent"),
     );
+    await emitEvent(args.orgId, "invoice.paid", {
+      id: args.invoiceId,
+      amount: args.amount,
+      method: "stripe",
+    });
+  }
   return recorded;
 }
 

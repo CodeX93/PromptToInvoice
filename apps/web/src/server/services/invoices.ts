@@ -31,6 +31,7 @@ import {
   type InvoiceEventType,
   type InvoiceSource,
   type IssuedSnapshot,
+  type WebhookEventType,
   type SQL,
   type Tx,
 } from "@pti/db";
@@ -41,6 +42,7 @@ import { ConflictError, NotFound, QuotaExceededError, ValidationError } from "..
 import { authorize, type OrgContext } from "../session";
 import { readBank } from "./business-profiles";
 import { consume } from "./usage";
+import { emitEvent } from "./webhooks";
 import { conversionRate, logFxGap } from "./fx";
 
 type InvoiceRow = typeof schema.invoices.$inferSelect;
@@ -453,7 +455,8 @@ export async function deleteDraft(ctx: OrgContext, id: string): Promise<void> {
  */
 export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ number: string }> {
   authorize(ctx, "invoice:issue");
-  return withOrg(db, ctx.org.id, async (tx) => {
+  const outbox: [WebhookEventType, Record<string, unknown>][] = [];
+  const result = await withOrg(db, ctx.org.id, async (tx) => {
     const [inv] = await tx.select().from(I).where(eq(I.id, id)).for("update");
     if (!inv) throw new NotFound("Invoice");
     assertCan(inv, "issue");
@@ -602,6 +605,8 @@ export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ numbe
           ctx.user.id,
           { creditNoteId: id, number, amount: Math.abs(inv.total) },
         );
+        if (fullyCreditedUnpaid)
+          outbox.push(["invoice.voided", { id: orig.id, number: orig.number, creditNoteId: id }]);
       }
     }
 
@@ -615,8 +620,16 @@ export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ numbe
       entityId: id,
       diff: { number, total: inv.total, currency: inv.currency },
     });
+    if (inv.docType !== "quote")
+      outbox.push([
+        "invoice.issued",
+        { id, number, docType: inv.docType, total: inv.total, currency: inv.currency },
+      ]);
     return { number };
   });
+  // Only after commit: a webhook must never announce something that rolled back.
+  for (const [type, data] of outbox) await emitEvent(ctx.org.id, type, data);
+  return result;
 }
 
 /** Start a new draft from any existing document. */
@@ -715,6 +728,8 @@ export interface PaymentInput {
 
 export async function recordPayment(ctx: OrgContext, id: string, p: PaymentInput): Promise<void> {
   authorize(ctx, "payment:write");
+  // Assigned inside the transaction callback; a box keeps TS from narrowing it to null.
+  const settled: { now: Record<string, unknown> | null } = { now: null };
   if (!Number.isSafeInteger(p.amount) || p.amount <= 0)
     throw new ValidationError("Enter an amount above zero.", {
       amount: ["Enter an amount above zero."],
@@ -755,7 +770,10 @@ export async function recordPayment(ctx: OrgContext, id: string, p: PaymentInput
       method: p.method,
       receivedOn: p.receivedOn,
     });
-    if (status === "paid") await event(tx, ctx.org.id, id, "paid", ctx.user.id);
+    if (status === "paid") {
+      await event(tx, ctx.org.id, id, "paid", ctx.user.id);
+      settled.now = { number: inv.number, total: inv.total, currency: inv.currency };
+    }
     await audit(tx, {
       orgId: ctx.org.id,
       actorId: ctx.user.id,
@@ -765,6 +783,7 @@ export async function recordPayment(ctx: OrgContext, id: string, p: PaymentInput
       diff: { amount: p.amount, method: p.method },
     });
   });
+  if (settled.now) await emitEvent(ctx.org.id, "invoice.paid", { id, ...settled.now });
 }
 
 /** Defaults for a brand-new draft (profile, currency, dates, notes, default tax rate). */
@@ -840,6 +859,7 @@ async function setQuoteAnswer(
       .where(eq(I.id, id));
     await event(tx, orgId, id, "comment", actorId, { quote: answer });
   });
+  await emitEvent(orgId, answer === "accepted" ? "quote.accepted" : "quote.declined", { id });
 }
 
 /** Owner records the client's answer (e.g. given by phone). */

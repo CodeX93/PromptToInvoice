@@ -29,6 +29,7 @@ import { pdfFor, publicUrl } from "../documents/service";
 import { labelsFor, localeFor } from "../documents/labels";
 import { getInvoice } from "./invoices";
 import { consume } from "./usage";
+import { emitEvent } from "./webhooks";
 
 export const sendSchema = z.object({
   to: z.array(emailSchema).min(1, "Add at least one recipient.").max(5),
@@ -188,6 +189,7 @@ export async function deliverInvoiceEmail(
       });
       await consume(tx, ctx.org.id, ctx.org.plan, "emails_sent");
     });
+    await emitEvent(ctx.org.id, "invoice.sent", { id: p.invoiceId, to: p.to });
   } catch (err) {
     await withOrg(db, ctx.org.id, (tx) =>
       tx

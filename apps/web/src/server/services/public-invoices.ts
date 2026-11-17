@@ -4,6 +4,7 @@ import { sysDb } from "../db";
 import { systemContext } from "../jobs/system-context";
 import type { OrgContext } from "../session";
 import { getInvoice, type InvoiceDetail } from "./invoices";
+import { emitEvent } from "./webhooks";
 
 const TOKEN_RE = /^[\w-]{20,40}$/;
 
@@ -52,6 +53,8 @@ export async function recordPublicView(
     .set({ viewedAt: new Date() })
     .where(and(eq(schema.invoices.id, invoiceId), sql`${schema.invoices.viewedAt} is null`))
     .returning({ id: schema.invoices.id });
-  if (updated.length)
+  if (updated.length) {
     await sysDb.insert(schema.invoiceEvents).values({ orgId, invoiceId, type: "viewed", data: {} });
+    await emitEvent(orgId, "invoice.viewed", { id: invoiceId });
+  }
 }
