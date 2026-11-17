@@ -116,6 +116,9 @@ export default async function InvoicesPage(props: PageProps<"/app/invoices">) {
             );
           })}
         </nav>
+        <Link href="/app/invoices/recurring" className="text-ink-3 hover:text-ink ml-auto text-[13px]">
+          Recurring →
+        </Link>
         <form role="search" className="py-2">
           {filter !== "all" ? <input type="hidden" name="status" value={filter} /> : null}
           <input
