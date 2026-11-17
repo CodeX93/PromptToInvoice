@@ -9,7 +9,9 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   {
     languageOptions: {
-      parserOptions: { projectService: true },
+      parserOptions: {
+        projectService: { allowDefaultProject: ["*.js", "*.mjs", "*.config.ts"] },
+      },
     },
     plugins: { "import-x": importX },
     rules: {
