@@ -44,7 +44,11 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
 
   if (detail.invoice.status === "draft" && can(ctx, "invoice:write")) {
     const marks = await aiMarksFor(ctx, detail.invoice.aiDraftId, detail.invoice.version);
-    return <InvoiceEditor {...await editorProps(ctx, detail, { aiFields: marks?.fields, aiNotes: marks?.notes })} />;
+    return (
+      <InvoiceEditor
+        {...await editorProps(ctx, detail, { aiFields: marks?.fields, aiNotes: marks?.notes })}
+      />
+    );
   }
 
   const inv = detail.invoice;

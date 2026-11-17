@@ -25,15 +25,31 @@ export const orgSettingsSchema = z.object({
 export type OrgSettings = z.infer<typeof orgSettingsSchema>;
 
 export async function getOrgSettings(orgId: string): Promise<OrgSettings> {
-  const [row] = await sysDb.select({ settings: schema.organizations.settings }).from(schema.organizations).where(eq(schema.organizations.id, orgId));
+  const [row] = await sysDb
+    .select({ settings: schema.organizations.settings })
+    .from(schema.organizations)
+    .where(eq(schema.organizations.id, orgId));
   const parsed = orgSettingsSchema.safeParse(row?.settings ?? {});
   return parsed.success ? parsed.data : orgSettingsSchema.parse({});
 }
 
-export async function updateOrgSettings(ctx: OrgContext, patch: Partial<OrgSettings>): Promise<OrgSettings> {
+export async function updateOrgSettings(
+  ctx: OrgContext,
+  patch: Partial<OrgSettings>,
+): Promise<OrgSettings> {
   authorize(ctx, "settings:write");
   const next = orgSettingsSchema.parse({ ...(await getOrgSettings(ctx.org.id)), ...patch });
-  await sysDb.update(schema.organizations).set({ settings: next }).where(eq(schema.organizations.id, ctx.org.id));
-  await audit(sysDb, { orgId: ctx.org.id, actorId: ctx.user.id, action: "org.settings_updated", entityType: "organization", entityId: ctx.org.id, diff: patch });
+  await sysDb
+    .update(schema.organizations)
+    .set({ settings: next })
+    .where(eq(schema.organizations.id, ctx.org.id));
+  await audit(sysDb, {
+    orgId: ctx.org.id,
+    actorId: ctx.user.id,
+    action: "org.settings_updated",
+    entityType: "organization",
+    entityId: ctx.org.id,
+    diff: patch,
+  });
   return next;
 }

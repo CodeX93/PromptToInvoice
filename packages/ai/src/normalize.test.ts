@@ -37,10 +37,25 @@ describe("normalizeDraft", () => {
   it("handles the canonical prompt", () => {
     const d = normalizeDraft(
       out({
-        client: { matchedClientId: "c-acme", name: "Acme Corp", email: null, country: null, vatId: null },
+        client: {
+          matchedClientId: "c-acme",
+          name: "Acme Corp",
+          email: null,
+          country: null,
+          vatId: null,
+        },
         currency: "usd",
         paymentTermsDays: 30,
-        lines: [{ description: "Consulting", quantity: "10", unit: "h", unitPrice: "120", discountPercent: null, taxHint: null }],
+        lines: [
+          {
+            description: "Consulting",
+            quantity: "10",
+            unit: "h",
+            unitPrice: "120",
+            discountPercent: null,
+            taxHint: null,
+          },
+        ],
       }),
       ctx,
     );
@@ -48,11 +63,24 @@ describe("normalizeDraft", () => {
     expect(d.currency).toBe("USD");
     expect(d.dueDate).toBe("2026-12-17");
     expect(d.lines[0]).toMatchObject({ quantity: "10", unit: "h", unitPrice: "120", tax: null });
-    expect(d.aiFields).toEqual(expect.arrayContaining(["client", "currency", "dueDate", "lines.0.unitPrice"]));
+    expect(d.aiFields).toEqual(
+      expect.arrayContaining(["client", "currency", "dueDate", "lines.0.unitPrice"]),
+    );
   });
 
   it("never trusts unknown client ids", () => {
-    const d = normalizeDraft(out({ client: { matchedClientId: "c-other-org", name: "Someone", email: "x@y.z", country: "de", vatId: "de 123 456 789" } }), ctx);
+    const d = normalizeDraft(
+      out({
+        client: {
+          matchedClientId: "c-other-org",
+          name: "Someone",
+          email: "x@y.z",
+          country: "de",
+          vatId: "de 123 456 789",
+        },
+      }),
+      ctx,
+    );
     expect(d.clientId).toBeNull();
     expect(d.clientName).toBe("Someone");
     expect(d.clientHints).toEqual({ email: "x@y.z", country: "DE", vatId: "DE123456789" });
@@ -63,7 +91,16 @@ describe("normalizeDraft", () => {
       out({
         issueDate: "2026-02-30",
         currency: "XYZ",
-        lines: [{ description: "Work", quantity: "ten", unit: null, unitPrice: "lots", discountPercent: "150", taxHint: null }],
+        lines: [
+          {
+            description: "Work",
+            quantity: "ten",
+            unit: null,
+            unitPrice: "lots",
+            discountPercent: "150",
+            taxHint: null,
+          },
+        ],
       }),
       ctx,
     );
@@ -76,8 +113,23 @@ describe("normalizeDraft", () => {
   it("fills a missing price from the user's history, preferring the same client", () => {
     const d = normalizeDraft(
       out({
-        client: { matchedClientId: "c-acme", name: "Acme", email: null, country: null, vatId: null },
-        lines: [{ description: "Consulting work", quantity: "5", unit: "h", unitPrice: null, discountPercent: null, taxHint: null }],
+        client: {
+          matchedClientId: "c-acme",
+          name: "Acme",
+          email: null,
+          country: null,
+          vatId: null,
+        },
+        lines: [
+          {
+            description: "Consulting work",
+            quantity: "5",
+            unit: "h",
+            unitPrice: null,
+            discountPercent: null,
+            taxHint: null,
+          },
+        ],
       }),
       ctx,
     );
@@ -86,16 +138,39 @@ describe("normalizeDraft", () => {
   });
 
   it("normalises thousands separators the model might leave in", () => {
-    const d = normalizeDraft(out({ lines: [{ description: "Retainer", quantity: "1", unit: null, unitPrice: "1,200.50", discountPercent: null, taxHint: null }] }), ctx);
+    const d = normalizeDraft(
+      out({
+        lines: [
+          {
+            description: "Retainer",
+            quantity: "1",
+            unit: null,
+            unitPrice: "1,200.50",
+            discountPercent: null,
+            taxHint: null,
+          },
+        ],
+      }),
+      ctx,
+    );
     expect(d.lines[0]?.unitPrice).toBe("1200.50");
   });
 
   it("drops a due date before the issue date", () => {
-    expect(normalizeDraft(out({ issueDate: "2026-11-20", dueDate: "2026-11-01" }), ctx).dueDate).toBeNull();
+    expect(
+      normalizeDraft(out({ issueDate: "2026-11-20", dueDate: "2026-11-01" }), ctx).dueDate,
+    ).toBeNull();
   });
 
   it("caps runaway output", () => {
-    const lines = Array.from({ length: 250 }, (_, i) => ({ description: `Item ${i}`, quantity: "1", unit: null, unitPrice: "1", discountPercent: null, taxHint: null }));
+    const lines = Array.from({ length: 250 }, (_, i) => ({
+      description: `Item ${i}`,
+      quantity: "1",
+      unit: null,
+      unitPrice: "1",
+      discountPercent: null,
+      taxHint: null,
+    }));
     expect(normalizeDraft(out({ lines }), ctx).lines).toHaveLength(100);
   });
 });
@@ -109,7 +184,9 @@ describe("helpers", () => {
   });
 
   it("only suggests prices above a similarity threshold", () => {
-    expect(suggestPrice("Logo design refresh", "", null, "EUR", ctx.history)?.unitPrice).toBe("1800");
+    expect(suggestPrice("Logo design refresh", "", null, "EUR", ctx.history)?.unitPrice).toBe(
+      "1800",
+    );
     expect(suggestPrice("Plumbing", "", null, "EUR", ctx.history)).toBeNull();
     expect(suggestPrice("Logo design", "", null, "USD", ctx.history)).toBeNull();
   });

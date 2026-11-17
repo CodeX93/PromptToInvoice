@@ -703,19 +703,17 @@ export async function recordPayment(ctx: OrgContext, id: string, p: PaymentInput
       throw new ValidationError("That's more than the amount due.", {
         amount: [`At most ${due / 100}.`],
       });
-    await tx
-      .insert(schema.payments)
-      .values({
-        orgId: ctx.org.id,
-        invoiceId: id,
-        amount: p.amount,
-        currency: inv.currency,
-        method: p.method,
-        reference: p.reference,
-        receivedOn: p.receivedOn,
-        notes: p.notes,
-        createdBy: ctx.user.id,
-      });
+    await tx.insert(schema.payments).values({
+      orgId: ctx.org.id,
+      invoiceId: id,
+      amount: p.amount,
+      currency: inv.currency,
+      method: p.method,
+      reference: p.reference,
+      receivedOn: p.receivedOn,
+      notes: p.notes,
+      createdBy: ctx.user.id,
+    });
     const paid = inv.amountPaid + p.amount;
     const status = statusAfterPayment(inv.total, paid, inv.creditedAmount);
     await tx

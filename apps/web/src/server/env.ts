@@ -85,7 +85,11 @@ const schema = z
     need(env.STORAGE_DRIVER === "s3", ["S3_BUCKET", "S3_REGION"], "when STORAGE_DRIVER=s3");
     need(!!env.STRIPE_SECRET_KEY, ["STRIPE_WEBHOOK_SECRET"], "when Stripe is enabled");
     if (env.NODE_ENV === "production" && env.AI_PROVIDER === "stub") {
-      ctx.addIssue({ code: "custom", path: ["AI_PROVIDER"], message: "the stub extractor is not allowed in production" });
+      ctx.addIssue({
+        code: "custom",
+        path: ["AI_PROVIDER"],
+        message: "the stub extractor is not allowed in production",
+      });
     }
     if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
       ctx.addIssue({

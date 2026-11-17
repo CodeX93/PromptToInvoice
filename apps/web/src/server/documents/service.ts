@@ -93,14 +93,12 @@ export async function archivePdf(ctx: OrgContext, invoiceId: string): Promise<vo
       .update(schema.invoices)
       .set({ pdfFileId: stored.id, pdfSha256: stored.sha256 })
       .where(eq(schema.invoices.id, invoiceId));
-    await tx
-      .insert(schema.invoiceEvents)
-      .values({
-        orgId: ctx.org.id,
-        invoiceId,
-        type: "pdf_rendered",
-        data: { sha256: stored.sha256, bytes: stored.size },
-      });
+    await tx.insert(schema.invoiceEvents).values({
+      orgId: ctx.org.id,
+      invoiceId,
+      type: "pdf_rendered",
+      data: { sha256: stored.sha256, bytes: stored.size },
+    });
   });
   logger.info({ invoiceId, bytes: pdf.length }, "invoice PDF archived");
 }

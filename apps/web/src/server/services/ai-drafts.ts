@@ -1,6 +1,14 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { extractDraft, normalizeDraft, stubExtract, type ExtractResult, type HistoryItem, type NormalizedDraft, type PromptContext } from "@pti/ai";
+import {
+  extractDraft,
+  normalizeDraft,
+  stubExtract,
+  type ExtractResult,
+  type HistoryItem,
+  type NormalizedDraft,
+  type PromptContext,
+} from "@pti/ai";
 import { isCurrencyCode, suggestTaxTreatment, todayIn, type TaxCategory } from "@pti/core";
 import { desc, eq, schema, sql, withOrg } from "@pti/db";
 import { db } from "../db";
@@ -34,17 +42,30 @@ export function setExtractorForTests(fn: Extractor | null): void {
 
 const MATCH_THRESHOLD = 0.5;
 
-async function buildContext(ctx: OrgContext, defaults: Awaited<ReturnType<typeof draftDefaults>>): Promise<{ prompt: PromptContext; history: HistoryItem[]; clientIds: Set<string> }> {
+async function buildContext(
+  ctx: OrgContext,
+  defaults: Awaited<ReturnType<typeof draftDefaults>>,
+): Promise<{ prompt: PromptContext; history: HistoryItem[]; clientIds: Set<string> }> {
   return withOrg(db, ctx.org.id, async (tx) => {
     const c = schema.clients;
     const clients = await tx
       .select({ id: c.id, name: c.name })
       .from(c)
       .where(sql`${c.status} <> 'archived'`)
-      .orderBy(sql`(select max(issue_date) from invoices where invoices.client_id = clients.id) desc nulls last`, desc(c.createdAt))
+      .orderBy(
+        sql`(select max(issue_date) from invoices where invoices.client_id = clients.id) desc nulls last`,
+        desc(c.createdAt),
+      )
       .limit(150);
     // Distinct recent line items with their latest price, per client.
-    const items = await tx.execute<{ description: string; unit: string; unit_price: string; currency: string; client_id: string | null; client: string | null }>(sql`
+    const items = await tx.execute<{
+      description: string;
+      unit: string;
+      unit_price: string;
+      currency: string;
+      client_id: string | null;
+      client: string | null;
+    }>(sql`
       select distinct on (lower(l.description), i.client_id)
         l.description, l.unit, l.unit_price::text as unit_price, i.currency, i.client_id, cl.name as client
       from invoice_lines l
@@ -54,14 +75,28 @@ async function buildContext(ctx: OrgContext, defaults: Awaited<ReturnType<typeof
       order by lower(l.description), i.client_id, i.issue_date desc
       limit 60
     `);
-    const history = items.map((r) => ({ description: r.description, unit: r.unit, unitPrice: String(Number(r.unit_price)), currency: r.currency, clientId: r.client_id }));
+    const history = items.map((r) => ({
+      description: r.description,
+      unit: r.unit,
+      unitPrice: String(Number(r.unit_price)),
+      currency: r.currency,
+      clientId: r.client_id,
+    }));
     return {
       prompt: {
         today: todayIn(ctx.org.timeZone),
         sellerCountry: defaults.profile.address.country,
         defaultCurrency: defaults.currency,
         clients,
-        recentItems: items.slice(0, 40).map((r, i) => ({ description: r.description, unit: r.unit, unitPrice: history[i]?.unitPrice ?? r.unit_price, currency: r.currency, client: r.client })),
+        recentItems: items
+          .slice(0, 40)
+          .map((r, i) => ({
+            description: r.description,
+            unit: r.unit,
+            unitPrice: history[i]?.unitPrice ?? r.unit_price,
+            currency: r.currency,
+            client: r.client,
+          })),
       },
       history,
       clientIds: new Set(clients.map((x) => x.id)),
@@ -69,7 +104,11 @@ async function buildContext(ctx: OrgContext, defaults: Awaited<ReturnType<typeof
   });
 }
 
-async function resolveClient(ctx: OrgContext, d: NormalizedDraft, notes: string[]): Promise<string | null> {
+async function resolveClient(
+  ctx: OrgContext,
+  d: NormalizedDraft,
+  notes: string[],
+): Promise<string | null> {
   if (d.clientId) return d.clientId;
   if (!d.clientName) return null;
   const [best] = await matchClients(ctx, d.clientName, 1);
@@ -85,7 +124,16 @@ async function resolveClient(ctx: OrgContext, d: NormalizedDraft, notes: string[
       contactName: null,
       emails: d.clientHints.email ? [d.clientHints.email] : [],
       phone: null,
-      address: d.clientHints.country ? { line1: "", line2: "", city: "", region: "", postalCode: "", country: d.clientHints.country } : null,
+      address: d.clientHints.country
+        ? {
+            line1: "",
+            line2: "",
+            city: "",
+            region: "",
+            postalCode: "",
+            country: d.clientHints.country,
+          }
+        : null,
       isBusiness: true,
       vatId: d.clientHints.vatId,
       taxId: null,
@@ -104,13 +152,23 @@ async function resolveClient(ctx: OrgContext, d: NormalizedDraft, notes: string[
 async function previousLines(ctx: OrgContext, clientId: string) {
   return withOrg(db, ctx.org.id, async (tx) => {
     const [last] = await tx
-      .select({ id: schema.invoices.id, currency: schema.invoices.currency, number: schema.invoices.number })
+      .select({
+        id: schema.invoices.id,
+        currency: schema.invoices.currency,
+        number: schema.invoices.number,
+      })
       .from(schema.invoices)
-      .where(sql`${schema.invoices.clientId} = ${clientId} and ${schema.invoices.docType} = 'invoice' and ${schema.invoices.status} <> 'draft'`)
+      .where(
+        sql`${schema.invoices.clientId} = ${clientId} and ${schema.invoices.docType} = 'invoice' and ${schema.invoices.status} <> 'draft'`,
+      )
       .orderBy(desc(schema.invoices.issueDate))
       .limit(1);
     if (!last) return null;
-    const lines = await tx.select().from(schema.invoiceLines).where(eq(schema.invoiceLines.invoiceId, last.id)).orderBy(schema.invoiceLines.position);
+    const lines = await tx
+      .select()
+      .from(schema.invoiceLines)
+      .where(eq(schema.invoiceLines.invoiceId, last.id))
+      .orderBy(schema.invoiceLines.position);
     return { ...last, lines };
   });
 }
@@ -127,21 +185,32 @@ export interface AiDraftResult {
  */
 export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise<AiDraftResult> {
   authorize(ctx, "invoice:write");
-  if (!features.ai) throw new AppError("ai_disabled", "AI drafting isn't configured on this server.", 503);
+  if (!features.ai)
+    throw new AppError("ai_disabled", "AI drafting isn't configured on this server.", 503);
   const settings = await getOrgSettings(ctx.org.id);
-  if (!settings.ai.enabled) throw new AppError("ai_disabled", "AI drafting is turned off for this organisation.", 403);
+  if (!settings.ai.enabled)
+    throw new AppError("ai_disabled", "AI drafting is turned off for this organisation.", 403);
   const prompt = rawPrompt.trim().slice(0, 2000);
-  if (prompt.length < 3) throw new ValidationError("Describe the work to invoice.", { prompt: ["Too short."] });
+  if (prompt.length < 3)
+    throw new ValidationError("Describe the work to invoice.", { prompt: ["Too short."] });
   await enforce(`ai:${ctx.user.id}`, RULES.aiDraft);
   // Count the attempt up front (its own transaction) so failures can't be used to bypass the quota.
   await withOrg(db, ctx.org.id, (tx) => consume(tx, ctx.org.id, ctx.org.plan, "ai_drafts"));
 
   const defaults = await draftDefaults(ctx);
   const { prompt: promptCtx, history, clientIds } = await buildContext(ctx, defaults);
-  const result = await extractor({ client: anthropicClient(), prompt, context: promptCtx, model: env.AI_MODEL });
+  const result = await extractor({
+    client: anthropicClient(),
+    prompt,
+    context: promptCtx,
+    model: env.AI_MODEL,
+  });
 
   const aiDraftId = crypto.randomUUID();
-  const record = (status: "ok" | "invalid" | "refused" | "error", extra: Record<string, unknown> = {}) =>
+  const record = (
+    status: "ok" | "invalid" | "refused" | "error",
+    extra: Record<string, unknown> = {},
+  ) =>
     withOrg(db, ctx.org.id, (tx) =>
       tx.insert(schema.aiDrafts).values({
         id: aiDraftId,
@@ -163,8 +232,17 @@ export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise
 
   if (result.status !== "ok") {
     await record(result.status);
-    logger.warn({ status: result.status, requestId: result.requestId, latencyMs: result.latencyMs }, "AI draft failed");
-    throw new AppError(`ai_${result.status}`, result.status === "refused" ? "That request can't be drafted. Try describing the work differently." : result.error, result.retryable ? 503 : 422);
+    logger.warn(
+      { status: result.status, requestId: result.requestId, latencyMs: result.latencyMs },
+      "AI draft failed",
+    );
+    throw new AppError(
+      `ai_${result.status}`,
+      result.status === "refused"
+        ? "That request can't be drafted. Try describing the work differently."
+        : result.error,
+      result.retryable ? 503 : 422,
+    );
   }
 
   const taxRates = await listTaxRates(ctx);
@@ -172,7 +250,11 @@ export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise
     today: promptCtx.today,
     knownClientIds: clientIds,
     history,
-    taxRates: taxRates.map((r) => ({ category: r.category as TaxCategory, rate: String(Number(r.rate)), isDefault: r.isDefault })),
+    taxRates: taxRates.map((r) => ({
+      category: r.category as TaxCategory,
+      rate: String(Number(r.rate)),
+      isDefault: r.isDefault,
+    })),
   });
   const notes = [...d.notesForUser];
   const clientId = await resolveClient(ctx, d, notes);
@@ -184,30 +266,69 @@ export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise
     const prev = await previousLines(ctx, clientId);
     if (prev) {
       currency ??= prev.currency;
-      lines = prev.lines.map((l) => ({ description: l.description, quantity: String(Number(l.quantity)), unit: l.unit, unitPrice: String(Number(l.unitPrice)), discountPercent: l.discountPercent, tax: { category: l.taxCategory as TaxCategory, rate: String(Number(l.taxRate)) } }));
+      lines = prev.lines.map((l) => ({
+        description: l.description,
+        quantity: String(Number(l.quantity)),
+        unit: l.unit,
+        unitPrice: String(Number(l.unitPrice)),
+        discountPercent: l.discountPercent,
+        tax: { category: l.taxCategory as TaxCategory, rate: String(Number(l.taxRate)) },
+      }));
       notes.push(`Copied the lines of ${prev.number ?? "the previous invoice"}.`);
     } else notes.push("No previous invoice for this client to copy.");
   }
 
   // Tax: explicit hint per line > treatment for this client > default rate.
   const treatment = client
-    ? suggestTaxTreatment({ sellerCountry: defaults.profile.address.country, sellerVatExempt: defaults.profile.vatExempt, supply: "services", ...clientTaxContext(client), buyerCountry: client.address?.country ?? null })
+    ? suggestTaxTreatment({
+        sellerCountry: defaults.profile.address.country,
+        sellerVatExempt: defaults.profile.vatExempt,
+        supply: "services",
+        ...clientTaxContext(client),
+        buyerCountry: client.address?.country ?? null,
+      })
     : null;
-  const fallbackTax = treatment && treatment.reason !== "non-eu-seller" ? { category: treatment.category, rate: treatment.category === "S" ? treatment.rate : "0" } : { category: defaults.taxCategory, rate: defaults.taxRate };
-  if (treatment && treatment.category !== "S" && treatment.reason !== "non-eu-seller") notes.push(`Applied ${treatment.category === "AE" ? "reverse charge" : "a 0% treatment"} for ${client?.name ?? "this client"}. Check it's right.`);
+  const fallbackTax =
+    treatment && treatment.reason !== "non-eu-seller"
+      ? { category: treatment.category, rate: treatment.category === "S" ? treatment.rate : "0" }
+      : { category: defaults.taxCategory, rate: defaults.taxRate };
+  if (treatment && treatment.category !== "S" && treatment.reason !== "non-eu-seller")
+    notes.push(
+      `Applied ${treatment.category === "AE" ? "reverse charge" : "a 0% treatment"} for ${client?.name ?? "this client"}. Check it's right.`,
+    );
 
-  const resolvedCurrency = currency && isCurrencyCode(currency) ? currency : (client?.currency ?? defaults.currency);
-  const termsDays = d.termsDays ?? client?.paymentTermsDays ?? defaults.profile.defaultPaymentTermsDays;
+  const resolvedCurrency =
+    currency && isCurrencyCode(currency) ? currency : (client?.currency ?? defaults.currency);
+  const termsDays =
+    d.termsDays ?? client?.paymentTermsDays ?? defaults.profile.defaultPaymentTermsDays;
   const payload = {
     businessProfileId: defaults.profile.id,
     clientId,
     currency: resolvedCurrency,
     issueDate: d.issueDate,
     supplyDate: d.supplyDate,
-    dueDate: d.dueDate ?? (d.issueDate ? new Date(Date.parse(`${d.issueDate}T00:00:00Z`) + termsDays * 86_400_000).toISOString().slice(0, 10) : null),
+    dueDate:
+      d.dueDate ??
+      (d.issueDate
+        ? new Date(Date.parse(`${d.issueDate}T00:00:00Z`) + termsDays * 86_400_000)
+            .toISOString()
+            .slice(0, 10)
+        : null),
     language: d.language ?? client?.language ?? defaults.profile.locale,
     reference: d.reference,
-    lines: (lines.length ? lines : [{ description: prompt.slice(0, 200), quantity: "1", unit: "", unitPrice: "0", discountPercent: null, tax: null }]).map((l) => ({
+    lines: (lines.length
+      ? lines
+      : [
+          {
+            description: prompt.slice(0, 200),
+            quantity: "1",
+            unit: "",
+            unitPrice: "0",
+            discountPercent: null,
+            tax: null,
+          },
+        ]
+    ).map((l) => ({
       description: l.description,
       quantity: l.quantity,
       unit: l.unit,
@@ -224,14 +345,28 @@ export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise
 
   await record("ok", { output: { raw: result.output, aiFields: d.aiFields, notes } });
   const { id } = await saveDraft(ctx, null, payload, { source: "ai", aiDraftId });
-  await withOrg(db, ctx.org.id, (tx) => tx.update(schema.aiDrafts).set({ acceptedInvoiceId: id }).where(eq(schema.aiDrafts.id, aiDraftId)));
+  await withOrg(db, ctx.org.id, (tx) =>
+    tx
+      .update(schema.aiDrafts)
+      .set({ acceptedInvoiceId: id })
+      .where(eq(schema.aiDrafts.id, aiDraftId)),
+  );
   return { invoiceId: id, aiDraftId };
 }
 
 /** AI marks for the editor: shown until the draft has been saved by a person. */
-export async function aiMarksFor(ctx: OrgContext, aiDraftId: string | null, version: number): Promise<{ fields: string[]; notes: string[] } | null> {
+export async function aiMarksFor(
+  ctx: OrgContext,
+  aiDraftId: string | null,
+  version: number,
+): Promise<{ fields: string[]; notes: string[] } | null> {
   if (!aiDraftId || version > 1) return null;
-  const [row] = await withOrg(db, ctx.org.id, (tx) => tx.select({ output: schema.aiDrafts.output }).from(schema.aiDrafts).where(eq(schema.aiDrafts.id, aiDraftId)));
+  const [row] = await withOrg(db, ctx.org.id, (tx) =>
+    tx
+      .select({ output: schema.aiDrafts.output })
+      .from(schema.aiDrafts)
+      .where(eq(schema.aiDrafts.id, aiDraftId)),
+  );
   const o = row?.output as { aiFields?: string[]; notes?: string[] } | null | undefined;
   return o ? { fields: o.aiFields ?? [], notes: o.notes ?? [] } : null;
 }
@@ -245,21 +380,40 @@ export async function recordAiOutcome(ctx: OrgContext, invoiceId: string): Promi
   await withOrg(db, ctx.org.id, async (tx) => {
     const [inv] = await tx.select().from(schema.invoices).where(eq(schema.invoices.id, invoiceId));
     if (!inv?.aiDraftId) return;
-    const [draft] = await tx.select().from(schema.aiDrafts).where(eq(schema.aiDrafts.id, inv.aiDraftId));
-    const raw = (draft?.output as { raw?: { lines?: { description: string; quantity: string; unitPrice: string | null }[]; currency?: string | null } } | null)?.raw;
+    const [draft] = await tx
+      .select()
+      .from(schema.aiDrafts)
+      .where(eq(schema.aiDrafts.id, inv.aiDraftId));
+    const raw = (
+      draft?.output as {
+        raw?: {
+          lines?: { description: string; quantity: string; unitPrice: string | null }[];
+          currency?: string | null;
+        };
+      } | null
+    )?.raw;
     if (!draft || !raw) return;
-    const lines = await tx.select().from(schema.invoiceLines).where(eq(schema.invoiceLines.invoiceId, invoiceId)).orderBy(schema.invoiceLines.position);
+    const lines = await tx
+      .select()
+      .from(schema.invoiceLines)
+      .where(eq(schema.invoiceLines.invoiceId, invoiceId))
+      .orderBy(schema.invoiceLines.position);
     const edited: string[] = [];
-    const same = (a: string | null | undefined, b: string | null | undefined) => a != null && b != null && Number(a) === Number(b);
+    const same = (a: string | null | undefined, b: string | null | undefined) =>
+      a != null && b != null && Number(a) === Number(b);
     (raw.lines ?? []).forEach((l, i) => {
       const f = lines[i];
       if (!f) return edited.push(`lines.${i}`);
       if (f.description.trim() !== l.description.trim()) edited.push(`lines.${i}.description`);
       if (!same(f.quantity, l.quantity)) edited.push(`lines.${i}.quantity`);
-      if (l.unitPrice !== null && !same(f.unitPrice, l.unitPrice)) edited.push(`lines.${i}.unitPrice`);
+      if (l.unitPrice !== null && !same(f.unitPrice, l.unitPrice))
+        edited.push(`lines.${i}.unitPrice`);
     });
     if (lines.length > (raw.lines?.length ?? 0)) edited.push("lines.added");
     if (raw.currency && raw.currency.toUpperCase() !== inv.currency) edited.push("currency");
-    await tx.update(schema.aiDrafts).set({ editedFields: edited }).where(eq(schema.aiDrafts.id, draft.id));
+    await tx
+      .update(schema.aiDrafts)
+      .set({ editedFields: edited })
+      .where(eq(schema.aiDrafts.id, draft.id));
   });
 }
