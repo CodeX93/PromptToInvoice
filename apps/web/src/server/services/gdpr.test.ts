@@ -6,6 +6,7 @@ import { readBlob } from "../storage";
 import { archivePdf } from "../documents/service";
 import { buildExport } from "./data-export";
 import { assertCanDeleteUser, deleteOrganization } from "./org-deletion";
+import { purgeExpiredRetention } from "../jobs/maintenance";
 import { issueInvoice, saveDraft } from "./invoices";
 
 afterAll(() => dbs.close());
@@ -41,6 +42,15 @@ describe("GDPR", () => {
     expect(org?.deletedAt).toBeInstanceOf(Date);
     // With the org gone, the owner may now delete their account.
     await expect(assertCanDeleteUser(ctx.user.id)).resolves.toBeUndefined();
+
+    // Nothing is purged while retention runs…
+    await archivePdf(ctx, issued.id).catch(() => undefined);
+    await purgeExpiredRetention(new Date());
+    expect(await dbs.system.select().from(schema.invoices).where(eq(schema.invoices.orgId, ctx.org.id))).toHaveLength(1);
+    // …and everything goes once it has ended.
+    await purgeExpiredRetention(new Date(Date.now() + 11 * 365 * 86_400_000));
+    expect(await dbs.system.select().from(schema.invoices).where(eq(schema.invoices.orgId, ctx.org.id))).toHaveLength(0);
+    expect(await dbs.system.select().from(schema.organizations).where(eq(schema.organizations.id, ctx.org.id))).toHaveLength(0);
   });
 
   it("blocks deleting the only owner of a live organisation", async () => {
