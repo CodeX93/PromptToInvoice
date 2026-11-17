@@ -15,7 +15,7 @@ const config: NextConfig = {
   reactStrictMode: true,
   // Pins server action ids across instances of one release (set in CI).
   deploymentId: process.env.DEPLOYMENT_ID,
-  transpilePackages: ["@pti/core", "@pti/db"],
+  transpilePackages: ["@pti/core", "@pti/db", "@pti/ai"],
   serverExternalPackages: ["pino", "postgres", "nodemailer", "pdfkit", "sharp"],
   // Fonts are read at runtime by the PDF renderer.
   outputFileTracingIncludes: { "/**": ["./assets/fonts/**"] },
