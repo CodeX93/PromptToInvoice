@@ -7,7 +7,7 @@ schemas that validate requests, so it cannot drift).
 ## Conventions
 
 - **Auth:** `Authorization: Bearer pti_live_<prefix>_<secret>`. Only a SHA-256 hash is
-  stored; lookup is by prefix with a constant-time compare. Keys act with *member*
+  stored; lookup is by prefix with a constant-time compare. Keys act with _member_
   permissions (create/issue/send, never people, billing or settings).
 - **Money** is an integer in minor units next to an ISO 4217 `currency`. Quantities,
   prices and rates are decimal **strings**.
@@ -20,16 +20,16 @@ schemas that validate requests, so it cannot drift).
 
 ## Endpoints
 
-| Method | Path | |
-|---|---|---|
-| GET | `/invoices` | `status`, `client_id`, `q`, `cursor`, `limit` |
-| POST | `/invoices` | Creates a **draft**; omitted fields take org defaults |
-| GET | `/invoices/{id}` | |
-| POST | `/invoices/{id}/issue` | Assigns the number; irreversible |
-| POST | `/invoices/{id}/send` | 202; `to` defaults to the client's emails |
-| GET | `/invoices/{id}/pdf` | PDF/A-3 (Factur-X embedded where the plan allows) |
-| GET/POST | `/clients`, GET `/clients/{id}` | |
-| POST | `/drafts` | `{ "prompt": "…" }` → AI draft (counts against AI quota) |
+| Method   | Path                            |                                                          |
+| -------- | ------------------------------- | -------------------------------------------------------- |
+| GET      | `/invoices`                     | `status`, `client_id`, `q`, `cursor`, `limit`            |
+| POST     | `/invoices`                     | Creates a **draft**; omitted fields take org defaults    |
+| GET      | `/invoices/{id}`                |                                                          |
+| POST     | `/invoices/{id}/issue`          | Assigns the number; irreversible                         |
+| POST     | `/invoices/{id}/send`           | 202; `to` defaults to the client's emails                |
+| GET      | `/invoices/{id}/pdf`            | PDF/A-3 (Factur-X embedded where the plan allows)        |
+| GET/POST | `/clients`, GET `/clients/{id}` |                                                          |
+| POST     | `/drafts`                       | `{ "prompt": "…" }` → AI draft (counts against AI quota) |
 
 ## Webhooks
 

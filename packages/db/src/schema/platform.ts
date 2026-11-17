@@ -213,7 +213,10 @@ export const apiKeys = pgTable(
     name: text("name").notNull(),
     prefix: text("prefix").notNull(),
     hash: text("hash").notNull(),
-    scopes: text("scopes").array().notNull().default(sql`'{}'::text[]`),
+    scopes: text("scopes")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
     lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => users.id, { onDelete: "set null" }),
     revokedAt: timestamp("revoked_at", { withTimezone: true }),
@@ -222,7 +225,15 @@ export const apiKeys = pgTable(
   (t) => [uniqueIndex("api_keys_prefix_uq").on(t.prefix), index("api_keys_org_idx").on(t.orgId)],
 );
 
-export const WEBHOOK_EVENTS = ["invoice.issued", "invoice.sent", "invoice.viewed", "invoice.paid", "invoice.voided", "quote.accepted", "quote.declined"] as const;
+export const WEBHOOK_EVENTS = [
+  "invoice.issued",
+  "invoice.sent",
+  "invoice.viewed",
+  "invoice.paid",
+  "invoice.voided",
+  "quote.accepted",
+  "quote.declined",
+] as const;
 export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number];
 
 export const webhookEndpoints = pgTable(
@@ -260,5 +271,8 @@ export const webhookDeliveries = pgTable(
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
-  (t) => [index("webhook_deliveries_endpoint_idx").on(t.endpointId, t.createdAt.desc()), uniqueIndex("webhook_deliveries_event_uq").on(t.endpointId, t.eventId)],
+  (t) => [
+    index("webhook_deliveries_endpoint_idx").on(t.endpointId, t.createdAt.desc()),
+    uniqueIndex("webhook_deliveries_event_uq").on(t.endpointId, t.eventId),
+  ],
 );
