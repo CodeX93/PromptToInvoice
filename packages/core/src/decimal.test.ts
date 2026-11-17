@@ -4,6 +4,7 @@ import {
   compareDecimal,
   divRound,
   formatDecimal,
+  isDecimalString,
   normalizeDecimal,
   parseDecimal,
   rescale,
@@ -27,6 +28,11 @@ describe("parseDecimal", () => {
   it("accepts insignificant trailing zeros beyond the scale", () => {
     expect(parseDecimal("5.000000", 4)).toEqual({ coef: 5n, scale: 0 });
     expect(parseDecimal("1.250000", 4)).toEqual({ coef: 125n, scale: 2 });
+  });
+
+  it("validates like it parses (trailing zeros)", () => {
+    expect(isDecimalString("5.000000", 4)).toBe(true);
+    expect(isDecimalString("5.000010", 4)).toBe(false);
   });
 
   it("rejects excessive precision", () => {
