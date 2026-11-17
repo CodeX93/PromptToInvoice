@@ -21,7 +21,12 @@ async function draftInvoice(seed: Seed) {
   return withOrg(dbs.app, seed.org.id, async (tx) => {
     const [inv] = await tx
       .insert(invoices)
-      .values({ orgId: seed.org.id, businessProfileId: seed.profile.id, issueDate: "2026-11-01", currency: "EUR" })
+      .values({
+        orgId: seed.org.id,
+        businessProfileId: seed.profile.id,
+        issueDate: "2026-11-01",
+        currency: "EUR",
+      })
       .returning();
     await tx.insert(invoiceLines).values({
       orgId: seed.org.id,
@@ -42,14 +47,21 @@ async function draftInvoice(seed: Seed) {
 
 async function issue(seed: Seed, id: string, number: string) {
   return withOrg(dbs.app, seed.org.id, (tx) =>
-    tx.update(invoices).set({ status: "open", number, issuedAt: new Date(), total: 11900 }).where(eq(invoices.id, id)),
+    tx
+      .update(invoices)
+      .set({ status: "open", number, issuedAt: new Date(), total: 11900 })
+      .where(eq(invoices.id, id)),
   );
 }
 
 describe("row-level security", () => {
   it("hides other organisations' rows", async () => {
-    await withOrg(dbs.app, a.org.id, (tx) => tx.insert(clients).values({ orgId: a.org.id, name: "Acme A" }));
-    await withOrg(dbs.app, b.org.id, (tx) => tx.insert(clients).values({ orgId: b.org.id, name: "Acme B" }));
+    await withOrg(dbs.app, a.org.id, (tx) =>
+      tx.insert(clients).values({ orgId: a.org.id, name: "Acme A" }),
+    );
+    await withOrg(dbs.app, b.org.id, (tx) =>
+      tx.insert(clients).values({ orgId: b.org.id, name: "Acme B" }),
+    );
 
     const seenByA = await withOrg(dbs.app, a.org.id, (tx) => tx.select().from(clients));
     expect(seenByA.map((c) => c.name)).toEqual(["Acme A"]);
@@ -124,9 +136,9 @@ describe("issued invoice immutability", () => {
   it("blocks deleting issued invoices and returning to draft", async () => {
     const inv = await draftInvoice(a);
     await issue(a, inv.id, "INV-T-4");
-    const del = await withOrg(dbs.app, a.org.id, (tx) => tx.delete(invoices).where(eq(invoices.id, inv.id))).catch(
-      (e: unknown) => e,
-    );
+    const del = await withOrg(dbs.app, a.org.id, (tx) =>
+      tx.delete(invoices).where(eq(invoices.id, inv.id)),
+    ).catch((e: unknown) => e);
     expect(String((del as Error).cause ?? del)).toMatch(/cannot be deleted/);
     const back = await withOrg(dbs.app, a.org.id, (tx) =>
       tx.update(invoices).set({ status: "draft", number: null }).where(eq(invoices.id, inv.id)),
@@ -157,12 +169,19 @@ describe("issued invoice immutability", () => {
     const [p] = await withOrg(dbs.app, a.org.id, (tx) =>
       tx
         .insert(payments)
-        .values({ orgId: a.org.id, invoiceId: inv.id, amount: 100, currency: "EUR", method: "bank_transfer", receivedOn: "2026-11-02" })
+        .values({
+          orgId: a.org.id,
+          invoiceId: inv.id,
+          amount: 100,
+          currency: "EUR",
+          method: "bank_transfer",
+          receivedOn: "2026-11-02",
+        })
         .returning(),
     );
-    const err = await withOrg(dbs.app, a.org.id, (tx) => tx.delete(payments).where(eq(payments.id, p!.id))).catch(
-      (e: unknown) => e,
-    );
+    const err = await withOrg(dbs.app, a.org.id, (tx) =>
+      tx.delete(payments).where(eq(payments.id, p!.id)),
+    ).catch((e: unknown) => e);
     expect(String((err as Error).cause ?? err)).toMatch(/cannot be deleted/);
   });
 });
@@ -209,7 +228,13 @@ describe("number allocation", () => {
     const seed = await seedOrg(dbs.system);
     const alloc = (issueDate: string) =>
       withOrg(dbs.app, seed.org.id, (tx) =>
-        allocateNumber(tx, { orgId: seed.org.id, seriesId: seed.series.id, pattern: "{YYYY}-{SEQ:3}", resetPolicy: "yearly", issueDate }),
+        allocateNumber(tx, {
+          orgId: seed.org.id,
+          seriesId: seed.series.id,
+          pattern: "{YYYY}-{SEQ:3}",
+          resetPolicy: "yearly",
+          issueDate,
+        }),
       );
     expect((await alloc("2026-12-31")).number).toBe("2026-001");
     expect((await alloc("2027-01-01")).number).toBe("2027-001");
@@ -220,11 +245,13 @@ describe("number allocation", () => {
 describe("audit log", () => {
   it("is append-only for the app role", async () => {
     await withOrg(dbs.app, a.org.id, (tx) =>
-      tx.execute(sql`insert into audit_log (org_id, action, entity_type) values (${a.org.id}, 'test', 'x')`),
+      tx.execute(
+        sql`insert into audit_log (org_id, action, entity_type) values (${a.org.id}, 'test', 'x')`,
+      ),
     );
-    const err = await withOrg(dbs.app, a.org.id, (tx) => tx.execute(sql`delete from audit_log`)).catch(
-      (e: unknown) => e,
-    );
+    const err = await withOrg(dbs.app, a.org.id, (tx) =>
+      tx.execute(sql`delete from audit_log`),
+    ).catch((e: unknown) => e);
     expect(String((err as Error).cause ?? err)).toMatch(/permission denied/);
   });
 });

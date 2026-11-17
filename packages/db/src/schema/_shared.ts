@@ -15,7 +15,8 @@ export const id = () =>
 
 export const newId = (): string => uuidv7();
 
-export const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
+export const createdAt = () =>
+  timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 
 export const updatedAt = () =>
   timestamp("updated_at", { withTimezone: true })

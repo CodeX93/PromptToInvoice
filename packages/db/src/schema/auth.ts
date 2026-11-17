@@ -1,4 +1,14 @@
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { createdAt, id, updatedAt } from "./_shared";
 
 /**
@@ -111,7 +121,10 @@ export const passkeys = pgTable(
     aaguid: text("aaguid"),
     createdAt: createdAt(),
   },
-  (t) => [index("passkeys_user_idx").on(t.userId), uniqueIndex("passkeys_credential_uq").on(t.credentialID)],
+  (t) => [
+    index("passkeys_user_idx").on(t.userId),
+    uniqueIndex("passkeys_credential_uq").on(t.credentialID),
+  ],
 );
 
 export const organizations = pgTable(
@@ -168,5 +181,8 @@ export const invitations = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     createdAt: createdAt(),
   },
-  (t) => [index("invitations_org_idx").on(t.organizationId), index("invitations_email_idx").on(t.email)],
+  (t) => [
+    index("invitations_org_idx").on(t.organizationId),
+    index("invitations_email_idx").on(t.email),
+  ],
 );
