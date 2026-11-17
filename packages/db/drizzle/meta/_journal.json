@@ -64,6 +64,13 @@
       "when": 1794942110853,
       "tag": "0008_job_queue_schema",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794942362107,
+      "tag": "0009_job_queue_grant",
+      "breakpoints": true
     }
   ]
 }
