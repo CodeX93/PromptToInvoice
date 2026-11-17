@@ -1,5 +1,5 @@
 import "server-only";
-import { sql } from "drizzle-orm";
+import { sql } from "@pti/db";
 import { sysDb } from "./db";
 import { RateLimitedError } from "./errors";
 
