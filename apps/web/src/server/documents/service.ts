@@ -8,7 +8,8 @@ import type { OrgContext } from "../session";
 import { getInvoice, type InvoiceDetail } from "../services/invoices";
 import { readBlob, storeFile } from "../storage";
 import { buildDocModel, type InvoiceDocModel } from "./model";
-import { renderInvoicePdf, type PdfAttachment } from "./pdf";
+import { renderInvoicePdf } from "./pdf";
+import { facturXFor } from "./einvoice";
 
 /** Years to retain issued documents (max across our markets: FR/DE 10). */
 const RETENTION_YEARS = 10;
@@ -48,15 +49,6 @@ export async function modelFor(ctx: OrgContext, detail: InvoiceDetail): Promise<
   });
 }
 
-/** Hook for the e-invoice module to add XML + XMP to the archived PDF (set in M8). */
-export type EinvoiceDecorator = (
-  detail: InvoiceDetail,
-  model: InvoiceDocModel,
-) => Promise<{ attachments: PdfAttachment[]; xmpExtension?: string } | null>;
-let decorate: EinvoiceDecorator | null = null;
-export function registerEinvoiceDecorator(fn: EinvoiceDecorator): void {
-  decorate = fn;
-}
 
 export async function renderFor(
   ctx: OrgContext,
@@ -64,7 +56,7 @@ export async function renderFor(
 ): Promise<{ pdf: Buffer; model: InvoiceDocModel }> {
   const model = await modelFor(ctx, detail);
   const extra =
-    detail.invoice.status !== "draft" && decorate ? await decorate(detail, model) : null;
+    detail.invoice.status !== "draft" && hasFeature(ctx.org.plan, "einvoice") ? facturXFor(detail) : null;
   const pdf = await renderInvoicePdf(model, {
     logo: await loadLogo(ctx.org.id, model.logoFileId),
     paper: detail.invoice.issuedSnapshot?.seller.address.country === "US" ? "LETTER" : "A4",
