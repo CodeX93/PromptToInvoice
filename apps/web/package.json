@@ -12,7 +12,8 @@
     "test": "vitest run",
     "seed": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local scripts/seed.ts",
     "worker": "tsx --tsconfig scripts/tsconfig.json --env-file=.env.local worker/index.ts",
-    "build:worker": "node scripts/bundle.mjs"
+    "build:worker": "node scripts/bundle.mjs",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
@@ -53,6 +54,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "@pti/eslint-config": "workspace:*",
     "@pti/tsconfig": "workspace:*",
     "@tailwindcss/postcss": "^4.3.5",

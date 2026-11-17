@@ -1,0 +1,5 @@
+
+# e2e
+/e2e/.outbox
+/test-results
+/playwright-report
