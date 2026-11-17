@@ -1,7 +1,7 @@
 import type { Metadata, Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { amountDue, can as canDo, formatMoney, fromMinor, todayIn } from "@pti/core";
+import { amountDue, can as canDo, hasFeature, formatMoney, fromMinor, todayIn } from "@pti/core";
 import { DocumentView } from "@/components/invoices/document-view";
 import { InvoiceActions } from "@/components/invoices/invoice-actions";
 import { InvoiceEditor } from "@/components/invoices/invoice-editor";
@@ -81,6 +81,11 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
             amountDue={formatMoney(due, currency)}
             amountDueRaw={fromMinor(due, currency)}
             today={todayIn(ctx.org.timeZone)}
+            number={inv.number ?? ""}
+            canSend={can(ctx, "invoice:send") && canDo(inv, "send")}
+            sentBefore={Boolean(inv.sentAt)}
+            clientEmails={detail.client?.emails ?? []}
+            canRepeat={inv.docType === "invoice" && can(ctx, "invoice:write") && hasFeature(ctx.org.plan, "recurring")}
           />
         </div>
       </div>
