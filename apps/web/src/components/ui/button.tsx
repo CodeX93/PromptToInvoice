@@ -47,8 +47,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       aria-busy={pending ?? undefined}
       {...props}
     >
-      {pending ? <Dots /> : null}
-      {children}
+      {/* Slot needs exactly one child, so asChild buttons don't render the indicator. */}
+      {asChild ? (
+        children
+      ) : (
+        <>
+          {pending ? <Dots /> : null}
+          {children}
+        </>
+      )}
     </Comp>
   );
 });
