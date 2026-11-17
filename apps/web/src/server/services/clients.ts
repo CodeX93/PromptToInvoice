@@ -117,10 +117,10 @@ export async function listClients(ctx: OrgContext, args: ListClientsArgs = {}) {
           select json_build_object(
             'outstanding', (select json_agg(json_build_object('currency', o.currency, 'amount', o.amt)) from (
               select currency, sum(total - amount_paid)::bigint as amt from invoices
-              where client_id = ${c.id} and status = 'open' and doc_type = 'invoice' group by currency
+              where client_id = clients.id and status = 'open' and doc_type = 'invoice' group by currency
             ) o where o.amt > 0),
-            'count', (select count(*) from invoices where client_id = ${c.id} and status <> 'draft'),
-            'last', (select max(issue_date) from invoices where client_id = ${c.id} and status <> 'draft')
+            'count', (select count(*) from invoices where client_id = clients.id and status <> 'draft'),
+            'last', (select max(issue_date) from invoices where client_id = clients.id and status <> 'draft')
           ))`,
       })
       .from(c)
