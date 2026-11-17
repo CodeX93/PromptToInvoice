@@ -17,14 +17,12 @@ afterAll(() => dbs.close());
 describe("quotes", () => {
   it("issues with their own numbering, is answered publicly and converts to an invoice", async () => {
     const { ctx, seed, clientId } = await orgContext({ plan: "starter" });
-    await dbs.system
-      .insert(schema.numberSeries)
-      .values({
-        orgId: ctx.org.id,
-        businessProfileId: seed.profile.id,
-        docType: "quote",
-        pattern: "Q-{SEQ:3}",
-      });
+    await dbs.system.insert(schema.numberSeries).values({
+      orgId: ctx.org.id,
+      businessProfileId: seed.profile.id,
+      docType: "quote",
+      pattern: "Q-{SEQ:3}",
+    });
     const { id } = await saveDraft(
       ctx,
       null,
