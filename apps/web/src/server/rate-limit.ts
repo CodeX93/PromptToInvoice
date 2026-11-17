@@ -16,6 +16,8 @@ export const RULES = {
   sendEmail: { limit: 60, windowSeconds: 3600 },
   publicInvoice: { limit: 120, windowSeconds: 60 },
   api: { limit: 600, windowSeconds: 60 },
+  /** Creating credentials and endpoints: generous for humans, useless for scripts. */
+  sensitive: { limit: 20, windowSeconds: 3600 },
 } satisfies Record<string, RateLimitRule>;
 
 /**

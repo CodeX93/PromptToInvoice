@@ -16,7 +16,7 @@ import {
 import { db, sysDb } from "../db";
 import { audit } from "../audit";
 import { decrypt, encrypt } from "../crypto";
-import { ValidationError } from "../errors";
+import { NotFound, ValidationError } from "../errors";
 import { logger } from "../logger";
 import { authorize, type OrgContext } from "../session";
 import { enqueue } from "../jobs/queue";
@@ -94,15 +94,13 @@ export async function createEndpoint(
   const id = crypto.randomUUID();
   const secret = `whsec_${randomBytes(24).toString("base64url")}`;
   await withOrg(db, ctx.org.id, async (tx) => {
-    await tx
-      .insert(schema.webhookEndpoints)
-      .values({
-        id,
-        orgId: ctx.org.id,
-        url: url.toString(),
-        events: input.events,
-        secretEncrypted: encrypt(secret, aad(id)),
-      });
+    await tx.insert(schema.webhookEndpoints).values({
+      id,
+      orgId: ctx.org.id,
+      url: url.toString(),
+      events: input.events,
+      secretEncrypted: encrypt(secret, aad(id)),
+    });
     await audit(tx, {
       orgId: ctx.org.id,
       actorId: ctx.user.id,
@@ -142,16 +140,50 @@ export async function listEndpoints(ctx: OrgContext) {
       })
       .from(schema.webhookEndpoints);
     const recent = await tx.execute<{
+      id: string;
       endpoint_id: string;
       type: string;
-      status: string;
+      status: "pending" | "delivered" | "failed";
+      attempts: number;
       response_status: number | null;
+      error: string | null;
       created_at: string;
     }>(sql`
-      select endpoint_id, type, status, response_status, created_at::text from webhook_deliveries order by created_at desc limit 20
+      select id, endpoint_id, type, status, attempts, response_status, error, created_at::text
+      from webhook_deliveries order by created_at desc limit 25
     `);
     return { endpoints, recent };
   });
+}
+
+/**
+ * Queue a signed `ping` to one endpoint so integrators can verify their
+ * signature check end to end. Also re-activates an endpoint that was
+ * switched off after repeated failures: sending a test is the explicit
+ * "it's fixed now" signal.
+ */
+export async function sendTestEvent(ctx: OrgContext, endpointId: string): Promise<void> {
+  authorize(ctx, "apikey:manage");
+  const eventId = crypto.randomUUID();
+  const [row] = await withOrg(db, ctx.org.id, async (tx) => {
+    const [ep] = await tx
+      .update(schema.webhookEndpoints)
+      .set({ active: true, failureCount: 0 })
+      .where(eq(schema.webhookEndpoints.id, endpointId))
+      .returning({ id: schema.webhookEndpoints.id });
+    if (!ep) throw new NotFound("Webhook endpoint");
+    return tx
+      .insert(schema.webhookDeliveries)
+      .values({
+        orgId: ctx.org.id,
+        endpointId,
+        eventId,
+        type: "ping",
+        payload: { id: eventId, type: "ping", created: new Date().toISOString(), data: {} },
+      })
+      .returning({ id: schema.webhookDeliveries.id });
+  });
+  if (row) await enqueue("webhook.deliver", { deliveryId: row.id }, { singletonKey: row.id });
 }
 
 /**

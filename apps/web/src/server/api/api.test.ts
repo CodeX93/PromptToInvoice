@@ -259,7 +259,6 @@ describe("webhooks", () => {
     const { id: endpointId, secret } = await createEndpoint(ctx, {
       url: "https://93.184.215.14/hooks",
       events: ["invoice.paid"],
-      description: "",
     });
     await emitEvent(ctx.org.id, "invoice.paid", { id: "inv_1" });
     await emitEvent(ctx.org.id, "invoice.sent", { id: "inv_1" }); // not subscribed
