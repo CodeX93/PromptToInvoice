@@ -4,13 +4,16 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink, organization, twoFactor } from "better-auth/plugins";
 import { adminAc, defaultAc, memberAc, ownerAc } from "better-auth/plugins/organization/access";
-import { schema, newId } from "@pti/db";
+import { eq, schema, newId } from "@pti/db";
 import { sysDb } from "./db";
 import { env, features } from "./env";
 import { sendEmail } from "./email/transport";
 import * as templates from "./email/templates";
 import { hit } from "./rate-limit";
 import { logger } from "./logger";
+
+/** Sign-in paths that never pass through the two-factor challenge. */
+const BYPASSES_SECOND_FACTOR = /^\/(?:magic-link\/verify|verify-email|callback\/|oauth2\/callback)/;
 
 /**
  * Authentication: email + password (verified), magic links, Google and
@@ -135,6 +138,32 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    session: {
+      create: {
+        /**
+         * Better Auth only challenges for TOTP on password sign-in. Every
+         * other way in (magic link, OAuth callback, auto sign-in after
+         * email verification) would mint a full session and skip the
+         * second factor, which is exactly the mailbox-compromise case 2FA
+         * exists for. So those paths may not create a session for a 2FA
+         * user; they're sent to password + code sign-in instead.
+         */
+        before: async (session, ctx) => {
+          const path = ctx?.path ?? "";
+          if (!BYPASSES_SECOND_FACTOR.test(path)) return;
+          const [u] = await sysDb
+            .select({ twoFactorEnabled: schema.users.twoFactorEnabled })
+            .from(schema.users)
+            .where(eq(schema.users.id, session.userId));
+          if (!u?.twoFactorEnabled) return;
+          logger.info({ userId: session.userId, path }, "second factor required");
+          throw (
+            ctx?.redirect(`${env.APP_URL}/sign-in?error=two_factor_required`) ??
+            new Error("two_factor_required")
+          );
+        },
+      },
+    },
     user: {
       create: {
         after: (user) => {

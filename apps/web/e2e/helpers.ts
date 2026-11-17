@@ -107,3 +107,28 @@ export async function draftInvoice(
   await page.getByLabel("Line 1 unit price").fill("3400");
   return client;
 }
+
+/**
+ * Direct DB access for test setup that has no UI shortcut (e.g. enabling
+ * 2FA without scanning a QR code). Uses the system role, like the worker.
+ */
+export async function sql<T extends Record<string, unknown>>(
+  query: TemplateStringsArray,
+  ...values: (string | number | boolean)[]
+): Promise<T[]> {
+  const { default: postgres } = await import("postgres");
+  const url = process.env.SYSTEM_DATABASE_URL ?? (await envFileValue("SYSTEM_DATABASE_URL"));
+  const db = postgres(url, { max: 1 });
+  try {
+    return (await db(query, ...values)) as unknown as T[];
+  } finally {
+    await db.end();
+  }
+}
+
+async function envFileValue(key: string): Promise<string> {
+  const text = await readFile(join(import.meta.dirname, "..", ".env.local"), "utf8");
+  const line = text.split("\n").find((l) => l.startsWith(`${key}=`));
+  if (!line) throw new Error(`${key} is not set`);
+  return line.slice(key.length + 1).replace(/^"|"$/g, "");
+}

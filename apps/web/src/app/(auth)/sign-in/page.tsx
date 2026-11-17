@@ -7,9 +7,19 @@ import { safeNext } from "@/lib/safe-redirect";
 export const metadata: Metadata = { title: "Sign in" };
 
 export default async function SignInPage(props: PageProps<"/sign-in">) {
-  const { next } = await props.searchParams;
+  const { next, error } = await props.searchParams;
   const providers: OAuthProvider[] = [];
   if (features.google) providers.push("google");
   if (features.microsoft) providers.push("microsoft");
-  return <SignInForm next={safeNext(next)} providers={providers} />;
+  return (
+    <SignInForm
+      next={safeNext(next)}
+      providers={providers}
+      notice={
+        error === "two_factor_required"
+          ? "Your account uses two-factor authentication. Sign in with your password and code."
+          : undefined
+      }
+    />
+  );
 }
