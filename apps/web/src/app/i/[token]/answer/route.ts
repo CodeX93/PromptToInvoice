@@ -1,3 +1,4 @@
+import { clientIp } from "@/server/client-ip";
 import { NextResponse } from "next/server";
 import { hit, RULES } from "@/server/rate-limit";
 import { isAppError } from "@/server/errors";
@@ -7,7 +8,7 @@ import { loadPublicInvoice } from "@/server/services/public-invoices";
 /** Client accepts or declines a quote from the public link (POST form). */
 export async function POST(req: Request, ctx: RouteContext<"/i/[token]/answer">) {
   const { token } = await ctx.params;
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIp(req.headers);
   if (!(await hit(`answer:${ip}`, RULES.publicInvoice)).allowed)
     return new Response("Too many requests", { status: 429 });
   const found = await loadPublicInvoice(token);

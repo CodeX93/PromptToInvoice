@@ -1,10 +1,11 @@
+import { clientIp } from "@/server/client-ip";
 import { hit, RULES } from "@/server/rate-limit";
 import { loadPublicInvoice } from "@/server/services/public-invoices";
 import { pdfFor } from "@/server/documents/service";
 
 export async function GET(req: Request, ctx: RouteContext<"/i/[token]/pdf">) {
   const { token } = await ctx.params;
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = clientIp(req.headers);
   if (!(await hit(`pub:${ip}`, RULES.publicInvoice)).allowed)
     return new Response("Too many requests", { status: 429 });
   const found = await loadPublicInvoice(token);

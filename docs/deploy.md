@@ -47,8 +47,11 @@ Storage: `STORAGE_DRIVER=s3` for anything with more than one host. The `fs` driv
 
 ## Behind a proxy
 
-Terminate TLS in front of the web replicas and forward `X-Forwarded-For`; rate limits and
-audit IPs use its first hop. HSTS (with preload) and a per-request nonce CSP are sent by
+Terminate TLS in front of the web replicas and forward `X-Forwarded-For`. **Set
+`TRUSTED_PROXIES`** to your load balancer's addresses/CIDRs (e.g. `10.0.0.0/8`): the client
+is the first address from the right that isn't a trusted hop, so a client-supplied
+`X-Forwarded-For` can't dodge rate limits. Without it, only a single-entry header is
+believed (platforms that overwrite the header); never expose the app port directly. HSTS (with preload) and a per-request nonce CSP are sent by
 the app itself.
 
 ## Backups
