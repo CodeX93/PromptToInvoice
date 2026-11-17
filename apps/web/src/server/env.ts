@@ -39,6 +39,8 @@ const schema = z
     MICROSOFT_CLIENT_SECRET: optional,
 
     ANTHROPIC_API_KEY: optional,
+    /** "stub" = deterministic offline extractor for local dev / e2e; refused in production. */
+    AI_PROVIDER: z.enum(["anthropic", "stub"]).default("anthropic"),
     AI_MODEL: z.string().default("claude-opus-5-5"),
 
     STRIPE_SECRET_KEY: optional,
@@ -82,6 +84,9 @@ const schema = z
     );
     need(env.STORAGE_DRIVER === "s3", ["S3_BUCKET", "S3_REGION"], "when STORAGE_DRIVER=s3");
     need(!!env.STRIPE_SECRET_KEY, ["STRIPE_WEBHOOK_SECRET"], "when Stripe is enabled");
+    if (env.NODE_ENV === "production" && env.AI_PROVIDER === "stub") {
+      ctx.addIssue({ code: "custom", path: ["AI_PROVIDER"], message: "the stub extractor is not allowed in production" });
+    }
     if (env.NODE_ENV === "production" && env.EMAIL_PROVIDER === "log") {
       ctx.addIssue({
         code: "custom",
@@ -107,7 +112,7 @@ function load(): Env {
 export const env: Env = load();
 
 export const features = {
-  ai: Boolean(env.ANTHROPIC_API_KEY),
+  ai: env.AI_PROVIDER === "stub" || Boolean(env.ANTHROPIC_API_KEY),
   stripe: Boolean(env.STRIPE_SECRET_KEY),
   google: Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET),
   microsoft: Boolean(env.MICROSOFT_CLIENT_ID && env.MICROSOFT_CLIENT_SECRET),

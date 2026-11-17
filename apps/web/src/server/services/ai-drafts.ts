@@ -1,6 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
-import { extractDraft, normalizeDraft, type ExtractResult, type HistoryItem, type NormalizedDraft, type PromptContext } from "@pti/ai";
+import { extractDraft, normalizeDraft, stubExtract, type ExtractResult, type HistoryItem, type NormalizedDraft, type PromptContext } from "@pti/ai";
 import { isCurrencyCode, suggestTaxTreatment, todayIn, type TaxCategory } from "@pti/core";
 import { desc, eq, schema, sql, withOrg } from "@pti/db";
 import { db } from "../db";
@@ -17,7 +17,8 @@ import { consume } from "./usage";
 type Extractor = (args: Parameters<typeof extractDraft>[0]) => Promise<ExtractResult>;
 
 let anthropic: Anthropic | null = null;
-let extractor: Extractor = extractDraft;
+const defaultExtractor: Extractor = env.AI_PROVIDER === "stub" ? stubExtract : extractDraft;
+let extractor: Extractor = defaultExtractor;
 
 function anthropicClient(): Anthropic {
   anthropic ??= new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
@@ -26,7 +27,7 @@ function anthropicClient(): Anthropic {
 
 /** Test seam: replace the model call with a scripted one. */
 export function setExtractorForTests(fn: Extractor | null): void {
-  extractor = fn ?? extractDraft;
+  extractor = fn ?? defaultExtractor;
 }
 
 const MATCH_THRESHOLD = 0.5;
