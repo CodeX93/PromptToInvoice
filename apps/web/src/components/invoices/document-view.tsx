@@ -165,7 +165,7 @@ function Stamp({ kind, text }: { kind: "draft" | "paid" | "void"; text: string }
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute top-28 right-10 -rotate-12 rounded-[3px] border-2 px-4 py-1.5 text-xl font-semibold tracking-[0.2em] uppercase opacity-75 sm:right-16"
+      className="pointer-events-none absolute top-9 left-1/2 -translate-x-1/2 -rotate-[8deg] rounded-[3px] border-2 px-4 py-1.5 text-xl font-semibold tracking-[0.2em] uppercase opacity-75"
       style={{ color, borderColor: color, boxShadow: `inset 0 0 0 2px #fff, inset 0 0 0 3px ${color}` }}
     >
       {text}
