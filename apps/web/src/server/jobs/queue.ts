@@ -27,6 +27,7 @@ export interface JobPayloads {
   "maintenance.purge": Record<string, never>;
   "org.export": { orgId: string; requestedBy: string };
   "fx.refresh": Record<string, never>;
+  "webhook.deliver": { deliveryId: string };
 }
 export type JobName = keyof JobPayloads;
 
@@ -41,6 +42,7 @@ export const QUEUES: { name: JobName; retryLimit: number; expireInSeconds: numbe
   { name: "maintenance.purge", retryLimit: 2, expireInSeconds: 900 },
   { name: "org.export", retryLimit: 3, expireInSeconds: 900 },
   { name: "fx.refresh", retryLimit: 5, expireInSeconds: 120 },
+  { name: "webhook.deliver", retryLimit: 8, expireInSeconds: 60 },
 ];
 
 const g = globalThis as typeof globalThis & { __ptiBoss?: Promise<PgBoss> };

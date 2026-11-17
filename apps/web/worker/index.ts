@@ -14,6 +14,7 @@ import { findDueReminders } from "@/server/services/reminders";
 import { findDueSchedules, runSchedule } from "@/server/services/recurring";
 import { buildExport } from "@/server/services/data-export";
 import { refreshEcbRates } from "@/server/services/fx";
+import { deliver } from "@/server/services/webhooks";
 
 type Handler<N extends keyof JobPayloads> = (data: JobPayloads[N]) => Promise<void>;
 
@@ -47,6 +48,7 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
     const r = await buildExport(await systemContext(d.orgId, d.requestedBy));
     logger.info({ orgId: d.orgId, bytes: r.bytes }, "export built");
   },
+  "webhook.deliver": async (d) => deliver(d.deliveryId),
   "fx.refresh": async () => {
     logger.info({ rates: await refreshEcbRates() }, "ECB rates refreshed");
   },

@@ -20,6 +20,7 @@ export {
   isNotNull,
   ilike,
   exists,
+  arrayContains,
   asc,
   desc,
   count,
