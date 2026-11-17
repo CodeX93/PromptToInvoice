@@ -12,11 +12,20 @@ import { Divider, OAuthButtons, type OAuthProvider } from "./oauth-buttons";
 
 type Mode = "password" | "link";
 
-export function SignInForm({ next, providers }: { next: string; providers: OAuthProvider[] }) {
+export function SignInForm({
+  next,
+  providers,
+  notice,
+}: {
+  next: string;
+  providers: OAuthProvider[];
+  /** Server-provided message, e.g. why a magic link didn't sign you in. */
+  notice?: string;
+}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("password");
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(notice ?? null);
   const [linkSentTo, setLinkSentTo] = useState<string | null>(null);
 
   async function onSubmit(e: SubmitEvent<HTMLFormElement>) {
