@@ -60,7 +60,13 @@ export const auth = betterAuth({
       locale: { type: "string", required: false, defaultValue: "en", input: true },
       timeZone: { type: "string", required: false, defaultValue: "UTC", input: true },
     },
-    deleteUser: { enabled: true },
+    deleteUser: {
+      enabled: true,
+      beforeDelete: async (user) => {
+        const { assertCanDeleteUser } = await import("./services/org-deletion");
+        await assertCanDeleteUser(user.id);
+      },
+    },
   },
   session: {
     expiresIn: 60 * 60 * 24 * 30,

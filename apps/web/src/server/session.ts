@@ -3,7 +3,7 @@ import { cache } from "react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { allows, isPlanId, isRole, type Permission, type PlanId, type Role } from "@pti/core";
-import { and, eq, asc, schema } from "@pti/db";
+import { and, eq, asc, isNull, schema } from "@pti/db";
 import { auth } from "./auth";
 import { sysDb } from "./db";
 import { ForbiddenError, UnauthorizedError } from "./errors";
@@ -72,7 +72,7 @@ async function loadMembership(userId: string, preferredOrgId: string | null) {
       },
     })
     .from(schema.members)
-    .innerJoin(schema.organizations, eq(schema.organizations.id, schema.members.organizationId));
+    .innerJoin(schema.organizations, and(eq(schema.organizations.id, schema.members.organizationId), isNull(schema.organizations.deletedAt)));
 
   if (preferredOrgId) {
     const [m] = await base

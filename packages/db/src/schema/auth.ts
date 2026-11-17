@@ -143,6 +143,8 @@ export const organizations = pgTable(
     region: text("region").notNull().default("eu"),
     timeZone: text("time_zone").notNull().default("UTC"),
     settings: jsonb("settings").notNull().default({}),
+    /** Soft deletion: issued documents stay under legal hold until their retention ends. */
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
