@@ -7,9 +7,11 @@ import { UserMenu } from "@/components/shell/user-menu";
 import { requireOrg, can } from "@/server/session";
 import { features } from "@/server/env";
 import { PLANS } from "@pti/core";
+import { getOrgSettings } from "@/server/services/org-settings";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
   const ctx = await requireOrg();
+  const settings = await getOrgSettings(ctx.org.id);
   const items: NavItem[] = [
     { href: "/app", label: "Overview", keys: "G D" },
     { href: "/app/invoices", label: "Invoices", keys: "G I" },
@@ -44,7 +46,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-col">
         <div className="bg-paper/95 sticky top-0 z-30 backdrop-blur-[2px]">
           <MobileBar />
-          <PromptBar aiEnabled={features.ai} />
+          <PromptBar aiEnabled={features.ai && settings.ai.enabled} />
         </div>
         <main className="min-w-0 flex-1">{children}</main>
       </div>

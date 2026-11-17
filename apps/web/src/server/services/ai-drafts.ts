@@ -13,6 +13,8 @@ import { clientTaxContext, createClient, getClient, matchClients } from "./clien
 import { draftDefaults, saveDraft } from "./invoices";
 import { listTaxRates } from "./tax-rates";
 import { consume } from "./usage";
+import { getOrgSettings } from "./org-settings";
+import { sha256 } from "../crypto";
 
 type Extractor = (args: Parameters<typeof extractDraft>[0]) => Promise<ExtractResult>;
 
@@ -126,6 +128,8 @@ export interface AiDraftResult {
 export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise<AiDraftResult> {
   authorize(ctx, "invoice:write");
   if (!features.ai) throw new AppError("ai_disabled", "AI drafting isn't configured on this server.", 503);
+  const settings = await getOrgSettings(ctx.org.id);
+  if (!settings.ai.enabled) throw new AppError("ai_disabled", "AI drafting is turned off for this organisation.", 403);
   const prompt = rawPrompt.trim().slice(0, 2000);
   if (prompt.length < 3) throw new ValidationError("Describe the work to invoice.", { prompt: ["Too short."] });
   await enforce(`ai:${ctx.user.id}`, RULES.aiDraft);
@@ -143,7 +147,8 @@ export async function createAiDraft(ctx: OrgContext, rawPrompt: string): Promise
         id: aiDraftId,
         orgId: ctx.org.id,
         userId: ctx.user.id,
-        prompt,
+        // Respect the organisation's retention choice: keep only a hash when prompts aren't retained.
+        prompt: settings.ai.retainPrompts ? prompt : `sha256:${sha256(prompt)}`,
         model: result.model,
         requestId: result.requestId,
         status,
