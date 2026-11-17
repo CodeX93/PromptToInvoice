@@ -31,7 +31,7 @@ export function DocumentView({ m, logoUrl }: { m: InvoiceDocModel; logoUrl: stri
           <p className="text-2xs font-medium tracking-[0.14em] text-[#7f7a6b] uppercase">
             {m.title}
           </p>
-          <p className="font-[IBM_Plex_Serif] text-2xl sm:text-[28px]">{m.number}</p>
+          <p className="font-[IBM_Plex_Serif] text-xl whitespace-nowrap sm:text-[28px]">{m.number}</p>
         </div>
       </header>
       <hr className="mt-6 mb-6 border-t-[1.5px]" style={{ borderColor: "var(--doc-accent)" }} />
