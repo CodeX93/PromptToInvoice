@@ -102,6 +102,8 @@ export async function draftInvoice(
   await page.getByLabel("Postcode").fill("10435");
   await page.getByLabel("City").fill("Berlin");
   await page.getByRole("button", { name: "Add client" }).click();
+  // The modal stays open (and traps focus) until the client is saved.
+  await expect(page.getByRole("dialog", { name: "New client" })).toBeHidden();
   await page.getByLabel("Line 1 description").fill("Brand identity");
   await page.getByLabel("Line 1 quantity").fill("1");
   await page.getByLabel("Line 1 unit price").fill("3400");
