@@ -12,6 +12,7 @@ import { authorize, orgContextOrThrow } from "@/server/session";
 import { parseOrThrow, run, type ActionResult } from "@/server/action";
 import { ForbiddenError, QuotaExceededError } from "@/server/errors";
 import { enforce, RULES } from "@/server/rate-limit";
+import { revokeKeysCreatedBy } from "@/server/services/api-keys";
 
 const inviteSchema = z.object({
   email: z.email("Enter a valid email.").trim().toLowerCase(),
@@ -97,6 +98,8 @@ export async function removeMember(memberId: string): Promise<ActionResult> {
       throw new ForbiddenError("Only owners can remove an owner.");
     await assertNotLastOwner(ctx.org.id, m, null);
     await sysDb.delete(schema.members).where(eq(schema.members.id, memberId));
+    // Their API keys stop working with them; nothing should act for a former member.
+    const revoked = await revokeKeysCreatedBy(ctx.org.id, m.userId);
     // Revoke their sessions' access to this org immediately.
     await sysDb
       .update(schema.sessions)
@@ -113,7 +116,7 @@ export async function removeMember(memberId: string): Promise<ActionResult> {
       action: "member.removed",
       entityType: "member",
       entityId: memberId,
-      diff: { userId: m.userId },
+      diff: { userId: m.userId, apiKeysRevoked: revoked },
     });
     revalidatePath("/app/settings/team");
   });

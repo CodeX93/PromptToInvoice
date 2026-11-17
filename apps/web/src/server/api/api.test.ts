@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { eq, schema } from "@pti/db";
 import { dbs, orgContext } from "../../../test/fixtures";
-import { createApiKey, revokeApiKey } from "../services/api-keys";
+import { createApiKey, revokeApiKey, revokeKeysCreatedBy } from "../services/api-keys";
 import type { Poster } from "../net/egress";
 import { assertPublicUrl, createEndpoint, deliver, emitEvent, sign } from "../services/webhooks";
 import * as invoicesRoute from "@/app/api/v1/invoices/route";
@@ -72,6 +72,13 @@ describe("API authentication", () => {
       .set({ plan: "pro" })
       .where(eq(schema.organizations.id, seed.org.id));
     expect((await invoicesRoute.GET(req("/invoices", key), noParams)).status).toBe(403);
+  });
+
+  it("keys stop working when the member who created them leaves", async () => {
+    const { ctx, key } = await enterprise();
+    expect((await invoicesRoute.GET(req("/invoices", key), noParams)).status).toBe(200);
+    expect(await revokeKeysCreatedBy(ctx.org.id, ctx.user.id)).toBe(1);
+    expect((await invoicesRoute.GET(req("/invoices", key), noParams)).status).toBe(401);
   });
 
   it("only Enterprise orgs can create keys", async () => {
