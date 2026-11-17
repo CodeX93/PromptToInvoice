@@ -48,7 +48,7 @@ type LineRow = typeof schema.invoiceLines.$inferSelect;
 
 export interface InvoiceListItem {
   id: string;
-  docType: "invoice" | "credit_note";
+  docType: "invoice" | "credit_note" | "quote";
   number: string | null;
   clientName: string | null;
   issueDate: string;
@@ -59,7 +59,8 @@ export interface InvoiceListItem {
   status: DisplayStatus;
 }
 
-export type InvoiceFilter = "all" | "draft" | "outstanding" | "overdue" | "paid" | "void";
+export type InvoiceFilter =
+  "all" | "draft" | "outstanding" | "overdue" | "paid" | "void" | "quotes";
 
 const I = schema.invoices;
 
@@ -91,6 +92,8 @@ export async function listInvoices(
   const limit = Math.min(args.limit ?? 50, 100);
   const today = todayIn(ctx.org.timeZone);
   const where: SQL[] = [];
+  // Quotes live on their own list; every other view shows invoices and credit notes.
+  where.push(args.filter === "quotes" ? eq(I.docType, "quote") : sql`${I.docType} <> 'quote'`);
   switch (args.filter ?? "all") {
     case "draft":
       where.push(eq(I.status, "draft"));
@@ -108,6 +111,7 @@ export async function listInvoices(
       where.push(eq(I.status, "void"));
       break;
     case "all":
+    case "quotes":
       break;
   }
   if (args.clientId) where.push(eq(I.clientId, args.clientId));
@@ -279,7 +283,7 @@ function totalsColumns(r: CalculationResult) {
 export interface SaveDraftOptions {
   source?: InvoiceSource;
   aiDraftId?: string | null;
-  docType?: "invoice" | "credit_note";
+  docType?: "invoice" | "credit_note" | "quote";
   correctsInvoiceId?: string | null;
   /** Optimistic concurrency: the version the editor loaded. */
   expectedVersion?: number;
@@ -553,7 +557,7 @@ export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ numbe
     // seller's national currency. Freeze the ECB reference rate at issue.
     const national = euCountry(profile.address.country)?.currency;
     let fx: { fxRate: string; fxCurrency: string } | null = null;
-    if (national && national !== inv.currency && inv.taxTotal !== 0) {
+    if (national && inv.docType !== "quote" && national !== inv.currency && inv.taxTotal !== 0) {
       const r = await conversionRate(inv.currency, national, inv.issueDate);
       if (r) fx = { fxRate: r.rate, fxCurrency: national };
       else logFxGap(id, inv.currency, national);
@@ -561,7 +565,16 @@ export async function issueInvoice(ctx: OrgContext, id: string): Promise<{ numbe
 
     await tx
       .update(I)
-      .set({ status: "open", number, seriesId: series.id, issuedSnapshot: snapshot, issuedAt: new Date(), publicToken: randomToken(18), version: inv.version + 1, ...fx })
+      .set({
+        status: "open",
+        number,
+        seriesId: series.id,
+        issuedSnapshot: snapshot,
+        issuedAt: new Date(),
+        publicToken: randomToken(18),
+        version: inv.version + 1,
+        ...fx,
+      })
       .where(eq(I.id, id));
 
     // Issuing a credit note settles (part of) the original invoice.
@@ -645,7 +658,7 @@ export async function duplicateInvoice(ctx: OrgContext, id: string): Promise<str
       terms: src.invoice.terms,
       taxNote: src.invoice.taxNote,
     },
-    { source: "duplicate" },
+    { source: "duplicate", docType: "invoice" },
   );
   return newId;
 }
@@ -792,7 +805,7 @@ export async function invoiceCounts(ctx: OrgContext) {
   const [r] = await withOrg(db, ctx.org.id, (tx) =>
     tx.execute<{ drafts: number; overdue: number }>(sql`
       select
-        count(*) filter (where status = 'draft')::int as drafts,
+        count(*) filter (where status = 'draft' and doc_type <> 'quote')::int as drafts,
         count(*) filter (where status = 'open' and doc_type = 'invoice' and due_date < ${today})::int as overdue
       from invoices
     `),
@@ -802,4 +815,70 @@ export async function invoiceCounts(ctx: OrgContext) {
 
 export function isInvoiceIds(ids: unknown): ids is string[] {
   return Array.isArray(ids) && ids.every((x) => typeof x === "string" && /^[0-9a-f-]{36}$/.test(x));
+}
+
+// ── Quotes ──────────────────────────────────────────────────────────────
+
+async function setQuoteAnswer(
+  orgId: string,
+  id: string,
+  answer: "accepted" | "declined",
+  actorId: string | null,
+): Promise<void> {
+  await withOrg(db, orgId, async (tx) => {
+    const [q] = await tx.select().from(I).where(eq(I.id, id)).for("update");
+    if (!q || q.docType !== "quote") throw new NotFound("Quote");
+    if (q.status !== "open" || q.convertedInvoiceId)
+      throw new ConflictError("This quote can no longer be answered.");
+    await tx
+      .update(I)
+      .set(
+        answer === "accepted"
+          ? { acceptedAt: new Date(), declinedAt: null }
+          : { declinedAt: new Date(), acceptedAt: null },
+      )
+      .where(eq(I.id, id));
+    await event(tx, orgId, id, "comment", actorId, { quote: answer });
+  });
+}
+
+/** Owner records the client's answer (e.g. given by phone). */
+export async function answerQuote(
+  ctx: OrgContext,
+  id: string,
+  answer: "accepted" | "declined",
+): Promise<void> {
+  authorize(ctx, "invoice:write");
+  await setQuoteAnswer(ctx.org.id, id, answer, ctx.user.id);
+}
+
+/** The client answers on the public page (no session; token already resolved). */
+export async function answerQuotePublic(
+  orgId: string,
+  id: string,
+  answer: "accepted" | "declined",
+): Promise<void> {
+  await setQuoteAnswer(orgId, id, answer, null);
+}
+
+/** Turn an issued quote into an invoice draft with the same lines; the quote is marked as invoiced. */
+export async function convertQuote(ctx: OrgContext, id: string): Promise<string> {
+  authorize(ctx, "invoice:write");
+  const q = await getInvoice(ctx, id);
+  if (q.invoice.docType !== "quote" || q.invoice.status !== "open")
+    throw new ConflictError("Only issued quotes can be invoiced.");
+  if (q.invoice.convertedInvoiceId) return q.invoice.convertedInvoiceId;
+  const invoiceId = await duplicateInvoice(ctx, id);
+  await withOrg(db, ctx.org.id, async (tx) => {
+    await tx
+      .update(I)
+      .set({ source: "duplicate", reference: q.invoice.number ?? "" })
+      .where(eq(I.id, invoiceId));
+    await tx
+      .update(I)
+      .set({ convertedInvoiceId: invoiceId, acceptedAt: q.invoice.acceptedAt ?? new Date() })
+      .where(eq(I.id, id));
+    await event(tx, ctx.org.id, id, "comment", ctx.user.id, { quote: "converted", invoiceId });
+  });
+  return invoiceId;
 }

@@ -96,10 +96,18 @@ describe("calculate", () => {
   });
 
   it("applies discounts to credit notes with the subtotal's sign", () => {
-    const pct = calculate({ currency: "EUR", lines: [line({ quantity: "-2" })], discount: { type: "percent", value: "5" } });
+    const pct = calculate({
+      currency: "EUR",
+      lines: [line({ quantity: "-2" })],
+      discount: { type: "percent", value: "5" },
+    });
     expect(pct.discountTotal).toBe(-1000);
     expect(pct.taxExclusive).toBe(-19000);
-    const amt = calculate({ currency: "EUR", lines: [line({ quantity: "-2" })], discount: { type: "amount", value: "10" } });
+    const amt = calculate({
+      currency: "EUR",
+      lines: [line({ quantity: "-2" })],
+      discount: { type: "amount", value: "10" },
+    });
     expect(amt.taxExclusive).toBe(-19000);
   });
 

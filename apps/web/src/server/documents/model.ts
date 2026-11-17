@@ -36,7 +36,7 @@ export interface InvoiceDocModel {
   labels: DocLabels;
   locale: string;
   currency: CurrencyCode;
-  kind: "invoice" | "credit_note";
+  kind: "invoice" | "credit_note" | "quote";
   title: string;
   number: string;
   stamp: "draft" | "paid" | "void" | null;
@@ -182,6 +182,7 @@ export function buildDocModel(
     meta.push({ label: L.supplyDate, value: date(inv.supplyDate) });
   if (kind === "invoice")
     meta.push({ label: L.dueDate, value: inv.dueDate ? date(inv.dueDate) : L.dueOnReceipt });
+  if (kind === "quote" && inv.dueDate) meta.push({ label: L.validUntil, value: date(inv.dueDate) });
   if (d.corrects?.number) meta.push({ label: L.correctsInvoice, value: d.corrects.number });
   if (inv.reference && !(kind === "credit_note" && inv.reference === d.corrects?.number))
     meta.push({ label: L.reference, value: inv.reference });
@@ -232,7 +233,9 @@ export function buildDocModel(
   if (inv.fxRate && inv.fxCurrency && isCurrencyCode(inv.fxCurrency) && inv.taxTotal !== 0) {
     const rate = parseDecimal(inv.fxRate);
     // Same rounding as every other amount (half-up), never truncation.
-    const taxNational = Number(divRound(BigInt(inv.taxTotal) * rate.coef, pow10(rate.scale), "half-up"));
+    const taxNational = Number(
+      divRound(BigInt(inv.taxTotal) * rate.coef, pow10(rate.scale), "half-up"),
+    );
     taxNotes.push(
       `${L.vat} in ${inv.fxCurrency}: ${formatMoney(taxNational, inv.fxCurrency, locale)} (1 ${currency} = ${formatDecimal(normalizeDecimal(rate))} ${inv.fxCurrency}, ECB reference rate).`,
     );
@@ -270,7 +273,7 @@ export function buildDocModel(
     locale,
     currency,
     kind,
-    title: kind === "credit_note" ? L.creditNote : L.invoice,
+    title: kind === "credit_note" ? L.creditNote : kind === "quote" ? L.quote : L.invoice,
     number: inv.number ?? L.draft,
     stamp:
       inv.status === "draft"

@@ -19,7 +19,10 @@ export type InvoiceAction =
 
 export interface LifecycleFacts {
   status: InvoiceStatus;
-  docType: "invoice" | "credit_note";
+  docType: "invoice" | "credit_note" | "quote";
+  acceptedAt?: Date | string | null;
+  declinedAt?: Date | string | null;
+  convertedInvoiceId?: string | null;
   total: number;
   amountPaid: number;
   /** Sum of issued credit notes against the invoice. */
@@ -40,7 +43,7 @@ export function can(
   facts: Pick<LifecycleFacts, "status" | "docType">,
   action: InvoiceAction,
 ): boolean {
-  if (facts.docType === "credit_note" && (action === "credit" || action === "record_payment"))
+  if (facts.docType !== "invoice" && (action === "credit" || action === "record_payment"))
     return false;
   return ALLOWED[facts.status].has(action);
 }
@@ -72,7 +75,18 @@ export function statusAfterPayment(
 }
 
 export type DisplayStatus =
-  "draft" | "issued" | "sent" | "viewed" | "partially_paid" | "overdue" | "paid" | "void";
+  | "draft"
+  | "issued"
+  | "sent"
+  | "viewed"
+  | "partially_paid"
+  | "overdue"
+  | "paid"
+  | "void"
+  | "accepted"
+  | "declined"
+  | "expired"
+  | "converted";
 
 /** What the UI shows. `today` is an ISO date in the org's time zone. */
 export function displayStatus(f: LifecycleFacts, today: string): DisplayStatus {
@@ -84,6 +98,15 @@ export function displayStatus(f: LifecycleFacts, today: string): DisplayStatus {
     case "paid":
       return "paid";
     case "open":
+      if (f.docType === "quote") {
+        // Quotes: the due date is the "valid until" date.
+        if (f.convertedInvoiceId) return "converted";
+        if (f.acceptedAt) return "accepted";
+        if (f.declinedAt) return "declined";
+        if (f.dueDate !== null && f.dueDate < today) return "expired";
+        if (f.viewedAt) return "viewed";
+        return f.sentAt ? "sent" : "issued";
+      }
       if (f.dueDate !== null && f.dueDate < today && f.docType === "invoice") return "overdue";
       if (f.amountPaid > 0 || (f.creditedAmount ?? 0) > 0) return "partially_paid";
       if (f.viewedAt) return "viewed";
@@ -101,11 +124,18 @@ export const DISPLAY_STATUS_LABEL: Readonly<Record<DisplayStatus, string>> = {
   overdue: "Overdue",
   paid: "Paid",
   void: "Void",
+  accepted: "Accepted",
+  declined: "Declined",
+  expired: "Expired",
+  converted: "Invoiced",
 };
 
 export function amountDue(
-  f: Pick<LifecycleFacts, "total" | "amountPaid" | "status" | "creditedAmount">,
+  f: Pick<LifecycleFacts, "total" | "amountPaid" | "status" | "creditedAmount"> & {
+    docType?: LifecycleFacts["docType"];
+  },
 ): number {
   if (f.status === "void" || f.status === "draft") return 0;
+  if ("docType" in f && f.docType === "quote") return 0;
   return Math.max(0, f.total - f.amountPaid - (f.creditedAmount ?? 0));
 }

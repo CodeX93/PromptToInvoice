@@ -119,8 +119,8 @@ export async function listClients(ctx: OrgContext, args: ListClientsArgs = {}) {
               select currency, sum(total - amount_paid)::bigint as amt from invoices
               where client_id = clients.id and status = 'open' and doc_type = 'invoice' group by currency
             ) o where o.amt > 0),
-            'count', (select count(*) from invoices where client_id = clients.id and status <> 'draft'),
-            'last', (select max(issue_date) from invoices where client_id = clients.id and status <> 'draft')
+            'count', (select count(*) from invoices where client_id = clients.id and status <> 'draft' and doc_type <> 'quote'),
+            'last', (select max(issue_date) from invoices where client_id = clients.id and status <> 'draft' and doc_type <> 'quote')
           ))`,
       })
       .from(c)

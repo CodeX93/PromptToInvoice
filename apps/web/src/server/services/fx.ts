@@ -23,12 +23,20 @@ export async function refreshEcbRates(fetchImpl: typeof fetch = fetch): Promise<
   if (!res.ok) throw new Error(`ECB HTTP ${res.status}`);
   const parsed = parseEcbXml(await res.text());
   if (!parsed) throw new Error("ECB response not understood");
-  const rows = Object.entries(parsed.rates).map(([currency, rate]) => ({ date: parsed.date, currency, rate, source: "ECB" }));
+  const rows = Object.entries(parsed.rates).map(([currency, rate]) => ({
+    date: parsed.date,
+    currency,
+    rate,
+    source: "ECB",
+  }));
   await sysDb.insert(schema.fxRates).values(rows).onConflictDoNothing();
   return rows.length;
 }
 
-async function eurRate(currency: string, onOrBefore: string): Promise<{ rate: string; date: string } | null> {
+async function eurRate(
+  currency: string,
+  onOrBefore: string,
+): Promise<{ rate: string; date: string } | null> {
   if (currency === "EUR") return { rate: "1", date: onOrBefore };
   const [r] = await sysDb
     .select()
@@ -43,7 +51,11 @@ async function eurRate(currency: string, onOrBefore: string): Promise<{ rate: st
  * Rate to convert 1 unit of `from` into `to`, using the latest ECB fixing on
  * or before `date` (cross rates via EUR). 8 decimal places, as stored.
  */
-export async function conversionRate(from: string, to: string, date: string): Promise<{ rate: string; date: string } | null> {
+export async function conversionRate(
+  from: string,
+  to: string,
+  date: string,
+): Promise<{ rate: string; date: string } | null> {
   if (from === to) return { rate: "1", date };
   const [a, b] = await Promise.all([eurRate(from, date), eurRate(to, date)]);
   if (!a || !b) return null;
@@ -52,7 +64,10 @@ export async function conversionRate(from: string, to: string, date: string): Pr
   const B = parseDecimal(b.rate);
   const scale = 8;
   const coef = divRound(B.coef * pow10(A.scale + scale), A.coef * pow10(B.scale), "half-even");
-  return { rate: formatDecimal(normalizeDecimal({ coef, scale })), date: a.date < b.date ? a.date : b.date };
+  return {
+    rate: formatDecimal(normalizeDecimal({ coef, scale })),
+    date: a.date < b.date ? a.date : b.date,
+  };
 }
 
 /** Is any rate stored at all? (Used to surface a setup hint instead of silently skipping.) */

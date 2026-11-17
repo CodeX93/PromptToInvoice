@@ -92,6 +92,13 @@
       "when": 1794943815010,
       "tag": "0012_fx_rates",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794943927296,
+      "tag": "0013_quotes",
+      "breakpoints": true
     }
   ]
 }

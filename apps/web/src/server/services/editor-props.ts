@@ -39,6 +39,7 @@ export async function editorProps(
     overrides?: Partial<EditorState>;
     aiFields?: string[];
     aiNotes?: string[];
+    docType?: "invoice" | "quote";
   } = {},
 ): Promise<InvoiceEditorProps> {
   const [defaults, rates] = await Promise.all([
@@ -106,7 +107,7 @@ export async function editorProps(
   return {
     id: detail?.invoice.id ?? null,
     version: detail?.invoice.version ?? 0,
-    docType: detail?.invoice.docType ?? "invoice",
+    docType: detail?.invoice.docType ?? opts.docType ?? "invoice",
     initial,
     seller: {
       name: p.tradingName ?? p.legalName,

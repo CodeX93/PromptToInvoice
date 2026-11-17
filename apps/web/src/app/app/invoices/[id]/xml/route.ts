@@ -10,12 +10,18 @@ export async function GET(req: Request, ctx: RouteContext<"/app/invoices/[id]/xm
   try {
     const org = await orgContextOrThrow();
     authorize(org, "invoice:read");
-    if (!hasFeature(org.org.plan, "einvoice")) return new Response("E-invoices are part of the Professional plan.", { status: 402 });
+    if (!hasFeature(org.org.plan, "einvoice"))
+      return new Response("E-invoices are part of the Professional plan.", { status: 402 });
     const d = await getInvoice(org, id);
-    if (d.invoice.status === "draft") return new Response("Issue the invoice first.", { status: 409 });
-    const format = new URL(req.url).searchParams.get("format") === "xrechnung" ? "xrechnung" : "en16931";
+    if (d.invoice.status === "draft")
+      return new Response("Issue the invoice first.", { status: 409 });
+    const format =
+      new URL(req.url).searchParams.get("format") === "xrechnung" ? "xrechnung" : "en16931";
     const xml = einvoiceXml(d, format);
-    if (!xml) return new Response("Add your VAT number or tax ID in Settings to create e-invoices.", { status: 422 });
+    if (!xml)
+      return new Response("Add your VAT number or tax ID in Settings to create e-invoices.", {
+        status: 422,
+      });
     return new Response(xml, {
       headers: {
         "Content-Type": "application/xml; charset=utf-8",

@@ -169,7 +169,12 @@ export function calculate(input: CalculationInput): CalculationResult {
   // Discounts follow the sign of the subtotal: on a credit note (negative
   // subtotal) a discount reduces the magnitude of the credit.
   const negative = lineNetTotal < 0n;
-  const rawDiscount = documentDiscount(input.discount, negative ? -lineNetTotal : lineNetTotal, exp, mode);
+  const rawDiscount = documentDiscount(
+    input.discount,
+    negative ? -lineNetTotal : lineNetTotal,
+    exp,
+    mode,
+  );
   if (rawDiscount < 0n || rawDiscount > (negative ? -lineNetTotal : lineNetTotal)) {
     throw new CalculationError("Discount cannot exceed the subtotal", ["discount"]);
   }

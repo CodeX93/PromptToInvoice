@@ -7,7 +7,14 @@ import type { CurrencyCode, TaxCategory } from "@pti/core";
  */
 export interface EParty {
   name: string;
-  address: { line1: string; line2: string; city: string; postalCode: string; region: string; country: string };
+  address: {
+    line1: string;
+    line2: string;
+    city: string;
+    postalCode: string;
+    region: string;
+    country: string;
+  };
   vatId?: string | null;
   taxId?: string | null;
   registration?: string | null;
@@ -62,22 +69,68 @@ export interface EInvoice {
   paymentTerms?: string | null;
   seller: EParty;
   buyer: EParty;
-  payment?: { iban: string; bic?: string | null; accountName?: string | null; reference: string } | null;
+  payment?: {
+    iban: string;
+    bic?: string | null;
+    accountName?: string | null;
+    reference: string;
+  } | null;
   lines: ELine[];
   allowances: EAllowance[];
   breakdown: ETaxBreakdown[];
-  totals: { lineTotal: number; allowanceTotal: number; taxBasis: number; taxTotal: number; grandTotal: number; prepaid: number; duePayable: number };
+  totals: {
+    lineTotal: number;
+    allowanceTotal: number;
+    taxBasis: number;
+    taxTotal: number;
+    grandTotal: number;
+    prepaid: number;
+    duePayable: number;
+  };
 }
 
 const UNIT_CODES: Record<string, string> = {
-  h: "HUR", hr: "HUR", hrs: "HUR", hour: "HUR", hours: "HUR", std: "HUR", "std.": "HUR", stunden: "HUR",
-  d: "DAY", day: "DAY", days: "DAY", tag: "DAY", tage: "DAY", jour: "DAY", jours: "DAY",
-  min: "MIN", minute: "MIN", minutes: "MIN",
-  week: "WEE", weeks: "WEE", wk: "WEE",
-  month: "MON", months: "MON", mo: "MON", monat: "MON",
-  year: "ANN", years: "ANN",
-  km: "KMT", kg: "KGM", m: "MTR", m2: "MTK", l: "LTR",
-  pcs: "H87", pc: "H87", piece: "H87", pieces: "H87", stk: "H87", "stk.": "H87", "stück": "H87", item: "H87", items: "H87",
+  h: "HUR",
+  hr: "HUR",
+  hrs: "HUR",
+  hour: "HUR",
+  hours: "HUR",
+  std: "HUR",
+  "std.": "HUR",
+  stunden: "HUR",
+  d: "DAY",
+  day: "DAY",
+  days: "DAY",
+  tag: "DAY",
+  tage: "DAY",
+  jour: "DAY",
+  jours: "DAY",
+  min: "MIN",
+  minute: "MIN",
+  minutes: "MIN",
+  week: "WEE",
+  weeks: "WEE",
+  wk: "WEE",
+  month: "MON",
+  months: "MON",
+  mo: "MON",
+  monat: "MON",
+  year: "ANN",
+  years: "ANN",
+  km: "KMT",
+  kg: "KGM",
+  m: "MTR",
+  m2: "MTK",
+  l: "LTR",
+  pcs: "H87",
+  pc: "H87",
+  piece: "H87",
+  pieces: "H87",
+  stk: "H87",
+  "stk.": "H87",
+  stück: "H87",
+  item: "H87",
+  items: "H87",
 };
 
 /** Map a free-text unit to a UN/ECE Rec. 20 code; C62 ("one") for anything unknown or blank. */

@@ -90,3 +90,22 @@ describe("payments", () => {
     expect(statusAfterPayment(100, 60, 40)).toBe("paid");
   });
 });
+
+describe("quotes", () => {
+  const q = (over: Partial<LifecycleFacts> = {}) => facts({ docType: "quote", ...over });
+  it("derives quote states", () => {
+    expect(displayStatus(q(), "2026-06-15")).toBe("issued");
+    expect(displayStatus(q({ sentAt: "x" }), "2026-06-15")).toBe("sent");
+    expect(displayStatus(q({ acceptedAt: "x" }), "2026-06-15")).toBe("accepted");
+    expect(displayStatus(q({ declinedAt: "x" }), "2026-06-15")).toBe("declined");
+    expect(displayStatus(q({ dueDate: "2026-06-01" }), "2026-06-15")).toBe("expired");
+    expect(displayStatus(q({ acceptedAt: "x", convertedInvoiceId: "i" }), "2026-06-15")).toBe(
+      "converted",
+    );
+  });
+  it("quotes are never payable or creditable", () => {
+    expect(can(q(), "record_payment")).toBe(false);
+    expect(can(q(), "credit")).toBe(false);
+    expect(amountDue(q())).toBe(0);
+  });
+});

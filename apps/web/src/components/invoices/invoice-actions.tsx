@@ -9,6 +9,8 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { toast } from "@/components/ui/toast";
 import {
+  answerQuoteAction,
+  convertQuoteAction,
   creditNoteAction,
   duplicateAction,
   markSentAction,
@@ -19,7 +21,8 @@ import { RecurringDialog } from "./recurring-dialog";
 
 export interface InvoiceActionsProps {
   id: string;
-  docType: "invoice" | "credit_note";
+  docType: "invoice" | "credit_note" | "quote";
+  quoteOpen?: boolean;
   publicUrl: string | null;
   canPay: boolean;
   canCredit: boolean;
@@ -76,6 +79,16 @@ export function InvoiceActions(p: InvoiceActionsProps) {
           {p.sentBefore ? "Send again" : "Send"}
         </Button>
       ) : null}
+      {p.docType === "quote" && p.quoteOpen && p.canWrite ? (
+        <Button
+          size="sm"
+          onClick={() =>
+            go(() => convertQuoteAction(p.id), "Invoice draft created from the quote.")
+          }
+        >
+          Convert to invoice
+        </Button>
+      ) : null}
       <Menu>
         <MenuTrigger asChild>
           <Button variant="ghost" size="sm" aria-label="More actions">
@@ -109,8 +122,42 @@ export function InvoiceActions(p: InvoiceActionsProps) {
           ) : null}
           {p.canEinvoice ? (
             <>
-              <MenuItem onSelect={() => (window.location.href = `/app/invoices/${p.id}/xml`)}>Download e-invoice (EN 16931 XML)</MenuItem>
-              <MenuItem onSelect={() => (window.location.href = `/app/invoices/${p.id}/xml?format=xrechnung`)}>Download XRechnung (DE public sector)</MenuItem>
+              <MenuItem onSelect={() => (window.location.href = `/app/invoices/${p.id}/xml`)}>
+                Download e-invoice (EN 16931 XML)
+              </MenuItem>
+              <MenuItem
+                onSelect={() =>
+                  (window.location.href = `/app/invoices/${p.id}/xml?format=xrechnung`)
+                }
+              >
+                Download XRechnung (DE public sector)
+              </MenuItem>
+            </>
+          ) : null}
+          {p.docType === "quote" && p.quoteOpen && p.canWrite ? (
+            <>
+              <MenuItem
+                onSelect={() =>
+                  start(async () => {
+                    const r = await answerQuoteAction(p.id, "accepted");
+                    if (r.ok) router.refresh();
+                    else toast.error(r.error);
+                  })
+                }
+              >
+                Mark as accepted
+              </MenuItem>
+              <MenuItem
+                onSelect={() =>
+                  start(async () => {
+                    const r = await answerQuoteAction(p.id, "declined");
+                    if (r.ok) router.refresh();
+                    else toast.error(r.error);
+                  })
+                }
+              >
+                Mark as declined
+              </MenuItem>
             </>
           ) : null}
           <MenuItem onSelect={() => window.open(`/app/invoices/${p.id}/pdf`, "_blank", "noopener")}>

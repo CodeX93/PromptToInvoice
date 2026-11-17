@@ -49,14 +49,15 @@ export async function modelFor(ctx: OrgContext, detail: InvoiceDetail): Promise<
   });
 }
 
-
 export async function renderFor(
   ctx: OrgContext,
   detail: InvoiceDetail,
 ): Promise<{ pdf: Buffer; model: InvoiceDocModel }> {
   const model = await modelFor(ctx, detail);
   const extra =
-    detail.invoice.status !== "draft" && hasFeature(ctx.org.plan, "einvoice") ? facturXFor(detail) : null;
+    detail.invoice.status !== "draft" && hasFeature(ctx.org.plan, "einvoice")
+      ? facturXFor(detail)
+      : null;
   const pdf = await renderInvoicePdf(model, {
     logo: await loadLogo(ctx.org.id, model.logoFileId),
     paper: detail.invoice.issuedSnapshot?.seller.address.country === "US" ? "LETTER" : "A4",

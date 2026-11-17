@@ -54,7 +54,10 @@ export const invoices = pgTable(
       .notNull()
       .references(() => businessProfiles.id),
     clientId: uuid("client_id").references(() => clients.id),
-    docType: text("doc_type").$type<"invoice" | "credit_note">().notNull().default("invoice"),
+    docType: text("doc_type")
+      .$type<"invoice" | "credit_note" | "quote">()
+      .notNull()
+      .default("invoice"),
     status: text("status").$type<InvoiceStatus>().notNull().default("draft"),
     number: text("number"),
     seriesId: uuid("series_id").references(() => numberSeries.id),
@@ -100,6 +103,10 @@ export const invoices = pgTable(
     viewedAt: timestamp("viewed_at", { withTimezone: true }),
     paidAt: timestamp("paid_at", { withTimezone: true }),
     voidedAt: timestamp("voided_at", { withTimezone: true }),
+    /** Quotes: the client's answer on the public page, and the invoice it became. */
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    declinedAt: timestamp("declined_at", { withTimezone: true }),
+    convertedInvoiceId: uuid("converted_invoice_id"),
     lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
     reminderCount: integer("reminder_count").notNull().default(0),
 

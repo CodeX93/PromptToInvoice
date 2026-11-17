@@ -73,6 +73,53 @@ export default async function PublicInvoicePage(props: PageProps<"/i/[token]">) 
                   This invoice was cancelled with a credit note. Nothing is due.
                 </p>
               </>
+            ) : inv.docType === "quote" ? (
+              <>
+                <p className="label-caps">Quote</p>
+                <p className="figures mt-1 text-3xl">
+                  {formatMoney(inv.total, currency, m.locale)}
+                </p>
+                {inv.dueDate ? (
+                  <p className="text-ink-3 mt-1 text-sm">
+                    valid until {formatDate(inv.dueDate, m.locale, "long")}
+                  </p>
+                ) : null}
+                {inv.acceptedAt || sp.answered === "accepted" ? (
+                  <p
+                    role="status"
+                    className="border-positive bg-positive-soft text-positive mt-5 border-l-2 px-3 py-2 text-sm"
+                  >
+                    Accepted. Thank you! {m.seller.name} has been notified.
+                  </p>
+                ) : inv.declinedAt || sp.answered === "declined" ? (
+                  <p role="status" className="text-ink-2 mt-5 text-sm">
+                    You declined this quote.
+                  </p>
+                ) : detail.status === "expired" ? (
+                  <p className="text-ink-3 mt-5 text-sm">
+                    This quote has expired. Contact {m.seller.name} for an updated one.
+                  </p>
+                ) : (
+                  <form method="post" action={`/i/${token}/answer`} className="mt-6 grid gap-2">
+                    <button
+                      type="submit"
+                      name="answer"
+                      value="accept"
+                      className="bg-ink text-paper hover:bg-ink-2 h-11 rounded-sm text-[15px] font-medium"
+                    >
+                      Accept quote
+                    </button>
+                    <button
+                      type="submit"
+                      name="answer"
+                      value="decline"
+                      className="text-ink-3 hover:text-ink h-9 text-sm"
+                    >
+                      Decline
+                    </button>
+                  </form>
+                )}
+              </>
             ) : inv.docType === "credit_note" ? (
               <>
                 <p className="label-caps">Credit note</p>

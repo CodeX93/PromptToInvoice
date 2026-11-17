@@ -70,7 +70,7 @@ export async function overview(ctx: OrgContext, primaryCurrency: CurrencyCode): 
         coalesce((select sum(total) from inv where currency = c.currency and issue_date >= ${monthStart}), 0)::bigint as this_month,
         coalesce((select sum(total) from inv where currency = c.currency and issue_date >= ${lastMonthStart} and issue_date < ${monthStart}), 0)::bigint as last_month,
         coalesce((select sum(amount - refunded_amount) from payments where currency = c.currency and received_on >= ${d30}), 0)::bigint as collected
-      from (select distinct currency from invoices where status <> 'draft' union select ${primaryCurrency}) c
+      from (select distinct currency from invoices where status <> 'draft' and doc_type <> 'quote' union select ${primaryCurrency}) c
     `);
 
     const aging = await tx.execute<{
@@ -205,7 +205,7 @@ export async function taxReport(
       select i.currency, b->>'category' as category, b->>'rate' as rate,
         sum((b->>'taxable')::bigint)::bigint as taxable, sum((b->>'tax')::bigint)::bigint as tax, count(distinct i.id)::int as docs
       from invoices i, jsonb_array_elements(i.tax_breakdown) b
-      where i.status <> 'draft' and i.issue_date between ${from} and ${to}
+      where i.status <> 'draft' and i.doc_type <> 'quote' and i.issue_date between ${from} and ${to}
       group by 1, 2, 3 order by 1, 2, (b->>'rate')::numeric desc
     `),
   );
@@ -246,7 +246,7 @@ export async function revenueByMonth(
         select to_char(issue_date, 'YYYY-MM') as month, currency,
           sum(total) filter (where doc_type = 'invoice') as invoiced,
           -sum(total) filter (where doc_type = 'credit_note') as credited
-        from invoices where status <> 'draft' and issue_date between ${from} and ${to} group by 1, 2
+        from invoices where status <> 'draft' and doc_type <> 'quote' and issue_date between ${from} and ${to} group by 1, 2
       ),
       pay as (
         select to_char(received_on, 'YYYY-MM') as month, currency, sum(amount - refunded_amount) as collected
@@ -302,7 +302,7 @@ export async function revenueByClient(
         sum(i.total - i.amount_paid - i.credited_amount) filter (where i.status = 'open' and i.doc_type = 'invoice')::bigint as outstanding,
         round(avg(extract(epoch from (i.paid_at - i.issued_at)) / 86400) filter (where i.paid_at is not null))::int as days
       from invoices i join clients c on c.id = i.client_id
-      where i.status <> 'draft' and i.issue_date between ${from} and ${to}
+      where i.status <> 'draft' and i.doc_type <> 'quote' and i.issue_date between ${from} and ${to}
       group by c.id, c.name, i.currency
       order by invoiced desc nulls last
     `),

@@ -64,8 +64,11 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
   return (
     <div className="pb-20">
       <div className="border-rule flex flex-wrap items-center gap-3 border-b px-6 py-2.5 lg:px-10">
-        <Link href="/app/invoices" className="text-ink-3 hover:text-ink text-[13px]">
-          ← Invoices
+        <Link
+          href={inv.docType === "quote" ? "/app/quotes" : "/app/invoices"}
+          className="text-ink-3 hover:text-ink text-[13px]"
+        >
+          ← {inv.docType === "quote" ? "Quotes" : "Invoices"}
         </Link>
         <span className="text-ink-4">/</span>
         <span className="figures text-[13px]">{inv.number}</span>
@@ -74,6 +77,7 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
           <InvoiceActions
             id={inv.id}
             docType={inv.docType}
+            quoteOpen={inv.docType === "quote" && inv.status === "open" && !inv.convertedInvoiceId}
             publicUrl={publicUrl(inv.publicToken)}
             canPay={can(ctx, "payment:write") && canDo(inv, "record_payment")}
             canCredit={canDo(inv, "credit")}
@@ -103,7 +107,13 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
 
         <aside className="flex flex-col gap-8 text-[13px] xl:sticky xl:top-20 xl:self-start">
           <section>
-            <p className="label-caps">{inv.docType === "invoice" ? "Amount due" : "Credit"}</p>
+            <p className="label-caps">
+              {inv.docType === "invoice"
+                ? "Amount due"
+                : inv.docType === "quote"
+                  ? "Quote total"
+                  : "Credit"}
+            </p>
             <p className="figures mt-1 text-2xl">
               {formatMoney(inv.docType === "invoice" ? due : inv.total, currency)}
             </p>
@@ -120,6 +130,17 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
             ) : null}
           </section>
 
+          {inv.convertedInvoiceId ? (
+            <section>
+              <p className="label-caps mb-1">Invoiced as</p>
+              <Link
+                href={`/app/invoices/${inv.convertedInvoiceId}` as Route}
+                className="underline underline-offset-4"
+              >
+                Open invoice →
+              </Link>
+            </section>
+          ) : null}
           {detail.corrects ? (
             <section>
               <p className="label-caps mb-1">Corrects</p>
