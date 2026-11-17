@@ -71,7 +71,7 @@ export function ChangePassword() {
           </div>
         )}
       </Field>
-      <Button type="submit" variant="secondary" pending={pending} disabled={pw.length < 10} className="self-start">
+      <Button type="submit" variant="secondary" pending={pending} disabled={pw.length < 10} className="justify-self-start">
         Change password
       </Button>
     </form>
