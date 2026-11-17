@@ -55,7 +55,8 @@ function byMonth(items: InvoiceListItem[]) {
       groups.push(g);
     }
     g.items.push(it);
-    if (it.status !== "draft" && it.status !== "void")
+    // Month heading = amount invoiced; credit notes keep their own rows.
+    if (it.docType === "invoice" && it.status !== "draft" && it.status !== "void")
       g.totals.set(it.currency, (g.totals.get(it.currency) ?? 0) + it.total);
   }
   return groups;
