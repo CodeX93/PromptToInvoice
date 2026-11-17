@@ -6,3 +6,5 @@ process.env.ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString("base64");
 process.env.EMAIL_PROVIDER ??= "log";
 process.env.LOG_LEVEL ??= "error";
 process.env.ANTHROPIC_API_KEY ??= "sk-test-not-used";
+process.env.STRIPE_SECRET_KEY ??= "sk_test_dummy_not_used_for_network";
+process.env.STRIPE_WEBHOOK_SECRET ??= "whsec_test_secret";

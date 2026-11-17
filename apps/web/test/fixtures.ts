@@ -1,5 +1,5 @@
 import { seedOrg, testDbs } from "@pti/db/testing";
-import { schema } from "@pti/db";
+import { eq, schema } from "@pti/db";
 import type { OrgContext } from "@/server/session";
 import type { PlanId, Role } from "@pti/core";
 
@@ -7,6 +7,7 @@ export const dbs = testDbs();
 
 export async function orgContext(opts: { plan?: PlanId; role?: Role } = {}) {
   const seed = await seedOrg(dbs.system);
+  if (opts.plan) await dbs.system.update(schema.organizations).set({ plan: opts.plan }).where(eq(schema.organizations.id, seed.org.id));
   await dbs.system.insert(schema.numberSeries).values({ orgId: seed.org.id, businessProfileId: seed.profile.id, docType: "credit_note", pattern: "CN-{SEQ:3}" });
   const [client] = await dbs.system
     .insert(schema.clients)
