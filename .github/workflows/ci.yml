@@ -46,3 +46,35 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+
+  images:
+    # Proves both production images build with no secrets and the web image boots.
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: web
+          tags: pti-web:ci
+          load: true
+          build-args: DEPLOYMENT_ID=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Build worker
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: worker
+          tags: pti-worker:ci
+          load: true
+          build-args: DEPLOYMENT_ID=${{ github.sha }}
+          cache-from: type=gha
+      - name: Web refuses to boot with missing configuration
+        run: |
+          set +e
+          docker run --rm pti-web:ci; code=$?
+          test "$code" -eq 1
