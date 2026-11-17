@@ -16,6 +16,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
           { href: "/app/settings/team", label: "Team" },
           { href: "/app/settings/billing", label: "Plan & billing" },
           { href: "/app/settings/account", label: "Account & security" },
+          { href: "/app/settings/data", label: "Data & privacy" },
         ]}
       />
       <div className="px-6 py-8 lg:px-10">{children}</div>
