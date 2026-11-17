@@ -1,7 +1,6 @@
 import "server-only";
 import { z } from "zod";
 import { WEBHOOK_EVENTS } from "@pti/db";
-import { env } from "../env";
 import {
   apiClientCreate,
   apiClientList,
@@ -54,10 +53,13 @@ const idem = {
 };
 const body = (ref: string) => ({ required: true, ...json(ref) });
 
-let cached: object | null = null;
+const cache = new Map<string, object>();
 
-export function openApiDocument(): object {
-  cached ??= {
+/** `origin` comes from the request, so one build serves every deployment. */
+export function openApiDocument(origin: string): object {
+  const hit = cache.get(origin);
+  if (hit) return hit;
+  const doc = {
     openapi: "3.1.0",
     info: {
       title: "PromptToInvoice API",
@@ -65,7 +67,7 @@ export function openApiDocument(): object {
       description:
         "Create, issue and send invoices programmatically. Money is an integer in minor units with an ISO 4217 currency; decimals (quantities, prices, rates) are strings. Errors follow RFC 9457 (application/problem+json).",
     },
-    servers: [{ url: `${env.APP_URL}/api/v1` }],
+    servers: [{ url: `${origin}/api/v1` }],
     security: [{ apiKey: [] }],
     paths: {
       "/invoices": {
@@ -225,5 +227,6 @@ export function openApiDocument(): object {
       },
     },
   };
-  return cached;
+  if (cache.size < 8) cache.set(origin, doc);
+  return doc;
 }
