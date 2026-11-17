@@ -27,13 +27,25 @@ interface Transport {
 
 const logTransport: Transport = {
   name: "log",
-  send(msg) {
+  async send(msg) {
     // Dev only (prod rejects the log provider): print the text body so links are clickable.
     logger.info(
       { to: msg.to, subject: msg.subject, tag: msg.tag, text: msg.text },
       "email (log transport)",
     );
-    return Promise.resolve({ provider: "log", providerMessageId: null });
+    // E2E: a file per message, so tests read real emails without a mail server.
+    if (env.EMAIL_OUTBOX_DIR) {
+      const { mkdir, writeFile } = await import("node:fs/promises");
+      const { join } = await import("node:path");
+      await mkdir(env.EMAIL_OUTBOX_DIR, { recursive: true });
+      const name = `${Date.now()}-${crypto.randomUUID()}.json`;
+      const { attachments, ...rest } = msg;
+      await writeFile(
+        join(env.EMAIL_OUTBOX_DIR, name),
+        JSON.stringify({ ...rest, attachments: attachments?.map((a) => a.filename) ?? [] }),
+      );
+    }
+    return { provider: "log", providerMessageId: null };
   },
 };
 
