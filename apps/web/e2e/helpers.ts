@@ -15,10 +15,10 @@ interface Mail {
  * range) so per-IP rate limits apply per test, as they would to real people.
  */
 export const test = base.extend({
-  page: async ({ page }, use) => {
+  page: async ({ page }, provide) => {
     const n = () => Math.floor(Math.random() * 254) + 1;
     await page.setExtraHTTPHeaders({ "x-forwarded-for": `198.18.${n()}.${n()}` });
-    await use(page);
+    await provide(page);
   },
 });
 export { expect };

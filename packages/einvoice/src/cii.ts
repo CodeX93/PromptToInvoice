@@ -15,6 +15,8 @@ const GUIDELINE: Record<CiiProfile, string> = {
 };
 
 export function escapeXml(s: string): string {
+  // XML 1.0 forbids these control characters outright, so they are dropped.
+  // eslint-disable-next-line no-control-regex -- matching control characters is the point
   return s.replace(/[<>&'"\u0000-\u0008\u000b\u000c\u000e-\u001f]/g, (c) =>
     c === "<"
       ? "&lt;"

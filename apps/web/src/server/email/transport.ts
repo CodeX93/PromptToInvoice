@@ -36,12 +36,12 @@ const logTransport: Transport = {
     // E2E: a file per message, so tests read real emails without a mail server.
     if (env.EMAIL_OUTBOX_DIR) {
       const { mkdir, writeFile } = await import("node:fs/promises");
-      const { join } = await import("node:path");
+      const nodePath = await import("node:path");
       await mkdir(env.EMAIL_OUTBOX_DIR, { recursive: true });
       const name = `${Date.now()}-${crypto.randomUUID()}.json`;
       const { attachments, ...rest } = msg;
       await writeFile(
-        join(env.EMAIL_OUTBOX_DIR, name),
+        nodePath.join(env.EMAIL_OUTBOX_DIR, name),
         JSON.stringify({ ...rest, attachments: attachments?.map((a) => a.filename) ?? [] }),
       );
     }

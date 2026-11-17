@@ -5,8 +5,10 @@
 import { build } from "esbuild";
 import { fileURLToPath } from "node:url";
 
+/** @param {string} p */
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
+/** @type {import("esbuild").Plugin} */
 const externalNpm = {
   name: "external-npm",
   setup(b) {
@@ -20,6 +22,7 @@ const externalNpm = {
   },
 };
 
+/** @type {import("esbuild").BuildOptions} */
 const common = {
   bundle: true,
   platform: "node",

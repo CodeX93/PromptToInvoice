@@ -117,21 +117,54 @@ const parser = new XMLParser({
 });
 const num = (s: unknown) => Number(s);
 
+/** The slice of a parsed CII document these tests read (fast-xml-parser output shape). */
+type Text = string | number;
+interface TaxNode {
+  CalculatedAmount: Text;
+  BasisAmount: Text;
+  RateApplicablePercent: Text;
+  ExemptionReason?: string;
+}
+interface LineNode {
+  SpecifiedLineTradeDelivery: { BilledQuantity: { "@_unitCode": string } };
+  SpecifiedLineTradeSettlement: {
+    SpecifiedTradeSettlementLineMonetarySummation: { LineTotalAmount: Text };
+  };
+}
+interface ParsedCii {
+  ExchangedDocumentContext: { GuidelineSpecifiedDocumentContextParameter: { ID: string } };
+  ExchangedDocument: { TypeCode: Text; IssueDateTime: { DateTimeString: { "#text": Text } } };
+  SupplyChainTradeTransaction: {
+    IncludedSupplyChainTradeLineItem: LineNode[];
+    ApplicableHeaderTradeAgreement: {
+      BuyerReference?: string;
+      SellerTradeParty: { SpecifiedTaxRegistration: { ID: unknown } };
+    };
+    ApplicableHeaderTradeSettlement: {
+      ApplicableTradeTax: TaxNode[];
+      SpecifiedTradeAllowanceCharge?: { ActualAmount: Text }[];
+      InvoiceReferencedDocument?: { IssuerAssignedID: string };
+      SpecifiedTradeSettlementHeaderMonetarySummation: {
+        LineTotalAmount: Text;
+        AllowanceTotalAmount?: Text;
+        TaxBasisTotalAmount: Text;
+        TaxTotalAmount: { "#text": Text };
+        GrandTotalAmount: Text;
+        TotalPrepaidAmount?: Text;
+        DuePayableAmount: Text;
+      };
+    };
+  };
+}
+
 /** EN 16931 arithmetic business rules, checked on the serialised XML. */
-function checkBusinessRules(xml: string) {
-  const doc = parser.parse(xml).CrossIndustryInvoice;
+function checkBusinessRules(xml: string): ParsedCii {
+  const doc = (parser.parse(xml) as { CrossIndustryInvoice: ParsedCii }).CrossIndustryInvoice;
   const tx = doc.SupplyChainTradeTransaction;
   const settle = tx.ApplicableHeaderTradeSettlement;
   const sum = settle.SpecifiedTradeSettlementHeaderMonetarySummation;
   const lineSum = tx.IncludedSupplyChainTradeLineItem.reduce(
-    (
-      a: number,
-      l: {
-        SpecifiedLineTradeSettlement: {
-          SpecifiedTradeSettlementLineMonetarySummation: { LineTotalAmount: string };
-        };
-      },
-    ) =>
+    (a, l) =>
       a +
       num(
         l.SpecifiedLineTradeSettlement.SpecifiedTradeSettlementLineMonetarySummation
@@ -140,14 +173,10 @@ function checkBusinessRules(xml: string) {
     0,
   );
   const allowances = (settle.SpecifiedTradeAllowanceCharge ?? []).reduce(
-    (a: number, x: { ActualAmount: string }) => a + num(x.ActualAmount),
+    (a, x) => a + num(x.ActualAmount),
     0,
   );
-  const taxes = settle.ApplicableTradeTax as {
-    CalculatedAmount: string;
-    BasisAmount: string;
-    RateApplicablePercent: string;
-  }[];
+  const taxes = settle.ApplicableTradeTax;
   const round2 = (n: number) => Math.round(n * 100) / 100;
   expect(round2(lineSum)).toBe(num(sum.LineTotalAmount)); // BR-CO-10
   expect(round2(allowances)).toBe(num(sum.AllowanceTotalAmount ?? 0)); // BR-CO-11
@@ -184,8 +213,8 @@ describe("CII", () => {
     });
     expect(agreement.BuyerReference).toBe("PO-77");
     expect(
-      doc.SupplyChainTradeTransaction.IncludedSupplyChainTradeLineItem[0].SpecifiedLineTradeDelivery
-        .BilledQuantity["@_unitCode"],
+      doc.SupplyChainTradeTransaction.IncludedSupplyChainTradeLineItem[0]
+        ?.SpecifiedLineTradeDelivery.BilledQuantity["@_unitCode"],
     ).toBe("HUR");
   });
 
@@ -236,11 +265,11 @@ describe("CII", () => {
     expect(doc.ExchangedDocument.TypeCode).toBe("381");
     expect(
       doc.SupplyChainTradeTransaction.ApplicableHeaderTradeSettlement.ApplicableTradeTax[0]
-        .ExemptionReason,
+        ?.ExemptionReason,
     ).toBe("Reverse charge");
     expect(
       doc.SupplyChainTradeTransaction.ApplicableHeaderTradeSettlement.InvoiceReferencedDocument
-        .IssuerAssignedID,
+        ?.IssuerAssignedID,
     ).toBe("INV-2026-0041");
   });
 
