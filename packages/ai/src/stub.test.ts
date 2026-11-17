@@ -21,6 +21,11 @@ describe("stub extractor", () => {
     expect(o.client.name).toBe("Halden");
   });
 
+  it("doesn't trip over words containing 'at'", () => {
+    const o = stubParse("16h implementation for Nordlicht at €110/h", [], "2026-11-17");
+    expect(o.lines[0]).toMatchObject({ description: "Implementation", quantity: "16", unit: "h", unitPrice: "110" });
+  });
+
   it("detects repeat requests", () => {
     expect(stubParse("same as last month for Acme Corp", clients, "2026-11-17")).toMatchObject({ copyFromPrevious: true, lines: [] });
   });

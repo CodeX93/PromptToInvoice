@@ -34,13 +34,13 @@ export function stubParse(prompt: string, clients: { id: string; name: string }[
   let currency: string | null = null;
   for (const part of text.split(/\s+(?:plus|and|\+)\s+|;\s*/i)) {
     const qty = /(\d+(?:[.,]\d+)?)\s*(h|hrs?|hours?|d|days?|pcs|pieces)\b/i.exec(part);
-    const at = /(?:at|@)\s*([^,]+?)(?:\s*\/\s*(?:h|hr|hour|day|d))?(?:,|$|\s+(?:due|net|for)\b)/i.exec(part) ?? /([€$£]\s?\d[\d.,]*|\d[\d.,]*\s?(?:eur|usd|gbp|€))/i.exec(part);
+    const at = /(?:\bat\b|@)\s*([^,]+?)(?:\s*\/\s*(?:h|hr|hour|day|d))?(?:,|$|\s+(?:due|net|for)\b)/i.exec(part) ?? /([€$£]\s?\d[\d.,]*|\d[\d.,]*\s?(?:eur|usd|gbp|€))/i.exec(part);
     const price = at ? money(at[1] ?? at[0]) : null;
     if (price?.currency) currency ??= price.currency;
     const desc = part
       .replace(/(\d+(?:[.,]\d+)?)\s*(h|hrs?|hours?|d|days?|pcs|pieces)\b(\s+of)?/i, "")
       .replace(/\bfor\s+[A-Z][\w&.'\- ]+/, "")
-      .replace(/(?:at|@)\s*[^,]+/i, "")
+      .replace(/(?:\bat\b|@)\s*[^,]+/i, "")
       .replace(/[€$£]\s?\d[\d.,]*|\d[\d.,]*\s?(?:eur|usd|gbp|€)/gi, "")
       .replace(/\s*\/\s*(?:h|hr|hour|day|d)\b/gi, "")
       .replace(/\b(due in \d+ days|net \d+|flat)\b/gi, "")
