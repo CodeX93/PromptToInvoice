@@ -13,9 +13,17 @@ export const metadata: Metadata = { title: "Payments" };
 
 export default async function PaymentsSettingsPage(props: PageProps<"/app/settings/payments">) {
   const ctx = await requireOrg();
-  const [profile, settings, sp] = await Promise.all([getProfile(ctx), getOrgSettings(ctx.org.id), props.searchParams]);
+  const [profile, settings, sp] = await Promise.all([
+    getProfile(ctx),
+    getOrgSettings(ctx.org.id),
+    props.searchParams,
+  ]);
   const canEdit = can(ctx, "settings:write");
-  const status = !profile.stripeAccountId ? "none" : profile.stripeChargesEnabled ? "active" : "pending";
+  const status = !profile.stripeAccountId
+    ? "none"
+    : profile.stripeChargesEnabled
+      ? "active"
+      : "pending";
 
   return (
     <>
@@ -37,13 +45,21 @@ export default async function PaymentsSettingsPage(props: PageProps<"/app/settin
                 <span className="text-ink-3">Not connected</span>
               )}
             </p>
-            {sp.return === "1" && status !== "active" ? <p className="text-ink-3 text-xs">Stripe is reviewing your details. This page updates automatically when they're done.</p> : null}
+            {sp.return === "1" && status !== "active" ? (
+              <p className="text-ink-3 text-xs">
+                Stripe is reviewing your details. This page updates automatically when they're done.
+              </p>
+            ) : null}
             {canEdit ? (
               <div className="flex gap-2">
                 <form action={startStripeOnboarding}>
                   <input type="hidden" name="profileId" value={profile.id} />
                   <Button type="submit" variant={status === "active" ? "secondary" : "primary"}>
-                    {status === "none" ? "Connect Stripe" : status === "pending" ? "Continue Stripe setup" : "Update Stripe details"}
+                    {status === "none"
+                      ? "Connect Stripe"
+                      : status === "pending"
+                        ? "Continue Stripe setup"
+                        : "Update Stripe details"}
                   </Button>
                 </form>
                 {status !== "none" ? (
@@ -59,8 +75,16 @@ export default async function PaymentsSettingsPage(props: PageProps<"/app/settin
           </div>
         )}
       </Section>
-      <Section title="Reminders" description="Polite, automatic follow-ups for unpaid invoices. Each reminder is sent once and stops as soon as the invoice is paid.">
-        <RemindersForm enabled={settings.reminders.enabled} offsets={settings.reminders.offsets} allowed={hasFeature(ctx.org.plan, "reminders")} canEdit={canEdit} />
+      <Section
+        title="Reminders"
+        description="Polite, automatic follow-ups for unpaid invoices. Each reminder is sent once and stops as soon as the invoice is paid."
+      >
+        <RemindersForm
+          enabled={settings.reminders.enabled}
+          offsets={settings.reminders.offsets}
+          allowed={hasFeature(ctx.org.plan, "reminders")}
+          canEdit={canEdit}
+        />
       </Section>
     </>
   );

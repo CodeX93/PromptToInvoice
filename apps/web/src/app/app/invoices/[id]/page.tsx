@@ -85,7 +85,11 @@ export default async function InvoicePage(props: PageProps<"/app/invoices/[id]">
             canSend={can(ctx, "invoice:send") && canDo(inv, "send")}
             sentBefore={Boolean(inv.sentAt)}
             clientEmails={detail.client?.emails ?? []}
-            canRepeat={inv.docType === "invoice" && can(ctx, "invoice:write") && hasFeature(ctx.org.plan, "recurring")}
+            canRepeat={
+              inv.docType === "invoice" &&
+              can(ctx, "invoice:write") &&
+              hasFeature(ctx.org.plan, "recurring")
+            }
           />
         </div>
       </div>

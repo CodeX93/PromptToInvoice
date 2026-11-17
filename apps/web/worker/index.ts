@@ -24,7 +24,8 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
   "reminders.scan": async () => {
     const due = await findDueReminders();
     const day = todayIn("UTC");
-    for (const r of due) await enqueue("reminders.send", r, { singletonKey: `${r.invoiceId}:${r.offset}:${day}` });
+    for (const r of due)
+      await enqueue("reminders.send", r, { singletonKey: `${r.invoiceId}:${r.offset}:${day}` });
     logger.info({ count: due.length }, "reminders scheduled");
   },
   "reminders.send": async (d) => {
@@ -32,7 +33,8 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
   },
   "recurring.scan": async () => {
     const due = await findDueSchedules();
-    for (const s of due) await enqueue("recurring.run", s, { singletonKey: `${s.scheduleId}:${s.runOn}` });
+    for (const s of due)
+      await enqueue("recurring.run", s, { singletonKey: `${s.scheduleId}:${s.runOn}` });
     logger.info({ count: due.length }, "recurring runs scheduled");
   },
   "recurring.run": async (d) => {
@@ -46,19 +48,29 @@ const handlers: { [N in keyof JobPayloads]: Handler<N> } = {
 
 async function main() {
   const b = await boss({ worker: true });
-  for (const [name, handler] of Object.entries(handlers) as [keyof JobPayloads, Handler<keyof JobPayloads>][]) {
-    await b.work<JobPayloads[typeof name]>(name, { localConcurrency: name === "invoice.send" ? 4 : 2, batchSize: 1 }, async (jobs) => {
-      for (const job of jobs) {
-        const started = performance.now();
-        try {
-          await handler(job.data as never);
-          logger.info({ job: name, id: job.id, ms: Math.round(performance.now() - started) }, "job done");
-        } catch (err) {
-          logger.error({ err, job: name, id: job.id }, "job failed");
-          throw err;
+  for (const [name, handler] of Object.entries(handlers) as [
+    keyof JobPayloads,
+    Handler<keyof JobPayloads>,
+  ][]) {
+    await b.work<JobPayloads[typeof name]>(
+      name,
+      { localConcurrency: name === "invoice.send" ? 4 : 2, batchSize: 1 },
+      async (jobs) => {
+        for (const job of jobs) {
+          const started = performance.now();
+          try {
+            await handler(job.data);
+            logger.info(
+              { job: name, id: job.id, ms: Math.round(performance.now() - started) },
+              "job done",
+            );
+          } catch (err) {
+            logger.error({ err, job: name, id: job.id }, "job failed");
+            throw err;
+          }
         }
-      }
-    });
+      },
+    );
   }
   // Hourly scans: each org's "today" depends on its time zone; singleton keys stop duplicates.
   await b.schedule("reminders.scan", "5 * * * *");

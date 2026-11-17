@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
 import { setStatus } from "./actions";
 
-export function ScheduleRowActions({ id, status }: { id: string; status: "active" | "paused" | "ended" }) {
+export function ScheduleRowActions({
+  id,
+  status,
+}: {
+  id: string;
+  status: "active" | "paused" | "ended";
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const go = (s: "active" | "paused" | "ended") =>
@@ -18,10 +24,20 @@ export function ScheduleRowActions({ id, status }: { id: string; status: "active
   if (status === "ended") return <span className="text-ink-4 text-xs">Ended</span>;
   return (
     <span className="inline-flex gap-1" aria-busy={pending}>
-      <Button size="sm" variant="ghost" onClick={() => go(status === "active" ? "paused" : "active")}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() => go(status === "active" ? "paused" : "active")}
+      >
         {status === "active" ? "Pause" : "Resume"}
       </Button>
-      <Button size="sm" variant="ghost" onClick={() => confirm("End this schedule? No more invoices will be created.") && go("ended")}>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() =>
+          confirm("End this schedule? No more invoices will be created.") && go("ended")
+        }
+      >
         End
       </Button>
     </span>

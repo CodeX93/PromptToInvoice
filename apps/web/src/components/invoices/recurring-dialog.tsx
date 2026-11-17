@@ -8,20 +8,37 @@ import { Field, Input, Select } from "@/components/ui/field";
 import { toast } from "@/components/ui/toast";
 import { makeRecurringAction } from "@/app/app/invoices/actions";
 
-export function RecurringDialog({ id, open, onOpenChange, startOn }: { id: string; open: boolean; onOpenChange: (o: boolean) => void; startOn: string }) {
+export function RecurringDialog({
+  id,
+  open,
+  onOpenChange,
+  startOn,
+}: {
+  id: string;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+  startOn: string;
+}) {
   const router = useRouter();
   const [pending, start] = useTransition();
   const [errors, setErrors] = useState<Record<string, string[]>>({});
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="Repeat this invoice" description="A new invoice with the same lines is created on each date, with dates and numbering updated.">
+      <DialogContent
+        title="Repeat this invoice"
+        description="A new invoice with the same lines is created on each date, with dates and numbering updated."
+      >
         <form
           className="grid gap-5 sm:grid-cols-2"
           onSubmit={(e) => {
             e.preventDefault();
             const input = Object.fromEntries(new FormData(e.currentTarget));
             start(async () => {
-              const r = await makeRecurringAction(id, { ...input, endsOn: input.endsOn || null, remainingRuns: input.remainingRuns || null });
+              const r = await makeRecurringAction(id, {
+                ...input,
+                endsOn: input.endsOn || null,
+                remainingRuns: input.remainingRuns || null,
+              });
               if (!r.ok) {
                 setErrors(r.fieldErrors ?? {});
                 return toast.error(r.error);
@@ -32,7 +49,19 @@ export function RecurringDialog({ id, open, onOpenChange, startOn }: { id: strin
             });
           }}
         >
-          <Field label="Every">{(f) => <Input id={f.id} name="intervalCount" type="number" min={1} max={36} defaultValue={1} className="figures" />}</Field>
+          <Field label="Every">
+            {(f) => (
+              <Input
+                id={f.id}
+                name="intervalCount"
+                type="number"
+                min={1}
+                max={36}
+                defaultValue={1}
+                className="figures"
+              />
+            )}
+          </Field>
           <Field label="Period">
             {(f) => (
               <Select id={f.id} name="intervalUnit" defaultValue="month">
@@ -42,8 +71,22 @@ export function RecurringDialog({ id, open, onOpenChange, startOn }: { id: strin
               </Select>
             )}
           </Field>
-          <Field label="First invoice on" error={errors.startOn}>{(f) => <Input id={f.id} name="startOn" type="date" defaultValue={startOn} min={startOn} className="figures" required />}</Field>
-          <Field label="Ends on" optional>{(f) => <Input id={f.id} name="endsOn" type="date" className="figures" />}</Field>
+          <Field label="First invoice on" error={errors.startOn}>
+            {(f) => (
+              <Input
+                id={f.id}
+                name="startOn"
+                type="date"
+                defaultValue={startOn}
+                min={startOn}
+                className="figures"
+                required
+              />
+            )}
+          </Field>
+          <Field label="Ends on" optional>
+            {(f) => <Input id={f.id} name="endsOn" type="date" className="figures" />}
+          </Field>
           <Field label="Then" className="sm:col-span-2" error={errors.autoIssue}>
             {(f) => (
               <Select id={f.id} name="autoIssue" defaultValue="issue_and_send">

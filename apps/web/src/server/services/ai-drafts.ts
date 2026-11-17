@@ -88,15 +88,13 @@ async function buildContext(
         sellerCountry: defaults.profile.address.country,
         defaultCurrency: defaults.currency,
         clients,
-        recentItems: items
-          .slice(0, 40)
-          .map((r, i) => ({
-            description: r.description,
-            unit: r.unit,
-            unitPrice: history[i]?.unitPrice ?? r.unit_price,
-            currency: r.currency,
-            client: r.client,
-          })),
+        recentItems: items.slice(0, 40).map((r, i) => ({
+          description: r.description,
+          unit: r.unit,
+          unitPrice: history[i]?.unitPrice ?? r.unit_price,
+          currency: r.currency,
+          client: r.client,
+        })),
       },
       history,
       clientIds: new Set(clients.map((x) => x.id)),

@@ -11,12 +11,21 @@ const TOKEN_RE = /^[\w-]{20,40}$/;
  * Resolve a public invoice link. Tokens are 144-bit random values; drafts
  * never have one. Returns null for anything that doesn't resolve.
  */
-export async function loadPublicInvoice(token: string): Promise<{ ctx: OrgContext; detail: InvoiceDetail; stripeReady: boolean } | null> {
+export async function loadPublicInvoice(
+  token: string,
+): Promise<{ ctx: OrgContext; detail: InvoiceDetail; stripeReady: boolean } | null> {
   if (!TOKEN_RE.test(token)) return null;
   const [row] = await sysDb
-    .select({ id: schema.invoices.id, orgId: schema.invoices.orgId, enabled: schema.businessProfiles.stripeChargesEnabled })
+    .select({
+      id: schema.invoices.id,
+      orgId: schema.invoices.orgId,
+      enabled: schema.businessProfiles.stripeChargesEnabled,
+    })
     .from(schema.invoices)
-    .innerJoin(schema.businessProfiles, eq(schema.businessProfiles.id, schema.invoices.businessProfileId))
+    .innerJoin(
+      schema.businessProfiles,
+      eq(schema.businessProfiles.id, schema.invoices.businessProfileId),
+    )
     .where(and(eq(schema.invoices.publicToken, token), sql`${schema.invoices.status} <> 'draft'`))
     .limit(1);
   if (!row) return null;
@@ -25,9 +34,17 @@ export async function loadPublicInvoice(token: string): Promise<{ ctx: OrgContex
 }
 
 /** First view by someone outside the organisation marks the invoice as viewed. */
-export async function recordPublicView(orgId: string, invoiceId: string, viewerUserId: string | null): Promise<void> {
+export async function recordPublicView(
+  orgId: string,
+  invoiceId: string,
+  viewerUserId: string | null,
+): Promise<void> {
   if (viewerUserId) {
-    const [m] = await sysDb.select({ id: schema.members.id }).from(schema.members).where(and(eq(schema.members.organizationId, orgId), eq(schema.members.userId, viewerUserId))).limit(1);
+    const [m] = await sysDb
+      .select({ id: schema.members.id })
+      .from(schema.members)
+      .where(and(eq(schema.members.organizationId, orgId), eq(schema.members.userId, viewerUserId)))
+      .limit(1);
     if (m) return;
   }
   const updated = await sysDb
@@ -35,5 +52,6 @@ export async function recordPublicView(orgId: string, invoiceId: string, viewerU
     .set({ viewedAt: new Date() })
     .where(and(eq(schema.invoices.id, invoiceId), sql`${schema.invoices.viewedAt} is null`))
     .returning({ id: schema.invoices.id });
-  if (updated.length) await sysDb.insert(schema.invoiceEvents).values({ orgId, invoiceId, type: "viewed", data: {} });
+  if (updated.length)
+    await sysDb.insert(schema.invoiceEvents).values({ orgId, invoiceId, type: "viewed", data: {} });
 }

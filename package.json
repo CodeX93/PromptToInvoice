@@ -18,7 +18,8 @@
     "db:generate": "pnpm --filter @pti/db db:generate",
     "db:studio": "pnpm --filter @pti/db db:studio",
     "db:seed": "pnpm --filter @pti/db db:seed",
-    "dev:services": "docker compose up -d postgres minio minio-setup mailpit"
+    "dev:services": "docker compose up -d postgres minio minio-setup mailpit",
+    "dev:worker": "pnpm --filter @pti/web worker"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
