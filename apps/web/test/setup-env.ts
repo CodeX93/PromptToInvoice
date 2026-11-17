@@ -5,3 +5,4 @@ process.env.BETTER_AUTH_SECRET ??= "test-secret-test-secret-test-secret-test-sec
 process.env.ENCRYPTION_KEY ??= Buffer.alloc(32, 7).toString("base64");
 process.env.EMAIL_PROVIDER ??= "log";
 process.env.LOG_LEVEL ??= "error";
+process.env.ANTHROPIC_API_KEY ??= "sk-test-not-used";
