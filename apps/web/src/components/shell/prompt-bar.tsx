@@ -42,12 +42,10 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
     e.preventDefault();
     const text = value.trim();
     if (!text) return;
-    router.push(`/app/invoices/new?prompt=${encodeURIComponent(text)}` as Route);
+    router.push((aiEnabled ? `/app/invoices/new?prompt=${encodeURIComponent(text)}` : `/app/invoices?q=${encodeURIComponent(text)}`) as Route);
     setValue("");
     input.current?.blur();
   }
-
-  if (!aiEnabled) return <div className="h-12" />;
 
   return (
     <form
@@ -65,7 +63,7 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
         <span aria-hidden className="figures text-ink-3 text-sm">
           ›
         </span>
-        <span className="sr-only">Describe the work to invoice</span>
+        <span className="sr-only">{aiEnabled ? "Describe the work to invoice" : "Search invoices"}</span>
         <input
           ref={input}
           value={value}
@@ -75,14 +73,14 @@ export function PromptBar({ aiEnabled }: { aiEnabled: boolean }) {
           onKeyDown={(e) => {
             if (e.key === "Escape") input.current?.blur();
           }}
-          placeholder={EXAMPLES[0]}
+          placeholder={aiEnabled ? EXAMPLES[0] : "Search invoices by number, client or reference"}
           maxLength={2000}
           className="figures placeholder:text-ink-4 h-full flex-1 bg-transparent text-[13px] outline-none"
           autoComplete="off"
           spellCheck={false}
         />
         {value ? (
-          <kbd className="figures text-ink-3 text-2xs">↵ draft</kbd>
+          <kbd className="figures text-ink-3 text-2xs">↵ {aiEnabled ? "draft" : "search"}</kbd>
         ) : (
           <kbd className="figures text-ink-4 text-2xs">⌘K</kbd>
         )}

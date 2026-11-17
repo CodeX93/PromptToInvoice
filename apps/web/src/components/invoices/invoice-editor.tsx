@@ -186,7 +186,7 @@ export function InvoiceEditor(props: InvoiceEditorProps) {
   return (
     <div className="pb-24">
       {/* ── Command strip ─────────────────────────────────────────── */}
-      <div className="border-rule bg-paper/95 sticky top-12 z-20 flex flex-wrap items-center gap-3 border-b px-6 py-2.5 backdrop-blur-[2px] lg:px-10">
+      <div className="border-rule bg-paper/95 sticky top-24 z-20 flex flex-wrap md:top-12 items-center gap-3 border-b px-6 py-2.5 backdrop-blur-[2px] lg:px-10">
         <Link href="/app/invoices" className="text-ink-3 hover:text-ink text-[13px]">
           ← Invoices
         </Link>
