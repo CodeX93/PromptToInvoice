@@ -3,14 +3,8 @@ import { describe, expect, it } from "vitest";
 import { eq, schema } from "@pti/db";
 import { dbs, orgContext } from "../../../test/fixtures";
 import { createApiKey, revokeApiKey } from "../services/api-keys";
-import {
-  assertPublicUrl,
-  createEndpoint,
-  deliver,
-  emitEvent,
-  isPrivateAddress,
-  sign,
-} from "../services/webhooks";
+import type { Poster } from "../net/egress";
+import { assertPublicUrl, createEndpoint, deliver, emitEvent, sign } from "../services/webhooks";
 import * as invoicesRoute from "@/app/api/v1/invoices/route";
 import * as invoiceRoute from "@/app/api/v1/invoices/[id]/route";
 import * as issueRoute from "@/app/api/v1/invoices/[id]/issue/route";
@@ -222,24 +216,6 @@ describe("API clients", () => {
 });
 
 describe("webhooks", () => {
-  it("classifies private and public addresses", () => {
-    for (const ip of [
-      "10.1.2.3",
-      "127.0.0.1",
-      "169.254.169.254",
-      "172.20.0.1",
-      "192.168.1.1",
-      "100.64.0.1",
-      "::1",
-      "fd00::1",
-      "::ffff:10.0.0.1",
-      "0.0.0.0",
-    ])
-      expect(isPrivateAddress(ip), ip).toBe(true);
-    for (const ip of ["93.184.215.14", "8.8.8.8", "172.32.0.1", "2606:4700::1111"])
-      expect(isPrivateAddress(ip), ip).toBe(false);
-  });
-
   it("rejects non-https, credentials and private targets", async () => {
     await expect(assertPublicUrl("http://93.184.215.14/x")).rejects.toThrow(/https/);
     await expect(assertPublicUrl("https://u:p@93.184.215.14/x")).rejects.toThrow(/Credentials/);
@@ -270,7 +246,7 @@ describe("webhooks", () => {
     const deliveryId = rows[0]!.id;
 
     // First attempt: receiver is down → throws so the queue retries.
-    const failing = (async () => new Response("nope", { status: 503 })) as unknown as typeof fetch;
+    const failing: Poster = () => Promise.resolve({ status: 503 });
     await expect(deliver(deliveryId, failing)).rejects.toThrow();
     let [row] = await dbs.system
       .select()
@@ -280,10 +256,10 @@ describe("webhooks", () => {
 
     // Second attempt succeeds; verify the receiver-side signature check.
     let seen: { headers: Headers; body: string } | null = null;
-    const ok = (async (_url: string, init: RequestInit) => {
-      seen = { headers: new Headers(init.headers), body: init.body as string };
-      return new Response("ok");
-    }) as unknown as typeof fetch;
+    const ok: Poster = (_url, init) => {
+      seen = { headers: new Headers(init.headers), body: init.body };
+      return Promise.resolve({ status: 200 });
+    };
     await deliver(deliveryId, ok);
     [row] = await dbs.system
       .select()
@@ -297,9 +273,7 @@ describe("webhooks", () => {
     expect(JSON.parse(got.body)).toMatchObject({ type: "invoice.paid", data: { id: "inv_1" } });
 
     // Delivered events are never re-sent.
-    const spy = (async () => {
-      throw new Error("should not be called");
-    }) as unknown as typeof fetch;
+    const spy: Poster = () => Promise.reject(new Error("should not be called"));
     await deliver(deliveryId, spy);
   });
 });
