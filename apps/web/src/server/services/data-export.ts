@@ -1,7 +1,7 @@
 import "server-only";
 import { zipSync, strToU8 } from "fflate";
 import { eq, schema, withOrg } from "@pti/db";
-import { db } from "../db";
+import { db, sysDb } from "../db";
 import { env } from "../env";
 import { audit } from "../audit";
 import { authorize, type OrgContext } from "../session";
@@ -15,7 +15,7 @@ export async function requestExport(ctx: OrgContext): Promise<void> {
   authorize(ctx, "export:run");
   await enforce(`export:${ctx.org.id}`, { limit: 3, windowSeconds: 86_400 });
   await enqueue("org.export", { orgId: ctx.org.id, requestedBy: ctx.user.id }, { singletonKey: `export:${ctx.org.id}` });
-  await audit(db, { orgId: ctx.org.id, actorId: ctx.user.id, action: "org.export_requested", entityType: "organization", entityId: ctx.org.id });
+  await audit(sysDb, { orgId: ctx.org.id, actorId: ctx.user.id, action: "org.export_requested", entityType: "organization", entityId: ctx.org.id });
 }
 
 /**

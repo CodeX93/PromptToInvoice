@@ -71,6 +71,13 @@
       "when": 1794942362107,
       "tag": "0009_job_queue_grant",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1794943261703,
+      "tag": "0010_org_soft_delete",
+      "breakpoints": true
     }
   ]
 }
