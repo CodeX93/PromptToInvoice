@@ -850,6 +850,18 @@ async function setQuoteAnswer(
     if (!q || q.docType !== "quote") throw new NotFound("Quote");
     if (q.status !== "open" || q.convertedInvoiceId)
       throw new ConflictError("This quote can no longer be answered.");
+    // The client's own answer is final and only valid until the quote expires.
+    // The owner (actorId set) may still record or correct an answer given offline.
+    if (actorId === null) {
+      if (q.acceptedAt || q.declinedAt)
+        throw new ConflictError("This quote has already been answered.");
+      const [org] = await tx
+        .select({ timeZone: schema.organizations.timeZone })
+        .from(schema.organizations)
+        .where(eq(schema.organizations.id, orgId));
+      if (q.dueDate && q.dueDate < todayIn(org?.timeZone ?? "UTC"))
+        throw new ConflictError("This quote has expired.", "expired");
+    }
     await tx
       .update(I)
       .set(
