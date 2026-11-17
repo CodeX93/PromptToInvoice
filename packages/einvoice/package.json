@@ -1,0 +1,25 @@
+{
+  "name": "@pti/einvoice",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@pti/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@pti/eslint-config": "workspace:*",
+    "@pti/tsconfig": "workspace:*",
+    "eslint": "^10.15.0",
+    "fast-xml-parser": "^5.12.1",
+    "vitest": "^5.1.0"
+  }
+}
