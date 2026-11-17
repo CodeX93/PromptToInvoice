@@ -176,6 +176,8 @@ export const auth = betterAuth({
   plugins: [
     organization({
       allowUserToCreateOrganization: false,
+      // Deletion goes through services/org-deletion (Stripe, legal hold, audit).
+      disableOrganizationDeletion: true,
       creatorRole: "owner",
       invitationExpiresIn: 60 * 60 * 24 * 7,
       cancelPendingInvitationsOnReInvite: true,
