@@ -14,7 +14,7 @@
     "eval": "tsx evals/run.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^1.10.0",
+    "@anthropic-ai/sdk": "^1.12.0",
     "@pti/core": "workspace:*",
     "zod": "^4.6.7"
   },
@@ -23,6 +23,6 @@
     "@pti/tsconfig": "workspace:*",
     "eslint": "^10.15.0",
     "tsx": "^4.23.15",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.1"
   }
 }
