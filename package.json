@@ -22,7 +22,7 @@
     "dev:worker": "pnpm --filter @pti/web worker"
   },
   "devDependencies": {
-    "@types/node": "^22.20.5",
+    "@types/node": "^26.6.6",
     "lefthook": "^2.2.2",
     "prettier": "^3.10.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
